@@ -52,7 +52,7 @@ func (c *Client) Setup() (err error) {
   if err != nil {
     return
   }
-  if c.DefaultFont, err = ttf.OpenFont(path.Join(c.DataRoot, "fonts", "DefaultFont.ttf"), 16); err != nil {
+  if c.DefaultFont, err = ttf.OpenFont(path.Join(c.DataRoot, "fonts", "DefaultFont.ttf"), 12); err != nil {
     return
   }
   Net.RegisterCommands()
