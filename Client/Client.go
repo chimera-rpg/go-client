@@ -1,7 +1,6 @@
 package Client
 
 import (
-  "github.com/veandco/go-sdl2/sdl"
   "github.com/veandco/go-sdl2/ttf"
   "client/UI"
   "common/Net"
@@ -33,28 +32,33 @@ func NewClient() (c *Client, e error) {
 func (c *Client) Setup() (err error) {
   c.Log = log.New(os.Stdout, "Client: ", log.Lshortfile)
   c.DataRoot = path.Join("share", "chimera", "client")
+
+  context := UI.Context{}
+  if context.Font, err = ttf.OpenFont(path.Join(c.DataRoot, "fonts", "DefaultFont.ttf"), 12); err != nil {
+    return
+  }
+
   err = c.RootWindow.Setup(UI.WindowConfig{
-    Title: "Chimera",
-    Dimensions: sdl.Rect{
-      sdl.WINDOWPOS_UNDEFINED,
-      sdl.WINDOWPOS_UNDEFINED,
-      1280,
-      720,
+    Value: "Chimera",
+    Style: UI.Style{
+      X: UI.Number{ Value: 0, },
+      Y: UI.Number{ Value: 0, },
+      W: UI.Number{ Value: 1280, },
+      H: UI.Number{ Value: 720, },
     },
     RenderFunc: func(w *UI.Window) {
-      w.Renderer.SetDrawColor(0, 0, 0, 255)
-      w.Renderer.Clear()
-      w.Renderer.SetDrawColor(255, 0, 255, 255)
-      w.Renderer.DrawPoint(150, 300)
-      w.Renderer.DrawLine(0, 0, 200, 200)
+      w.Context.Renderer.SetDrawColor(0, 0, 0, 255)
+      w.Context.Renderer.Clear()
+      w.Context.Renderer.SetDrawColor(255, 0, 255, 255)
+      w.Context.Renderer.DrawPoint(150, 300)
+      w.Context.Renderer.DrawLine(0, 0, 200, 200)
     },
+    Context: &context,
   })
   if err != nil {
     return
   }
-  if c.DefaultFont, err = ttf.OpenFont(path.Join(c.DataRoot, "fonts", "DefaultFont.ttf"), 12); err != nil {
-    return
-  }
+
   Net.RegisterCommands()
 
   c.RenderChannel = make(chan struct{})
@@ -96,16 +100,25 @@ func (c *Client) SetState(state StateI, v interface{}) {
 
 func (c *Client) Render() {
   c.RootWindow.RenderMutex.Lock()
-  c.State.HandleRender()
   c.RootWindow.Render()
   c.RootWindow.RenderMutex.Unlock()
+}
+
+func (c *Client) Refresh() {
+  if c.RootWindow.HasDirt() {
+    c.Render()
+  }
+}
+
+func (c *Client) RecursiveRefresh(e UI.ElementI) bool {
+  return true
 }
 
 func (c *Client) ChannelLoop() {
   for c.isRunning {
     select {
     case <- c.RenderChannel:
-      c.Render()
+      c.Refresh()
     case msg := <- c.StateChannel:
       c.SetState(msg.State, msg.Args)
     }

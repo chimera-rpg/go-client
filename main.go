@@ -91,11 +91,13 @@ func main() {
         client.RootWindow.RenderMutex.Lock()
         client.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
         client.RootWindow.RenderMutex.Unlock()
+        client.Refresh()
       } else if t.Event == sdl.WINDOWEVENT_CLOSE {
         running = false
       }
     default:
       client.State.HandleEvent(&event)
+      client.Refresh()
     }
   }
 
