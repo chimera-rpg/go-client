@@ -49,9 +49,6 @@ func (c *Client) Setup() (err error) {
     RenderFunc: func(w *UI.Window) {
       w.Context.Renderer.SetDrawColor(0, 0, 0, 255)
       w.Context.Renderer.Clear()
-      w.Context.Renderer.SetDrawColor(255, 0, 255, 255)
-      w.Context.Renderer.DrawPoint(150, 300)
-      w.Context.Renderer.DrawLine(0, 0, 200, 200)
     },
     Context: &context,
   })
@@ -110,10 +107,6 @@ func (c *Client) Refresh() {
   }
 }
 
-func (c *Client) RecursiveRefresh(e UI.ElementI) bool {
-  return true
-}
-
 func (c *Client) ChannelLoop() {
   for c.isRunning {
     select {
@@ -123,6 +116,23 @@ func (c *Client) ChannelLoop() {
       c.SetState(msg.State, msg.Args)
     }
   }
+}
+
+func (c *Client) GetPNGData(file string) (data []byte) {
+  reader, err := os.Open(path.Join(c.DataRoot, file))
+  if err != nil {
+    panic(err)
+  }
+  info, err := reader.Stat()
+  if err != nil {
+    panic(err)
+  }
+  data = make([]byte, info.Size())
+  _, err = reader.Read(data)
+  if err != nil {
+    panic(err)
+  }
+  return
 }
 
 func (c *Client) IsRunning() bool {

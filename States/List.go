@@ -45,7 +45,7 @@ func (s *List) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 
   UI.TextElementConfig{
     ForegroundColor: "255 255 255 255",
-    BackgorundColor: "255 255 255 64",
+    BackgroundColor: "255 255 255 64",
     padding: "5% 5% 5% 5%",
     origin: "centerx centery",
     X: "50%",
@@ -53,52 +53,72 @@ func (s *List) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
     Value: "Please choose a server",
   }
   */
-  el := UI.ElementI(&UI.TextElement{
-    BaseElement: UI.BaseElement{
-      Style: UI.Style{
-        ForegroundColor: UI.Color{
-          R: 255,
-          G: 255,
-          B: 255,
-          A: 255,
-        },
-        BackgroundColor: UI.Color{
-          R: 255,
-          G: 255,
-          B: 255,
-          A: 64,
-        },
-        PaddingLeft: UI.Number{
-          Percentage: true,
-          Value: 5,
-        },
-        PaddingRight: UI.Number{
-          Percentage: true,
-          Value: 5,
-        },
-        PaddingTop: UI.Number{
-          Percentage: true,
-          Value: 5,
-        },
-        PaddingBottom: UI.Number{
-          Percentage: true,
-          Value: 5,
-        },
-        Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
-        X: UI.Number{
-          Value: 50,
-          Percentage: true,
-        },
-        Y: UI.Number{
-          Value: 10,
-          Percentage: true,
-        },
+  el := UI.NewTextElement(UI.TextElementConfig{
+    Style: UI.Style{
+      ForegroundColor: UI.Color{ 255, 255, 255, 255, },
+      BackgroundColor: UI.Color{ 255, 255, 255, 64, },
+      PaddingLeft: UI.Number{
+        Percentage: true,
+        Value: 5,
       },
-      Value: "Please choose a server:",
+      PaddingRight: UI.Number{
+        Percentage: true,
+        Value: 5,
+      },
+      PaddingTop: UI.Number{
+        Percentage: true,
+        Value: 5,
+      },
+      PaddingBottom: UI.Number{
+        Percentage: true,
+        Value: 5,
+      },
+      Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
+      X: UI.Number{
+        Value: 50,
+        Percentage: true,
+      },
+      Y: UI.Number{
+        Value: 10,
+        Percentage: true,
+      },
     },
+    Value: "Please choose a server:",
+  })
+
+  el_img := UI.NewImageElement(UI.ImageElementConfig{
+    Style: UI.Style{
+      X: UI.Number{
+        Value: 50,
+        Percentage: true,
+      },
+      Y: UI.Number{
+        Value: 50,
+        Percentage: true,
+      },
+      Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
+    },
+    Image: s.Client.GetPNGData("ui/button.png"),
   })
 
   s.ServersWindow.AdoptChild(el)
+  el.AdoptChild(el_img)
+
+  el_test := UI.NewTextElement(UI.TextElementConfig{
+    Style: UI.Style{
+      X: UI.Number{
+        Value: 50,
+        Percentage: true,
+      },
+      Y: UI.Number{
+        Value: 50,
+        Percentage: true,
+      },
+      Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
+    },
+    Value: "Test",
+  })
+  el_img.AdoptChild(el_test)
 
   s.Client.Print("Please choose a server: ")
   return

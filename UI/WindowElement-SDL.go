@@ -32,6 +32,7 @@ func NewWindow(c WindowConfig) (w *Window, err error) {
 }
 
 func (w *Window) Setup(c WindowConfig) (err error) {
+  w.This        = ElementI(w)
   w.RenderMutex = sync.Mutex{}
   w.RenderFunc  = c.RenderFunc
   w.Style       = c.Style
@@ -139,4 +140,11 @@ func (w *Window) Destroy() {
   for _, child := range w.Children {
     child.Destroy()
   }
+}
+
+func (w *Window) GetX() int32 {
+  return 0
+}
+func (w *Window) GetY() int32 {
+  return 0
 }

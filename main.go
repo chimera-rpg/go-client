@@ -1,6 +1,7 @@
 package main
 
 import (
+  "runtime/debug"
   "client/Client"
   "client/States"
   "github.com/veandco/go-sdl2/sdl"
@@ -41,7 +42,8 @@ func showInfo(format string, a ...interface{}) {
 func main() {
   defer func() {
     if r := recover(); r != nil {
-      showError(r.(error).Error())
+      showError("%v", r.(error).Error())
+      debug.PrintStack()
     }
   }()
   log.Print("Starting Chimera client (golang)")
@@ -91,9 +93,10 @@ func main() {
         client.RootWindow.RenderMutex.Lock()
         client.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
         client.RootWindow.RenderMutex.Unlock()
-        client.Refresh()
       } else if t.Event == sdl.WINDOWEVENT_CLOSE {
         running = false
+      } else if t.Event == sdl.WINDOWEVENT_EXPOSED {
+        client.Render()
       }
     default:
       client.State.HandleEvent(&event)

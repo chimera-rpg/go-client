@@ -12,6 +12,21 @@ type TextElement struct {
   th int32 // Texture height
 }
 
+type TextElementConfig struct {
+  Style Style
+  Value string
+}
+
+func NewTextElement(c TextElementConfig) ElementI {
+  t := TextElement{}
+  t.This  = ElementI(&t)
+  t.Style = c.Style
+  t.SetValue(c.Value)
+
+  return ElementI(&t)
+}
+
+
 func (t *TextElement) Destroy() {
   if t.SDL_texture != nil {
     t.SDL_texture.Destroy()

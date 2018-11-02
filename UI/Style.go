@@ -1,6 +1,5 @@
 package UI
 
-
 const (
   ORIGIN_RIGHT = 1 << iota
   ORIGIN_BOTTOM

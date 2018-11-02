@@ -13,10 +13,10 @@ type ElementI interface {
   GetWidth() int32
   GetHeight() int32
   //
-  GetContext() *Context
   SetContext(c *Context)
   //
   // IsDirty returns if the Element should be redrawn
+  SetDirty(bool)
   IsDirty() bool
   // HasDirt iterates down all of an element's children to see if any return true for IsDirty
   HasDirt() bool
@@ -30,7 +30,6 @@ type ElementI interface {
   //
   SetParent(p ElementI)
   GetParent() ElementI
-  GetChildren() *[]ElementI
   AdoptChild(e ElementI)
   DisownChild(e ElementI)
 }

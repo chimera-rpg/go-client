@@ -1,6 +1,11 @@
 package UI
 
 type BaseElement struct {
+  /* NOTE: I'm sure this is The Wrong Way(tm), but we're using an Element interface to point to "this" element via This. This "This" must be set by any BaseElement embedding structs to point to itself via pointer.
+
+  The reason for this is that by using embedded structs to gain a set of default properties and methods for any of the embedding structs, we _must_ either define Adopt/Disown methods on each Element or use a pointer to an interface property that is set in the BaseElement.
+  */
+  This ElementI
   Parent ElementI
   Children []ElementI
   Style Style
@@ -69,11 +74,13 @@ func (b *BaseElement) CalculateStyle() {
     } else {
       x = int32(b.Style.X.Value)
     }
+    x = x + b.Parent.GetX()
     if b.Style.Y.Percentage {
       y = int32(b.Style.Y.PercentOf(float64(b.Parent.GetHeight())))
     } else {
       y = int32(b.Style.Y.Value)
     }
+    y = y + int32(b.Parent.GetY())
     if b.Style.W.Percentage {
       w = int32(b.Style.W.PercentOf(float64(b.Parent.GetWidth())))
     } else {
@@ -162,6 +169,9 @@ func (b *BaseElement) CalculateStyle() {
   }
 }
 
+func (b *BaseElement) SetDirty(v bool) {
+  b.Dirty = v
+}
 func (b *BaseElement) IsDirty() bool {
   return b.Dirty
 }
@@ -179,10 +189,6 @@ func (b *BaseElement) HasDirt() (dirt bool) {
   return
 }
 
-func (b *BaseElement) GetContext() *Context {
-  return b.Context
-}
-
 func (b *BaseElement) SetContext(c *Context) {
   b.Context = c
 }
@@ -190,7 +196,7 @@ func (b *BaseElement) SetContext(c *Context) {
 /* Relationships */
 func (b *BaseElement) SetParent(e ElementI) {
   if b.Parent != nil && e != nil {
-    b.Parent.DisownChild(ElementI(b))
+    b.Parent.DisownChild(b.This)
   }
   b.Parent = e
 }
@@ -199,23 +205,20 @@ func (b *BaseElement) GetParent() (e ElementI) {
   return b.Parent
 }
 
-func (b *BaseElement) AdoptChild(e ElementI) {
-  e.SetContext(b.Context)
-  b.Children = append(b.Children, e)
-  e.SetParent(b)
-  e.CalculateStyle()
-}
-
-func (b *BaseElement) DisownChild(e ElementI) {
+func (b *BaseElement) DisownChild(c ElementI) {
   for i, child := range b.Children {
-    if child == e {
+    if child == c {
       b.Children = append(b.Children[:i], b.Children[i+1:]...)
-      e.SetParent(nil)
+      c.SetParent(nil)
       return
     }
   }
 }
 
-func (b *BaseElement) GetChildren() *[]ElementI {
-  return &b.Children
+func (b *BaseElement) AdoptChild(c ElementI) {
+  c.SetContext(b.Context)
+  b.Children = append(b.Children, c)
+  c.SetParent(b.This)
+  c.CalculateStyle()
+  c.SetDirty(true)
 }
