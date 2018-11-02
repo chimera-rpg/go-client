@@ -20,7 +20,7 @@ type TextElementConfig struct {
 func NewTextElement(c TextElementConfig) ElementI {
   t := TextElement{}
   t.This  = ElementI(&t)
-  t.Style = c.Style
+  t.Style.Set(c.Style)
   t.SetValue(c.Value)
 
   return ElementI(&t)
@@ -87,8 +87,8 @@ func (t *TextElement) SetValue(value string) (err error) {
 
   t.tw = surface.W
   t.th = surface.H
-  t.Style.W.Value = float64(surface.W)
-  t.Style.H.Value = float64(surface.H)
+  t.Style.W.Set(float64(surface.W))
+  t.Style.H.Set(float64(surface.H))
   t.Dirty = true
   return
 }

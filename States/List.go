@@ -55,8 +55,8 @@ func (s *List) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
   */
   el := UI.NewTextElement(UI.TextElementConfig{
     Style: UI.Style{
-      ForegroundColor: UI.Color{ 255, 255, 255, 255, },
-      BackgroundColor: UI.Color{ 255, 255, 255, 64, },
+      ForegroundColor: UI.Color{ 255, 255, 255, 255, true, },
+      BackgroundColor: UI.Color{ 255, 255, 255, 64, true, },
       PaddingLeft: UI.Number{
         Percentage: true,
         Value: 5,
@@ -87,21 +87,24 @@ func (s *List) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
   })
 
   el_img := UI.NewImageElement(UI.ImageElementConfig{
-    Style: UI.ImageStyle{
-      Scale: 3,
-      Style: UI.Style{
-        X: UI.Number{
-          Value: 50,
-          Percentage: true,
-        },
-        Y: UI.Number{
-          Value: 50,
-          Percentage: true,
-        },
-        Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
+    Style: UI.Style{
+      X: UI.Number{
+        Value: 50,
+        Percentage: true,
       },
+      Y: UI.Number{
+        Value: 50,
+        Percentage: true,
+      },
+      W: UI.Number {
+        Value: 48,
+      },
+      H: UI.Number {
+        Value: 48,
+      },
+      Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
     },
-    Image: s.Client.GetPNGData("ui/blank.png"),
+    Image: s.Client.GetPNGData("ui/loading.png"),
   })
 
   s.ServersWindow.AdoptChild(el)

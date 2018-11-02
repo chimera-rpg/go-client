@@ -6,30 +6,23 @@ import (
   "github.com/veandco/go-sdl2/img"
 )
 
-type ImageStyle struct {
-  Style
-  Scale float32
-}
-
 type ImageElement struct {
   BaseElement
   SDL_texture *sdl.Texture
   Image []byte
   tw int32 // Texture width
   th int32 // Texture height
-  Scale float32
 }
 
 type ImageElementConfig struct {
   Image []byte
-  Style ImageStyle
+  Style Style
 }
 
 func NewImageElement(c ImageElementConfig) ElementI {
   i := ImageElement{}
   i.This  = ElementI(&i)
-  i.Style = c.Style.Style
-  i.Scale = c.Style.Scale
+  i.Style.Set(c.Style)
   i.Image = c.Image
 
   return ElementI(&i)
@@ -58,8 +51,8 @@ func (i *ImageElement) Render() {
   dst := sdl.Rect{
     X: i.x + i.pl,
     Y: i.y + i.pt,
-    W: int32(float32(i.tw)*i.Scale),
-    H: int32(float32(i.th)*i.Scale),
+    W: i.w,
+    H: i.h,
   }
   i.Context.Renderer.Copy(i.SDL_texture, nil, &dst)
   i.BaseElement.Render()
@@ -87,7 +80,11 @@ func (i *ImageElement) SetImage(png []byte) {
   }
   i.tw = surface.W
   i.th = surface.H
-  i.Style.W.Value = float64(surface.W)
-  i.Style.H.Value = float64(surface.H)
+  if !i.Style.W.IsSet {
+    i.Style.W.Set(float64(surface.W))
+  }
+  if !i.Style.H.IsSet {
+    i.Style.H.Set(float64(surface.H))
+  }
   i.Dirty = true
 }

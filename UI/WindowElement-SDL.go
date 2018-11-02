@@ -35,7 +35,7 @@ func (w *Window) Setup(c WindowConfig) (err error) {
   w.This        = ElementI(w)
   w.RenderMutex = sync.Mutex{}
   w.RenderFunc  = c.RenderFunc
-  w.Style       = c.Style
+  w.Style.Set(c.Style)
   w.Context     = c.Context
   w.Value       = c.Value
   if c.Parent != nil {
@@ -71,8 +71,8 @@ func (w *Window) Resize(id uint32, width int32, height int32) (err error) {
   wid, err := w.SDL_window.GetID()
   if wid == id {
     if w.Parent == nil {
-      w.Style.W.Value = float64(width)
-      w.Style.H.Value = float64(height)
+      w.Style.W.Set(float64(width))
+      w.Style.H.Set(float64(height))
       w.CalculateStyle()
     } else {
       w.CalculateStyle()
