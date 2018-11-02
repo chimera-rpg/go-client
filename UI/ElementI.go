@@ -32,5 +32,8 @@ type ElementI interface {
   GetParent() ElementI
   AdoptChild(e ElementI)
   DisownChild(e ElementI)
+  //
+  SetHidden(b bool)
+  IsHidden() bool
 }
 

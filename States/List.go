@@ -87,18 +87,21 @@ func (s *List) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
   })
 
   el_img := UI.NewImageElement(UI.ImageElementConfig{
-    Style: UI.Style{
-      X: UI.Number{
-        Value: 50,
-        Percentage: true,
+    Style: UI.ImageStyle{
+      Scale: 3,
+      Style: UI.Style{
+        X: UI.Number{
+          Value: 50,
+          Percentage: true,
+        },
+        Y: UI.Number{
+          Value: 50,
+          Percentage: true,
+        },
+        Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
       },
-      Y: UI.Number{
-        Value: 50,
-        Percentage: true,
-      },
-      Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
     },
-    Image: s.Client.GetPNGData("ui/button.png"),
+    Image: s.Client.GetPNGData("ui/blank.png"),
   })
 
   s.ServersWindow.AdoptChild(el)

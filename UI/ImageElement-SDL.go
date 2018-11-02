@@ -6,23 +6,30 @@ import (
   "github.com/veandco/go-sdl2/img"
 )
 
+type ImageStyle struct {
+  Style
+  Scale float32
+}
+
 type ImageElement struct {
   BaseElement
   SDL_texture *sdl.Texture
   Image []byte
   tw int32 // Texture width
   th int32 // Texture height
+  Scale float32
 }
 
 type ImageElementConfig struct {
   Image []byte
-  Style Style
+  Style ImageStyle
 }
 
 func NewImageElement(c ImageElementConfig) ElementI {
   i := ImageElement{}
   i.This  = ElementI(&i)
-  i.Style = c.Style
+  i.Style = c.Style.Style
+  i.Scale = c.Style.Scale
   i.Image = c.Image
 
   return ElementI(&i)
@@ -32,6 +39,9 @@ func (i *ImageElement) Destroy() {
 }
 
 func (i *ImageElement) Render() {
+  if i.IsHidden() {
+    return
+  }
   if i.SDL_texture == nil {
     i.SetImage(i.Image)
   }
@@ -48,8 +58,8 @@ func (i *ImageElement) Render() {
   dst := sdl.Rect{
     X: i.x + i.pl,
     Y: i.y + i.pt,
-    W: i.tw,
-    H: i.th,
+    W: int32(float32(i.tw)*i.Scale),
+    H: int32(float32(i.th)*i.Scale),
   }
   i.Context.Renderer.Copy(i.SDL_texture, nil, &dst)
   i.BaseElement.Render()
@@ -65,7 +75,11 @@ func (i *ImageElement) SetImage(png []byte) {
   surface, err := img.LoadRW(rwops, false)
   defer surface.Free()
   if err != nil {
-    panic(err)
+    surface, err = sdl.CreateRGBSurface(0, 16, 16, 32, 0, 0, 0, 0)
+    defer surface.Free()
+    if err != nil {
+      panic(err)
+    }
   }
   i.SDL_texture, err = i.Context.Renderer.CreateTextureFromSurface(surface)
   if err != nil {

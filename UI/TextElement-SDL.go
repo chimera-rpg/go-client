@@ -34,6 +34,9 @@ func (t *TextElement) Destroy() {
 }
 
 func (t *TextElement) Render() {
+  if t.IsHidden() {
+    return
+  }
   if t.SDL_texture == nil {
     t.SetValue(t.Value)
   }

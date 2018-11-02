@@ -47,7 +47,7 @@ func (c *Client) Setup() (err error) {
       H: UI.Number{ Value: 720, },
     },
     RenderFunc: func(w *UI.Window) {
-      w.Context.Renderer.SetDrawColor(0, 0, 0, 255)
+      w.Context.Renderer.SetDrawColor(128, 196, 128, 255)
       w.Context.Renderer.Clear()
     },
     Context: &context,

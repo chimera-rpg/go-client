@@ -94,6 +94,7 @@ func (w *Window) UpdateTexture() (err error) {
   }
 
   t, err := w.Context.Renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_TARGET, w.w, w.h)
+  t.SetBlendMode(sdl.BLENDMODE_BLEND)
   if err != nil {
     return err
   }
@@ -107,6 +108,9 @@ func (w *Window) UpdateTexture() (err error) {
 }
 
 func (w *Window) Render() {
+  if w.IsHidden() {
+    return
+  }
   old_t := w.Context.Renderer.GetRenderTarget()
   w.Context.Renderer.SetRenderTarget(w.SDL_texture)
   if w.RenderFunc != nil {

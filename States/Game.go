@@ -3,6 +3,7 @@ package States
 import (
   "client/Client"
   "client/UI"
+  "github.com/veandco/go-sdl2/sdl"
 )
 
 type Game struct {
@@ -19,29 +20,64 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
   s.Client.Log.Print("Game State")
   s.Client.RootWindow.RenderMutex.Lock()
   defer s.Client.RootWindow.RenderMutex.Unlock()
-  // Sub-window: chat
-  err = s.ChatWindow.Setup(UI.WindowConfig{
-    Value: "Chat",
+  // Sub-window: map
+  err = s.MapWindow.Setup(UI.WindowConfig{
+    Value: "Map",
     Style: UI.Style{
       X: UI.Number{
         Percentage: true,
-        Value: 70,
+        Value: 50,
       },
       Y: UI.Number{
         Percentage: true,
+        Value: 50,
       },
       W: UI.Number{
         Percentage: true,
-        Value: 30,
+        Value: 100,
       },
       H: UI.Number{
         Percentage: true,
         Value: 100,
       },
+      Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
     },
     Parent: &s.Client.RootWindow,
     RenderFunc: func(w *UI.Window) {
-      w.Context.Renderer.SetDrawColor(255, 0, 0, 255)
+      w.Context.Renderer.SetDrawColor(0, 128, 0, 128)
+      w.Context.Renderer.Clear()
+      //
+      for x := 0; x < 12; x++ {
+        for y := 0; y < 12; y ++ {
+          w.Context.Renderer.FillRect(&sdl.Rect{
+            16*3*int32(x), 16*3*int32(y), 16*3, 16*3,
+          })
+        }
+      }
+    },
+  })
+  // Sub-window: chat
+  err = s.ChatWindow.Setup(UI.WindowConfig{
+    Value: "Chat",
+    Style: UI.Style{
+      X: UI.Number{
+        Value: 8,
+      },
+      Y: UI.Number{
+        Value: 8,
+      },
+      W: UI.Number{
+        Percentage: true,
+        Value: 70,
+      },
+      H: UI.Number{
+        Percentage: true,
+        Value: 20,
+      },
+    },
+    Parent: &s.Client.RootWindow,
+    RenderFunc: func(w *UI.Window) {
+      w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
       w.Context.Renderer.Clear()
     },
   })
@@ -51,18 +87,21 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
     Style: UI.Style{
       X: UI.Number{
         Percentage: true,
+        Value: 50,
       },
       Y: UI.Number{
         Percentage: true,
+        Value: 50,
       },
       W: UI.Number{
         Percentage: true,
-        Value: 30,
+        Value: 50,
       },
       H: UI.Number{
         Percentage: true,
-        Value: 70,
+        Value: 80,
       },
+      Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
     },
     Parent: &s.Client.RootWindow,
     RenderFunc: func(w *UI.Window) {
@@ -70,6 +109,7 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
       w.Context.Renderer.Clear()
     },
   })
+  s.InventoryWindow.SetHidden(true)
   // Sub-window: ground
   err = s.GroundWindow.Setup(UI.WindowConfig{
     Value: "Ground",
@@ -92,7 +132,7 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
     },
     Parent: &s.Client.RootWindow,
     RenderFunc: func(w *UI.Window) {
-      w.Context.Renderer.SetDrawColor(255, 0, 0, 255)
+      w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
       w.Context.Renderer.Clear()
     },
   })
@@ -122,6 +162,7 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
       w.Context.Renderer.Clear()
     },
   })
+  s.StatsWindow.SetHidden(true)
   // Sub-window: state
   err = s.StateWindow.Setup(UI.WindowConfig{
     Value: "State",
@@ -149,36 +190,8 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
       w.Context.Renderer.Clear()
     },
   })
-  // Sub-window: map
-  err = s.MapWindow.Setup(UI.WindowConfig{
-    Value: "Map",
-    Style: UI.Style{
-      X: UI.Number{
-        Percentage: true,
-        Value: 30,
-      },
-      Y: UI.Number{
-        Percentage: true,
-        Value: 20,
-      },
-      W: UI.Number{
-        Percentage: true,
-        Value: 40,
-      },
-      H: UI.Number{
-        Percentage: true,
-        Value: 60,
-      },
-    },
-    Parent: &s.Client.RootWindow,
-    RenderFunc: func(w *UI.Window) {
-      w.Context.Renderer.SetDrawColor(0, 0, 0, 255)
-      w.Context.Renderer.Clear()
-      w.Context.Renderer.SetDrawColor(255, 0, 255, 255)
-      w.Context.Renderer.DrawPoint(150, 300)
-      w.Context.Renderer.DrawLine(0, 0, 200, 200)
-    },
-  })
+  s.StateWindow.SetHidden(true)
+  //
   //go s.Client.LoopCmd()
   go s.HandleNet()
   return

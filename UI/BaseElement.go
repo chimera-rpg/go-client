@@ -14,6 +14,7 @@ type BaseElement struct {
   Dirty bool
   //
   Value string
+  Hidden bool
   // Context is cached when the object is created.
   Context *Context
   // x, y, w, h are cached values from CalculateStyle
@@ -67,6 +68,9 @@ func (b *BaseElement) GetStyle() *Style {
   return &b.Style
 }
 func (b *BaseElement) CalculateStyle() {
+  if b.Hidden {
+    return
+  }
   var x, y, w, h, pt, pb, pl, pr int32 = 0, 0, 0, 0, 0, 0, 0, 0
   if b.Parent != nil {
     if b.Style.X.Percentage {
@@ -221,4 +225,11 @@ func (b *BaseElement) AdoptChild(c ElementI) {
   c.SetParent(b.This)
   c.CalculateStyle()
   c.SetDirty(true)
+}
+
+func (b *BaseElement) SetHidden(v bool) {
+  b.Hidden = v
+}
+func (b *BaseElement) IsHidden() bool {
+  return b.Hidden
 }
