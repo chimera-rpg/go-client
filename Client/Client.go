@@ -2,8 +2,8 @@ package Client
 
 import (
   "github.com/veandco/go-sdl2/ttf"
-  "client/UI"
-  "common/Net"
+  "github.com/chimera-rpg/go-client/UI"
+  "github.com/chimera-rpg/go-common/Net"
   "fmt"
   "path"
   "os"

@@ -1,7 +1,7 @@
 package States
 
 import (
-  "client/Client"
+  "github.com/chimera-rpg/go-client/Client"
 )
 
 type Login struct {

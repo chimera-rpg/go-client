@@ -2,8 +2,8 @@ package main
 
 import (
   "runtime/debug"
-  "client/Client"
-  "client/States"
+  "github.com/chimera-rpg/go-client/Client"
+  "github.com/chimera-rpg/go-client/States"
   "github.com/veandco/go-sdl2/sdl"
   "github.com/veandco/go-sdl2/ttf"
   "log"
@@ -21,7 +21,6 @@ func showWindow(flags uint32, format string, a ...interface{}) {
     nil,
     "Chimera",
     fmt.Sprintf(format, a...),
-    int32(len(buttons)),
     buttons,
     nil,
   }

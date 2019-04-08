@@ -1,9 +1,9 @@
 package States
 
 import (
-  "client/Client"
-  "client/UI"
-  "common/Net"
+  "github.com/chimera-rpg/go-client/Client"
+  "github.com/chimera-rpg/go-client/UI"
+  "github.com/chimera-rpg/go-common/Net"
 )
 
 type Handshake struct {
