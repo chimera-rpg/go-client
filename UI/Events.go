@@ -7,4 +7,5 @@ type Events struct {
 	OnMouseButtonDown func(button uint8, x int32, y int32) bool
 	OnMouseMove       func(x int32, y int32) bool
 	OnMouseButtonUp   func(button uint8, x int32, y int32) bool
+	OnAdopted         func(parent ElementI)
 }

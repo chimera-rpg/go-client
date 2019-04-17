@@ -44,7 +44,7 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 		},
 	})
 
-	el_selection := UI.NewTextElement(UI.TextElementConfig{
+	el_selection := UI.NewInputElement(UI.InputElementConfig{
 		Style: UI.Style{
 			ForegroundColor: UI.Color{255, 255, 255, 255, true},
 			BackgroundColor: UI.Color{255, 255, 255, 64, true},
@@ -86,6 +86,7 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 			},
 		},
 	})
+
 	s.SelectionWindow.AdoptChild(el_selection)
 
 	go s.Loop()
@@ -115,19 +116,19 @@ func (s *CharacterCreation) Close() {
 }
 
 func (s *CharacterCreation) Loop() {
-	isWaiting := true
-	for isWaiting {
+	for {
 		select {
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
 			if ret {
-				isWaiting = false
+				return
 			}
 		case event := <-s.Client.EventChannel:
 			s.HandleEvent(event)
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
 			s.Client.StateChannel <- Client.StateMessage{&List{}, nil}
+			return
 		}
 	}
 }

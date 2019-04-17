@@ -10,6 +10,7 @@ type ElementI interface {
 	GetWidth() int32
 	GetHeight() int32
 	//
+	GetContext() *Context
 	SetContext(c *Context)
 	//
 	// IsDirty returns if the Element should be redrawn
@@ -42,4 +43,5 @@ type ElementI interface {
 	OnMouseButtonDown(button_id uint8, x int32, y int32) bool
 	OnMouseMove(x int32, y int32) bool
 	OnMouseButtonUp(button_id uint8, x int32, y int32) bool
+	OnAdopted(parent ElementI)
 }

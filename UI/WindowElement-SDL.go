@@ -171,6 +171,12 @@ func IterateEvent(e ElementI, event sdl.Event) {
 				}
 			}
 		}
+	case *sdl.KeyboardEvent:
+		// ??? Probably have a global and currently focused element
+	case *sdl.TextInputEvent:
+		// This should only receive when a focused element is true and inputting
+	case *sdl.TextEditingEvent:
+		// This should somehow show a "temp" value in input elements.
 	}
 	for _, child := range e.GetChildren() {
 		switch t := event.(type) {

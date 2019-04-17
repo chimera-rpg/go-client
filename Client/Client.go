@@ -116,7 +116,9 @@ func (c *Client) ChannelLoop() {
 		case <-c.RenderChannel:
 			c.Refresh()
 		case msg := <-c.StateChannel:
-			c.SetState(msg.State, msg.Args)
+			if c.isRunning {
+				c.SetState(msg.State, msg.Args)
+			}
 		}
 	}
 }

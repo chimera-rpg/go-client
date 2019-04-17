@@ -221,6 +221,9 @@ func (b *BaseElement) HasDirt() (dirt bool) {
 	return
 }
 
+func (b *BaseElement) GetContext() *Context {
+	return b.Context
+}
 func (b *BaseElement) SetContext(c *Context) {
 	b.Context = c
 }
@@ -248,11 +251,8 @@ func (b *BaseElement) DisownChild(c ElementI) {
 }
 
 func (b *BaseElement) AdoptChild(c ElementI) {
-	c.SetContext(b.Context)
 	b.Children = append(b.Children, c)
-	c.SetParent(b.This)
-	c.CalculateStyle()
-	c.SetDirty(true)
+	c.OnAdopted(b)
 }
 
 func (b *BaseElement) SetHidden(v bool) {
@@ -297,6 +297,16 @@ func (b *BaseElement) OnMouseButtonUp(button_id uint8, x int32, y int32) bool {
 		return b.Events.OnMouseButtonUp(button_id, x, y)
 	}
 	return true
+}
+
+func (b *BaseElement) OnAdopted(parent ElementI) {
+	b.SetContext(parent.GetContext())
+	b.SetParent(parent)
+	b.CalculateStyle()
+	b.SetDirty(true)
+	if b.Events.OnAdopted != nil {
+		b.Events.OnAdopted(parent)
+	}
 }
 
 func (b *BaseElement) GetChildren() []ElementI {
