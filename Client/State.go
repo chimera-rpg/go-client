@@ -1,6 +1,7 @@
 package Client
+
 import (
-  "github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 /*
@@ -14,14 +15,12 @@ The functions of a state are defined through the State interface known as StateI
 StateI provides the base interface for all Client States.
 */
 type StateI interface {
-  Init(v interface{}) (state StateI, nextArgs interface{}, err error)
-  Close()
-  CommandLoop()
-  SetClient(*Client)
-  HandleRender()
-  HandleEvent(*sdl.Event)
+	Init(v interface{}) (state StateI, nextArgs interface{}, err error)
+	Close()
+	CommandLoop()
+	SetClient(*Client)
+	HandleRender()
 }
-
 
 /*
 State struct should be embedded in any Client State to provide the base struct methods and members. These can be overridden by the embedding state.
@@ -36,15 +35,15 @@ ex.:
   }
 */
 type State struct {
-  Client *Client
+	Client *Client
 }
 
 func (s *State) SetClient(c *Client) {
-  s.Client = c
+	s.Client = c
 }
 
 func (s *State) Init(t interface{}) (next StateI, nextArgs interface{}, err error) {
-  return
+	return
 }
 
 func (s *State) Close() {
