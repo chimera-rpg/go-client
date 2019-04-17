@@ -76,12 +76,12 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 		},
 		Value: "Select your Character:",
 		Events: UI.Events{
-			OnMouseMove: func(id uint32, x int32, y int32) bool {
+			OnMouseMove: func(x int32, y int32) bool {
 				s.Client.Log.Printf("Movement: %dx%d! :)\n", x, y)
 				return false
 			},
-			OnMouseButtonDown: func(id uint32, x int32, y int32) bool {
-				s.Client.Log.Printf("Clicky: %d @ %dx%d! :D\n", id, x, y)
+			OnMouseButtonDown: func(button uint8, x int32, y int32) bool {
+				s.Client.Log.Printf("Clicky: %d @ %dx%d! :D\n", button, x, y)
 				return false
 			},
 		},

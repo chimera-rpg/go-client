@@ -280,21 +280,21 @@ func (b *BaseElement) OnTouchEnd(id uint32, x int32, y int32) bool {
 	}
 	return true
 }
-func (b *BaseElement) OnMouseButtonDown(id uint32, x int32, y int32) bool {
+func (b *BaseElement) OnMouseButtonDown(button_id uint8, x int32, y int32) bool {
 	if b.Events.OnMouseButtonDown != nil {
-		return b.Events.OnMouseButtonDown(id, x, y)
+		return b.Events.OnMouseButtonDown(button_id, x, y)
 	}
 	return true
 }
-func (b *BaseElement) OnMouseMove(id uint32, x int32, y int32) bool {
+func (b *BaseElement) OnMouseMove(x int32, y int32) bool {
 	if b.Events.OnMouseMove != nil {
-		return b.Events.OnMouseMove(id, x, y)
+		return b.Events.OnMouseMove(x, y)
 	}
 	return true
 }
-func (b *BaseElement) OnMouseButtonUp(id uint32, x int32, y int32) bool {
+func (b *BaseElement) OnMouseButtonUp(button_id uint8, x int32, y int32) bool {
 	if b.Events.OnMouseButtonUp != nil {
-		return b.Events.OnMouseButtonUp(id, x, y)
+		return b.Events.OnMouseButtonUp(button_id, x, y)
 	}
 	return true
 }

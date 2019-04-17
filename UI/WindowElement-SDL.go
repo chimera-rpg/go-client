@@ -155,18 +155,18 @@ func IterateEvent(e ElementI, event sdl.Event) {
 	case *sdl.WindowEvent:
 	case *sdl.MouseMotionEvent:
 		if e.Hit(t.X, t.Y) {
-			if !e.OnMouseMove(t.Which, t.X, t.Y) {
+			if !e.OnMouseMove(t.X, t.Y) {
 				return
 			}
 		}
 	case *sdl.MouseButtonEvent:
 		if e.Hit(t.X, t.Y) {
 			if t.State == 1 {
-				if !e.OnMouseButtonDown(t.Which, t.X, t.Y) {
+				if !e.OnMouseButtonDown(t.Button, t.X, t.Y) {
 					return
 				}
 			} else {
-				if !e.OnMouseButtonUp(t.Which, t.X, t.Y) {
+				if !e.OnMouseButtonUp(t.Button, t.X, t.Y) {
 					return
 				}
 			}
@@ -177,18 +177,18 @@ func IterateEvent(e ElementI, event sdl.Event) {
 		case *sdl.WindowEvent:
 		case *sdl.MouseMotionEvent:
 			if child.Hit(t.X, t.Y) {
-				if !child.OnMouseMove(t.Which, t.X, t.Y) {
+				if !child.OnMouseMove(t.X, t.Y) {
 					return
 				}
 			}
 		case *sdl.MouseButtonEvent:
 			if child.Hit(t.X, t.Y) {
 				if t.State == 1 {
-					if !child.OnMouseButtonDown(t.Which, t.X, t.Y) {
+					if !child.OnMouseButtonDown(t.Button, t.X, t.Y) {
 						return
 					}
 				} else {
-					if !child.OnMouseButtonUp(t.Which, t.X, t.Y) {
+					if !child.OnMouseButtonUp(t.Button, t.X, t.Y) {
 						return
 					}
 				}
