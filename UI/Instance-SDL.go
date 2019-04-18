@@ -8,6 +8,7 @@ import (
 )
 
 type Instance struct {
+	HeldElement     ElementI
 	FocusedElement  ElementI
 	HoveredElements []ElementI
 	Running         bool
@@ -102,6 +103,12 @@ func (i *Instance) HandleEvent(event sdl.Event) {
 				}
 			}
 		}
+		if i.HeldElement != nil {
+			if t.State == sdl.RELEASED && t.Button == sdl.BUTTON_LEFT {
+				i.HeldElement.SetHeld(false)
+				i.HeldElement = nil
+			}
+		}
 	case *sdl.KeyboardEvent:
 		if i.FocusedElement != nil {
 			if t.Keysym.Sym == 27 {
@@ -164,9 +171,13 @@ func (inst *Instance) IterateEvent(e ElementI, event sdl.Event) {
 		}
 	case *sdl.MouseButtonEvent:
 		if e.Hit(t.X, t.Y) {
-			if t.State == 1 {
+			if t.State == sdl.PRESSED {
 				if e.CanFocus() {
 					inst.FocusElement(e)
+				}
+				if t.Button == sdl.BUTTON_LEFT && e.CanHold() {
+					inst.HeldElement = e
+					e.SetHeld(true)
 				}
 				if !e.OnMouseButtonDown(t.Button, t.X, t.Y) {
 					return

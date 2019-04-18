@@ -2,7 +2,6 @@
 package UI
 
 import (
-	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -65,8 +64,19 @@ func (t *InputElement) Render() {
 		H: t.th,
 	}
 	t.Context.Renderer.Copy(t.SDL_texture, nil, &dst)
-	// Get and draw our cursor position
 	if t.Focused {
+		// Draw our border
+		if t.Style.BackgroundColor.A > 0 {
+			dst := sdl.Rect{
+				X: t.x,
+				Y: t.y,
+				W: t.w,
+				H: t.h,
+			}
+			t.Context.Renderer.SetDrawColor(255-t.Style.BackgroundColor.R, 255-t.Style.BackgroundColor.G, 255-t.Style.BackgroundColor.B, 255-t.Style.BackgroundColor.A)
+			t.Context.Renderer.DrawRect(&dst)
+		}
+		// Get and draw our cursor position
 		cursor_start, cursor_height, _ := t.Context.Font.SizeUTF8(string(t.composition[:t.cursor]))
 		t.Context.Renderer.SetDrawColor(t.Style.ForegroundColor.R, t.Style.ForegroundColor.G, t.Style.ForegroundColor.B, t.Style.ForegroundColor.A)
 		cursor_dst := sdl.Rect{
@@ -126,7 +136,6 @@ func (t *InputElement) CalculateStyle() {
 func (i *InputElement) OnFocus() bool {
 	sdl.StartTextInput()
 	i.Dirty = true
-	fmt.Printf("focused\n")
 	if i.Events.OnFocus != nil {
 		return i.Events.OnFocus()
 	}
@@ -199,7 +208,6 @@ func (i *InputElement) OnTextInput(str string) bool {
 	return true
 }
 func (i *InputElement) OnTextEdit(str string, start int32, length int32) bool {
-	fmt.Printf("Text Edit: %s (%d to%d)\n", str, start, length)
 	if i.Events.OnTextEdit != nil {
 		return i.Events.OnTextEdit(str, start, length)
 	}

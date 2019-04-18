@@ -39,7 +39,9 @@ func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, e
 		},
 	})
 
-	el_username := UI.NewInputElement(UI.InputElementConfig{
+	var el_username, el_password, el_login UI.ElementI
+
+	el_username = UI.NewInputElement(UI.InputElementConfig{
 		Style: UI.Style{
 			ForegroundColor: UI.Color{255, 255, 255, 255, true},
 			BackgroundColor: UI.Color{0, 0, 0, 128, true},
@@ -74,26 +76,7 @@ func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, e
 			},
 		},
 		Value: "username",
-		Events: UI.Events{
-			OnMouseMove: func(x int32, y int32) bool {
-				s.Client.Log.Printf("Movement: %dx%d! :)\n", x, y)
-				return false
-			},
-			OnMouseButtonDown: func(button uint8, x int32, y int32) bool {
-				s.Client.Log.Printf("Clicky use: %d @ %dx%d! :D\n", button, x, y)
-				return false
-			},
-			OnMouseIn: func(x int32, y int32) bool {
-				s.Client.Log.Printf("MouseIn\n")
-				return false
-			},
-			OnMouseOut: func(x int32, y int32) bool {
-				s.Client.Log.Printf("MouseOut\n")
-				return false
-			},
-		},
 	})
-	var el_password UI.ElementI
 	el_password = UI.NewInputElement(UI.InputElementConfig{
 		Style: UI.Style{
 			ForegroundColor: UI.Color{255, 255, 255, 255, true},
@@ -131,37 +114,66 @@ func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, e
 		},
 		Value: "password",
 		Events: UI.Events{
-			OnMouseMove: func(x int32, y int32) bool {
-				s.Client.Log.Printf("Movement: %dx%d! :)\n", x, y)
-				return false
-			},
-			OnMouseButtonDown: func(button uint8, x int32, y int32) bool {
-				s.Client.Log.Printf("Clicky: %d @ %dx%d! :D\n", button, x, y)
-				return false
-			},
-			OnMouseIn: func(x int32, y int32) bool {
-				s.Client.Log.Printf("MouseIn\n")
-				return false
-			},
-			OnMouseOut: func(x int32, y int32) bool {
-				s.Client.Log.Printf("MouseOut\n")
-				return false
-			},
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
-					s.Client.Send(Net.Command(Net.CommandLogin{
-						Type: Net.LOGIN,
-						User: el_username.GetValue(),
-						Pass: el_password.GetValue(),
-					}))
+					el_login.OnMouseButtonUp(1, 0, 0)
 				}
 				return true
 			},
 		},
 	})
 
+	el_login = UI.NewButtonElement(UI.ButtonElementConfig{
+		Style: UI.Style{
+			ForegroundColor: UI.Color{255, 255, 255, 255, true},
+			BackgroundColor: UI.Color{128, 196, 128, 200, true},
+			//Position: UI.POSITION_RELATIVE,
+			PaddingLeft: UI.Number{
+				Percentage: true,
+				Value:      5,
+			},
+			PaddingRight: UI.Number{
+				Percentage: true,
+				Value:      5,
+			},
+			PaddingTop: UI.Number{
+				Percentage: true,
+				Value:      5,
+			},
+			PaddingBottom: UI.Number{
+				Percentage: true,
+				Value:      5,
+			},
+			Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
+			X: UI.Number{
+				Value:      50,
+				Percentage: true,
+			},
+			Y: UI.Number{
+				Value:      90,
+				Percentage: true,
+			},
+			H: UI.Number{
+				Value:      20,
+				Percentage: true,
+			},
+		},
+		Value: "LOGIN",
+		Events: UI.Events{
+			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+				s.Client.Send(Net.Command(Net.CommandLogin{
+					Type: Net.LOGIN,
+					User: el_username.GetValue(),
+					Pass: el_password.GetValue(),
+				}))
+				return false
+			},
+		},
+	})
+
 	s.LoginWindow.AdoptChild(el_username)
 	s.LoginWindow.AdoptChild(el_password)
+	s.LoginWindow.AdoptChild(el_login)
 
 	s.Client.Log.Print("Login State")
 	// Show UI for Username/Password input:

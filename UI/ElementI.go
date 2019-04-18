@@ -54,6 +54,8 @@ type ElementI interface {
 	OnAdopted(parent ElementI)
 	CanFocus() bool
 	SetFocused(bool)
+	CanHold() bool
+	SetHeld(bool)
 	OnFocus() bool
 	OnBlur() bool
 }

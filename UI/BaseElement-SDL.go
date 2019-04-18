@@ -19,6 +19,8 @@ type BaseElement struct {
 	Hidden    bool
 	Focusable bool
 	Focused   bool
+	Holdable  bool
+	Held      bool
 	// Context is cached when the object is created.
 	Context *Context
 	// x, y, w, h are cached values from CalculateStyle
@@ -380,6 +382,14 @@ func (b *BaseElement) OnBlur() bool {
 		return b.Events.OnBlur()
 	}
 	return true
+}
+
+func (b *BaseElement) CanHold() bool {
+	return b.Holdable
+}
+func (b *BaseElement) SetHeld(v bool) {
+	b.Held = v
+	b.SetDirty(true)
 }
 
 func (b *BaseElement) IsContainer() bool {
