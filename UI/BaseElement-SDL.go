@@ -372,12 +372,14 @@ func (b *BaseElement) SetFocused(v bool) {
 }
 
 func (b *BaseElement) OnFocus() bool {
+	b.Dirty = true
 	if b.Events.OnFocus != nil {
 		return b.Events.OnFocus()
 	}
 	return true
 }
 func (b *BaseElement) OnBlur() bool {
+	b.Dirty = true
 	if b.Events.OnBlur != nil {
 		return b.Events.OnBlur()
 	}

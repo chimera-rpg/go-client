@@ -135,19 +135,11 @@ func (t *InputElement) CalculateStyle() {
 
 func (i *InputElement) OnFocus() bool {
 	sdl.StartTextInput()
-	i.Dirty = true
-	if i.Events.OnFocus != nil {
-		return i.Events.OnFocus()
-	}
-	return true
+	return i.BaseElement.OnFocus()
 }
 func (i *InputElement) OnBlur() bool {
 	sdl.StopTextInput()
-	i.Dirty = true
-	if i.Events.OnBlur != nil {
-		return i.Events.OnBlur()
-	}
-	return true
+	return i.BaseElement.OnBlur()
 }
 
 func (i *InputElement) SyncComposition() {

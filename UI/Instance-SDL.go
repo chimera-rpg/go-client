@@ -114,6 +114,13 @@ func (i *Instance) HandleEvent(event sdl.Event) {
 			if t.Keysym.Sym == 27 {
 				i.BlurFocusedElement()
 				return
+			} else if t.Keysym.Sym == 9 && t.State == sdl.RELEASED { // tab
+				if t.Keysym.Mod&1 == 1 { // Shift
+					i.FocusPreviousElement(i.FocusedElement)
+				} else {
+					i.FocusNextElement(i.FocusedElement)
+				}
+				return
 			}
 			if t.State == sdl.PRESSED {
 				i.FocusedElement.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod)
@@ -218,9 +225,43 @@ func (inst *Instance) BlurFocusedElement() {
 
 func (inst *Instance) FocusElement(e ElementI) {
 	if inst.FocusedElement != nil && inst.FocusedElement != e {
+		inst.FocusedElement.SetFocused(false)
 		inst.FocusedElement.OnBlur()
 	}
 	e.SetFocused(true)
 	e.OnFocus()
 	inst.FocusedElement = e
+}
+
+func (inst *Instance) FocusNextElement(start ElementI) {
+	found := false
+	for _, c := range start.GetParent().GetChildren() {
+		if c == start {
+			found = true
+		} else if found {
+			if c.CanFocus() {
+				inst.FocusElement(c)
+				return
+			}
+		}
+	}
+	// if we get here just Blur the focused one
+	inst.BlurFocusedElement()
+}
+func (inst *Instance) FocusPreviousElement(start ElementI) {
+	found := false
+	children := start.GetParent().GetChildren()
+	for i := len(children) - 1; i >= 0; i-- {
+		c := children[i]
+		if c == start {
+			found = true
+		} else if found {
+			if c.CanFocus() {
+				inst.FocusElement(c)
+				return
+			}
+		}
+	}
+	// if we get here just Blur the focused one
+	inst.BlurFocusedElement()
 }

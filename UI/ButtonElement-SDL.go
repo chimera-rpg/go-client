@@ -22,6 +22,7 @@ func NewButtonElement(c ButtonElementConfig) ElementI {
 	t := ButtonElement{}
 	t.This = ElementI(&t)
 	t.Holdable = true
+	t.Focusable = true
 	t.Style.Set(c.Style)
 	t.SetValue(c.Value)
 	t.Events = c.Events
@@ -42,8 +43,8 @@ func (t *ButtonElement) Render() {
 	if t.SDL_texture == nil {
 		t.SetValue(t.Value)
 	}
+	held_offset := int32(0)
 	if t.Style.BackgroundColor.A > 0 {
-		held_offset := int32(0)
 		offset_y := int32(t.h / 10)
 		if t.Held {
 			held_offset = offset_y
@@ -68,10 +69,21 @@ func (t *ButtonElement) Render() {
 			t.Context.Renderer.SetDrawColor(t.Style.BackgroundColor.R-64, t.Style.BackgroundColor.G-64, t.Style.BackgroundColor.B-64, t.Style.BackgroundColor.A)
 			t.Context.Renderer.FillRect(&dst)
 		}
+		if t.Focused {
+			// Draw our border
+			dst := sdl.Rect{
+				X: t.x,
+				Y: t.y + held_offset,
+				W: t.w,
+				H: t.h,
+			}
+			t.Context.Renderer.SetDrawColor(255-t.Style.BackgroundColor.R, 255-t.Style.BackgroundColor.G, 255-t.Style.BackgroundColor.B, 255-t.Style.BackgroundColor.A)
+			t.Context.Renderer.DrawRect(&dst)
+		}
 	}
 	dst := sdl.Rect{
 		X: t.x + t.pl,
-		Y: t.y + t.pt,
+		Y: t.y + t.pt + held_offset,
 		W: t.tw,
 		H: t.th,
 	}
@@ -117,4 +129,20 @@ func (t *ButtonElement) CalculateStyle() {
 		t.SetValue(t.Value)
 	}
 	t.BaseElement.CalculateStyle()
+}
+
+func (b *ButtonElement) OnKeyDown(key uint8, modifiers uint16) bool {
+	switch key {
+	case 13: // Activate button when enter is hit
+		b.SetHeld(true)
+	}
+	return false
+}
+func (b *ButtonElement) OnKeyUp(key uint8, modifiers uint16) bool {
+	switch key {
+	case 13: // Activate button when enter is released
+		b.SetHeld(false)
+		b.OnMouseButtonUp(1, 0, 0)
+	}
+	return false
 }
