@@ -54,7 +54,7 @@ func (t *ButtonElement) Render() {
 			X: t.x,
 			Y: t.y + held_offset,
 			W: t.w,
-			H: t.h - offset_y + held_offset,
+			H: t.h - offset_y,
 		}
 		t.Context.Renderer.SetDrawColor(t.Style.BackgroundColor.R, t.Style.BackgroundColor.G, t.Style.BackgroundColor.B, t.Style.BackgroundColor.A)
 		t.Context.Renderer.FillRect(&dst)
@@ -75,15 +75,24 @@ func (t *ButtonElement) Render() {
 				X: t.x,
 				Y: t.y + held_offset,
 				W: t.w,
-				H: t.h,
+				H: t.h - held_offset,
 			}
 			t.Context.Renderer.SetDrawColor(255-t.Style.BackgroundColor.R, 255-t.Style.BackgroundColor.G, 255-t.Style.BackgroundColor.B, 255-t.Style.BackgroundColor.A)
 			t.Context.Renderer.DrawRect(&dst)
 		}
 	}
+	// Render text texture
+	tx := t.x + t.pl
+	ty := t.y + t.pt
+	if (t.Style.CenterContent & CENTERX) == CENTERX {
+		tx += t.w/2 - t.tw/2
+	}
+	if (t.Style.CenterContent & CENTERY) == CENTERY {
+		ty += t.h/2 - t.th/2
+	}
 	dst := sdl.Rect{
-		X: t.x + t.pl,
-		Y: t.y + t.pt + held_offset,
+		X: tx,
+		Y: ty + held_offset,
 		W: t.tw,
 		H: t.th,
 	}
@@ -118,8 +127,10 @@ func (t *ButtonElement) SetValue(value string) (err error) {
 
 	t.tw = surface.W
 	t.th = surface.H
-	t.Style.W.Set(float64(surface.W))
-	t.Style.H.Set(float64(surface.H))
+	if t.Style.ResizeToContent {
+		t.Style.W.Set(float64(surface.W))
+		t.Style.H.Set(float64(surface.H))
+	}
 	t.Dirty = true
 	return
 }

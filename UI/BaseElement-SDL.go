@@ -94,7 +94,7 @@ func (b *BaseElement) CalculateStyle() {
 	if b.Hidden {
 		return
 	}
-	var x, y, w, h, pt, pb, pl, pr int32 = b.x, b.y, b.w, b.h, b.pt, b.pb, b.pl, b.pr
+	var x, y, w, minw, maxw, h, minh, maxh, pt, pb, pl, pr int32 = b.x, b.y, b.w, 0, 0, b.h, 0, 0, b.pt, b.pb, b.pl, b.pr
 	if b.Parent != nil {
 		if b.Style.X.IsSet {
 			if b.Style.X.Percentage {
@@ -130,6 +130,35 @@ func (b *BaseElement) CalculateStyle() {
 				h = int32(b.Style.H.Value)
 			}
 		}
+		if b.Style.MinW.IsSet {
+			if b.Style.MinW.Percentage {
+				minw = int32(b.Style.MinW.PercentOf(float64(b.Parent.GetWidth())))
+			} else {
+				minw = int32(b.Style.MinW.Value)
+			}
+		}
+		if b.Style.MaxW.IsSet {
+			if b.Style.MaxW.Percentage {
+				maxw = int32(b.Style.MaxW.PercentOf(float64(b.Parent.GetWidth())))
+			} else {
+				maxw = int32(b.Style.MaxW.Value)
+			}
+		}
+		if b.Style.MinH.IsSet {
+			if b.Style.MinH.Percentage {
+				minh = int32(b.Style.MinH.PercentOf(float64(b.Parent.GetHeight())))
+			} else {
+				minh = int32(b.Style.MinH.Value)
+			}
+		}
+		if b.Style.MaxH.IsSet {
+			if b.Style.MaxH.Percentage {
+				maxh = int32(b.Style.MaxH.PercentOf(float64(b.Parent.GetHeight())))
+			} else {
+				maxh = int32(b.Style.MaxH.Value)
+			}
+		}
+
 		// Padding
 		if b.Style.PaddingLeft.IsSet {
 			if b.Style.PaddingLeft.Percentage {
@@ -172,6 +201,18 @@ func (b *BaseElement) CalculateStyle() {
 		if b.Style.H.IsSet && !b.Style.H.Percentage {
 			h = int32(b.Style.H.Value)
 		}
+		if b.Style.MinW.IsSet && !b.Style.MinW.Percentage {
+			minw = int32(b.Style.MinW.Value)
+		}
+		if b.Style.MaxW.IsSet && !b.Style.MaxW.Percentage {
+			maxw = int32(b.Style.MaxW.Value)
+		}
+		if b.Style.MinH.IsSet && !b.Style.MinH.Percentage {
+			minh = int32(b.Style.MinH.Value)
+		}
+		if b.Style.MaxH.IsSet && !b.Style.MaxH.Percentage {
+			maxh = int32(b.Style.MaxH.Value)
+		}
 		// Padding
 		if b.Style.PaddingLeft.IsSet && !b.Style.PaddingLeft.Percentage {
 			pl = int32(b.Style.PaddingLeft.Value)
@@ -185,6 +226,18 @@ func (b *BaseElement) CalculateStyle() {
 		if b.Style.PaddingBottom.IsSet && !b.Style.PaddingBottom.Percentage {
 			pb = int32(b.Style.PaddingBottom.Value)
 		}
+	}
+	if h < minh {
+		h = minh
+	}
+	if maxw > 0 && w > maxw {
+		w = maxw
+	}
+	if w < minw {
+		w = minw
+	}
+	if maxh > 0 && h > maxh {
+		h = maxh
 	}
 	if x != b.x || y != b.y || w != b.w || h != b.h || pl != b.pl || pr != b.pr || pt != b.pt || pb != b.pb {
 		b.x = x

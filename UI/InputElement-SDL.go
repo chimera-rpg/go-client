@@ -3,6 +3,7 @@ package UI
 
 import (
 	"github.com/veandco/go-sdl2/sdl"
+	"strings"
 )
 
 type InputElement struct {
@@ -13,12 +14,16 @@ type InputElement struct {
 	th          int32 // Texture height
 	cursor      int
 	composition []rune
+	isPassword  bool
+	placeholder string
 }
 
 type InputElementConfig struct {
-	Style  Style
-	Value  string
-	Events Events
+	Style       Style
+	Value       string
+	Events      Events
+	Password    bool
+	Placeholder string
 }
 
 func NewInputElement(c InputElementConfig) ElementI {
@@ -29,6 +34,8 @@ func NewInputElement(c InputElementConfig) ElementI {
 	i.cursor = len(i.composition)
 	i.SyncComposition()
 	i.Events = c.Events
+	i.isPassword = c.Password
+	i.placeholder = c.Placeholder
 	i.Focusable = true
 
 	return ElementI(&i)
@@ -57,9 +64,18 @@ func (t *InputElement) Render() {
 		t.Context.Renderer.SetDrawColor(t.Style.BackgroundColor.R, t.Style.BackgroundColor.G, t.Style.BackgroundColor.B, t.Style.BackgroundColor.A)
 		t.Context.Renderer.FillRect(&dst)
 	}
+	// Render text texture
+	tx := t.x + t.pl
+	ty := t.y + t.pt
+	if (t.Style.CenterContent & CENTERX) == CENTERX {
+		tx += t.w/2 - t.tw/2
+	}
+	if (t.Style.CenterContent & CENTERY) == CENTERY {
+		ty += t.h/2 - t.th/2
+	}
 	dst := sdl.Rect{
-		X: t.x + t.pl,
-		Y: t.y + t.pt,
+		X: tx,
+		Y: ty,
 		W: t.tw,
 		H: t.th,
 	}
@@ -80,8 +96,8 @@ func (t *InputElement) Render() {
 		cursor_start, cursor_height, _ := t.Context.Font.SizeUTF8(string(t.composition[:t.cursor]))
 		t.Context.Renderer.SetDrawColor(t.Style.ForegroundColor.R, t.Style.ForegroundColor.G, t.Style.ForegroundColor.B, t.Style.ForegroundColor.A)
 		cursor_dst := sdl.Rect{
-			X: t.x + int32(cursor_start) + t.pl - 1,
-			Y: t.y + t.pt,
+			X: tx + int32(cursor_start) - 1,
+			Y: ty,
 			W: 1,
 			H: int32(cursor_height),
 		}
@@ -92,8 +108,12 @@ func (t *InputElement) Render() {
 
 func (t *InputElement) SetValue(value string) (err error) {
 	t.Value = value
-	if len(t.Value) == 0 {
-		t.Value = " "
+	var render_str string
+	render_color := sdl.Color{
+		t.Style.ForegroundColor.R,
+		t.Style.ForegroundColor.G,
+		t.Style.ForegroundColor.B,
+		t.Style.ForegroundColor.A,
 	}
 	if t.Context == nil || t.Context.Font == nil {
 		return
@@ -102,13 +122,23 @@ func (t *InputElement) SetValue(value string) (err error) {
 		t.SDL_texture.Destroy()
 		t.SDL_texture = nil
 	}
-	surface, err := t.Context.Font.RenderUTF8Blended(t.Value,
-		sdl.Color{
-			t.Style.ForegroundColor.R,
-			t.Style.ForegroundColor.G,
-			t.Style.ForegroundColor.B,
-			t.Style.ForegroundColor.A,
-		})
+
+	if len(value) == 0 {
+		if len(t.placeholder) == 0 {
+			render_str = " "
+		} else {
+			render_str = t.placeholder
+			render_color.A = render_color.A / 2
+		}
+	} else {
+		if t.isPassword {
+			render_str = strings.Repeat("*", len(value))
+		} else {
+			render_str = value
+		}
+	}
+
+	surface, err := t.Context.Font.RenderUTF8Blended(render_str, render_color)
 	defer surface.Free()
 	if err != nil {
 		panic(err)
@@ -120,8 +150,10 @@ func (t *InputElement) SetValue(value string) (err error) {
 
 	t.tw = surface.W
 	t.th = surface.H
-	t.Style.W.Set(float64(surface.W))
-	t.Style.H.Set(float64(surface.H))
+	if t.Style.ResizeToContent {
+		t.Style.W.Set(float64(surface.W))
+		t.Style.H.Set(float64(surface.H))
+	}
 	t.Dirty = true
 	return
 }

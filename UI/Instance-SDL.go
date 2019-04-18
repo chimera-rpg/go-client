@@ -44,7 +44,7 @@ func (i *Instance) Setup(data_root string) (err error) {
 			H: Number{Value: 720},
 		},
 		RenderFunc: func(w *Window) {
-			w.Context.Renderer.SetDrawColor(128, 196, 128, 255)
+			w.Context.Renderer.SetDrawColor(139, 186, 139, 255)
 			w.Context.Renderer.Clear()
 		},
 		Context: &i.Context,
