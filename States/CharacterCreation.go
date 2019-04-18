@@ -4,7 +4,6 @@ import (
 	"github.com/chimera-rpg/go-client/Client"
 	"github.com/chimera-rpg/go-client/UI"
 	"github.com/chimera-rpg/go-common/Net"
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 type CharacterCreation struct {
@@ -14,9 +13,6 @@ type CharacterCreation struct {
 }
 
 func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs interface{}, err error) {
-	s.Client.RootWindow.RenderMutex.Lock()
-	defer s.Client.RootWindow.RenderMutex.Unlock()
-
 	s.Client.Log.Print("CharacterCreation State")
 
 	err = s.SelectionWindow.Setup(UI.WindowConfig{
@@ -37,7 +33,7 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 				Value:      20,
 			},
 		},
-		Parent: &s.Client.RootWindow,
+		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
 			w.Context.Renderer.SetDrawColor(32, 32, 128, 128)
 			w.Context.Renderer.Clear()
@@ -47,7 +43,7 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 	el_selection := UI.NewInputElement(UI.InputElementConfig{
 		Style: UI.Style{
 			ForegroundColor: UI.Color{255, 255, 255, 255, true},
-			BackgroundColor: UI.Color{255, 255, 255, 64, true},
+			BackgroundColor: UI.Color{0, 0, 0, 128, true},
 			PaddingLeft: UI.Number{
 				Percentage: true,
 				Value:      5,
@@ -74,7 +70,7 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 				Percentage: true,
 			},
 		},
-		Value: "Select your Character:",
+		Value: "Select your Character",
 		Events: UI.Events{
 			OnMouseMove: func(x int32, y int32) bool {
 				s.Client.Log.Printf("Movement: %dx%d! :)\n", x, y)
@@ -82,6 +78,14 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 			},
 			OnMouseButtonDown: func(button uint8, x int32, y int32) bool {
 				s.Client.Log.Printf("Clicky: %d @ %dx%d! :D\n", button, x, y)
+				return false
+			},
+			OnMouseIn: func(x int32, y int32) bool {
+				s.Client.Log.Printf("MouseIn\n")
+				return false
+			},
+			OnMouseOut: func(x int32, y int32) bool {
+				s.Client.Log.Printf("MouseOut\n")
 				return false
 			},
 		},
@@ -123,8 +127,6 @@ func (s *CharacterCreation) Loop() {
 			if ret {
 				return
 			}
-		case event := <-s.Client.EventChannel:
-			s.HandleEvent(event)
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
 			s.Client.StateChannel <- Client.StateMessage{&List{}, nil}
@@ -149,15 +151,4 @@ func (s *CharacterCreation) HandleNet(cmd Net.Command) bool {
 		return true
 	}
 	return false
-}
-
-func (s *CharacterCreation) HandleEvent(event sdl.Event) {
-	switch event.(type) {
-	case *sdl.MouseMotionEvent:
-		s.Client.Log.Print("mouse motion!")
-	case *sdl.MouseButtonEvent:
-		// s.UI.OnMouseButton...
-		s.Client.Log.Print("mouse button!")
-	default:
-	}
 }

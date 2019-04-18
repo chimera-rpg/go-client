@@ -15,8 +15,10 @@ type BaseElement struct {
 	// Dirty should be set whenever the Element should be re-rendered
 	Dirty bool
 	//
-	Value  string
-	Hidden bool
+	Value     string
+	Hidden    bool
+	Focusable bool
+	Focused   bool
 	// Context is cached when the object is created.
 	Context *Context
 	// x, y, w, h are cached values from CalculateStyle
@@ -74,8 +76,15 @@ func (b *BaseElement) Hit(x int32, y int32) bool {
 	if b.Hidden {
 		return false
 	}
-	if x >= b.x && y >= b.y && x <= b.x+b.w && y <= b.y+b.h {
-		return true
+	if b.Parent != nil {
+		lx, ly := b.Parent.GetX()+b.x, b.Parent.GetY()+b.y
+		if x >= lx && y >= ly && x <= lx+b.w && y <= ly+b.h {
+			return true
+		}
+	} else {
+		if x >= b.x && y >= b.y && x <= b.x+b.w && y <= b.y+b.h {
+			return true
+		}
 	}
 	return false
 }
@@ -91,7 +100,9 @@ func (b *BaseElement) CalculateStyle() {
 			} else {
 				x = int32(b.Style.X.Value)
 			}
-			x = x + b.Parent.GetX()
+			if b.Parent.IsContainer() {
+				//x = x + int32(b.Parent.GetX())
+			}
 		}
 		if b.Style.Y.IsSet {
 			if b.Style.Y.Percentage {
@@ -99,7 +110,9 @@ func (b *BaseElement) CalculateStyle() {
 			} else {
 				y = int32(b.Style.Y.Value)
 			}
-			y = y + int32(b.Parent.GetY())
+			if b.Parent.IsContainer() {
+				//y = y + int32(b.Parent.GetY())
+			}
 		}
 		if b.Style.W.IsSet {
 			if b.Style.W.Percentage {
@@ -292,9 +305,49 @@ func (b *BaseElement) OnMouseMove(x int32, y int32) bool {
 	}
 	return true
 }
+func (b *BaseElement) OnMouseIn(x int32, y int32) bool {
+	if b.Events.OnMouseIn != nil {
+		return b.Events.OnMouseIn(x, y)
+	}
+	return true
+}
+func (b *BaseElement) OnMouseOut(x int32, y int32) bool {
+	if b.Events.OnMouseOut != nil {
+		return b.Events.OnMouseOut(x, y)
+	}
+	return true
+}
+
 func (b *BaseElement) OnMouseButtonUp(button_id uint8, x int32, y int32) bool {
 	if b.Events.OnMouseButtonUp != nil {
 		return b.Events.OnMouseButtonUp(button_id, x, y)
+	}
+	return true
+}
+
+func (b *BaseElement) OnKeyDown(key uint8, modifiers uint16) bool {
+	if b.Events.OnKeyDown != nil {
+		return b.Events.OnKeyDown(key, modifiers)
+	}
+	return true
+}
+
+func (b *BaseElement) OnKeyUp(key uint8, modifiers uint16) bool {
+	if b.Events.OnKeyUp != nil {
+		return b.Events.OnKeyUp(key, modifiers)
+	}
+	return true
+}
+
+func (b *BaseElement) OnTextInput(str string) bool {
+	if b.Events.OnTextInput != nil {
+		return b.Events.OnTextInput(str)
+	}
+	return true
+}
+func (b *BaseElement) OnTextEdit(str string, start int32, length int32) bool {
+	if b.Events.OnTextEdit != nil {
+		return b.Events.OnTextEdit(str, start, length)
 	}
 	return true
 }
@@ -307,6 +360,30 @@ func (b *BaseElement) OnAdopted(parent ElementI) {
 	if b.Events.OnAdopted != nil {
 		b.Events.OnAdopted(parent)
 	}
+}
+
+func (b *BaseElement) CanFocus() bool {
+	return b.Focusable
+}
+func (b *BaseElement) SetFocused(v bool) {
+	b.Focused = v
+}
+
+func (b *BaseElement) OnFocus() bool {
+	if b.Events.OnFocus != nil {
+		return b.Events.OnFocus()
+	}
+	return true
+}
+func (b *BaseElement) OnBlur() bool {
+	if b.Events.OnBlur != nil {
+		return b.Events.OnBlur()
+	}
+	return true
+}
+
+func (b *BaseElement) IsContainer() bool {
+	return false
 }
 
 func (b *BaseElement) GetChildren() []ElementI {

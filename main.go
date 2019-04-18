@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/chimera-rpg/go-client/Client"
 	"github.com/chimera-rpg/go-client/States"
+	"github.com/chimera-rpg/go-client/UI"
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/ttf"
 	"log"
 	"runtime/debug"
 )
@@ -47,19 +47,25 @@ func main() {
 	}()
 	log.Print("Starting Chimera client (golang)")
 
-	// Initialize SDL
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(err)
-	}
-	defer sdl.Quit()
-	// Initialize TTF
-	if err := ttf.Init(); err != nil {
-		panic(err)
-	}
-
 	client, err := Client.NewClient()
 	defer client.Destroy()
 	if err != nil {
+		showError("%s", err)
+		return
+	}
+
+	ui, err := UI.NewInstance()
+	defer ui.Cleanup()
+	if err != nil {
+		showError("%s", err)
+		return
+	}
+
+	// Setup our UI
+	ui.Setup(client.DataRoot)
+
+	// Setup our Client
+	if err = client.Setup(ui); err != nil {
 		showError("%s", err)
 		return
 	}
@@ -77,31 +83,8 @@ func main() {
 		client.StateChannel <- Client.StateMessage{&States.List{}, nil}
 	}
 
-	var empty struct{}
-
-	// Run the SDL loop in the main thread, as calling WaitEvent() in a coroutine causes crashes on Mac OS.
-	running := true
-	for running {
-		event := sdl.WaitEvent()
-		client.RenderChannel <- empty
-		switch t := event.(type) {
-		case *sdl.QuitEvent:
-			running = false
-		case *sdl.WindowEvent:
-			if t.Event == sdl.WINDOWEVENT_RESIZED {
-				client.RootWindow.RenderMutex.Lock()
-				client.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
-				client.RootWindow.RenderMutex.Unlock()
-			} else if t.Event == sdl.WINDOWEVENT_CLOSE {
-				running = false
-			} else if t.Event == sdl.WINDOWEVENT_EXPOSED {
-				client.Render()
-			}
-		default:
-			client.RootWindow.HandleEvent(event)
-			client.Refresh()
-		}
-	}
+	// Start our UI Loop.
+	ui.Loop()
 
 	log.Print("Sayonara!")
 }

@@ -12,7 +12,7 @@ import (
 )
 
 type Client struct {
-	RootWindow  UI.Window
+	RootWindow  *UI.Window
 	DefaultFont *ttf.Font
 	Net.Connection
 	LogHistory    []string
@@ -27,20 +27,14 @@ type Client struct {
 
 func NewClient() (c *Client, e error) {
 	c = &Client{}
-	e = c.Setup()
+	c.DataRoot = path.Join("share", "chimera", "client")
 	return
 }
 
-func (c *Client) Setup() (err error) {
+func (c *Client) Setup(inst *UI.Instance) (err error) {
 	c.Log = log.New(os.Stdout, "Client: ", log.Lshortfile)
-	c.DataRoot = path.Join("share", "chimera", "client")
 
-	context := UI.Context{}
-	if context.Font, err = ttf.OpenFont(path.Join(c.DataRoot, "fonts", "DefaultFont.ttf"), 12); err != nil {
-		return
-	}
-
-	err = c.RootWindow.Setup(UI.WindowConfig{
+	/*err = UI.RootWindow.Setup(UI.WindowConfig{
 		Value: "Chimera",
 		Style: UI.Style{
 			X: UI.Number{Value: 0},
@@ -52,11 +46,12 @@ func (c *Client) Setup() (err error) {
 			w.Context.Renderer.SetDrawColor(128, 196, 128, 255)
 			w.Context.Renderer.Clear()
 		},
-		Context: &context,
+		Context: &UI.Context{},
 	})
 	if err != nil {
 		return
-	}
+	}*/
+	c.RootWindow = &inst.RootWindow
 
 	Net.RegisterCommands()
 
@@ -75,7 +70,6 @@ func (c *Client) Destroy() {
 	c.isRunning = false
 	c.Close()
 	c.State.Close()
-	c.RootWindow.Destroy()
 }
 
 func (c *Client) Print(format string, a ...interface{}) {
@@ -98,23 +92,11 @@ func (c *Client) SetState(state StateI, v interface{}) {
 	}
 }
 
-func (c *Client) Render() {
-	c.RootWindow.RenderMutex.Lock()
-	c.RootWindow.Render()
-	c.RootWindow.RenderMutex.Unlock()
-}
-
-func (c *Client) Refresh() {
-	if c.RootWindow.HasDirt() {
-		c.Render()
-	}
-}
-
 func (c *Client) ChannelLoop() {
 	for c.isRunning {
 		select {
-		case <-c.RenderChannel:
-			c.Refresh()
+		/*case <-c.RenderChannel:
+		c.Refresh()*/
 		case msg := <-c.StateChannel:
 			if c.isRunning {
 				c.SetState(msg.State, msg.Args)

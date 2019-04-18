@@ -146,68 +146,13 @@ func (w *Window) Destroy() {
 	}
 }
 
-func (w *Window) HandleEvent(event sdl.Event) {
-	IterateEvent(w, event)
-}
-
-func IterateEvent(e ElementI, event sdl.Event) {
-	switch t := event.(type) {
-	case *sdl.WindowEvent:
-	case *sdl.MouseMotionEvent:
-		if e.Hit(t.X, t.Y) {
-			if !e.OnMouseMove(t.X, t.Y) {
-				return
-			}
-		}
-	case *sdl.MouseButtonEvent:
-		if e.Hit(t.X, t.Y) {
-			if t.State == 1 {
-				if !e.OnMouseButtonDown(t.Button, t.X, t.Y) {
-					return
-				}
-			} else {
-				if !e.OnMouseButtonUp(t.Button, t.X, t.Y) {
-					return
-				}
-			}
-		}
-	case *sdl.KeyboardEvent:
-		// ??? Probably have a global and currently focused element
-	case *sdl.TextInputEvent:
-		// This should only receive when a focused element is true and inputting
-	case *sdl.TextEditingEvent:
-		// This should somehow show a "temp" value in input elements.
-	}
-	for _, child := range e.GetChildren() {
-		switch t := event.(type) {
-		case *sdl.WindowEvent:
-		case *sdl.MouseMotionEvent:
-			if child.Hit(t.X, t.Y) {
-				if !child.OnMouseMove(t.X, t.Y) {
-					return
-				}
-			}
-		case *sdl.MouseButtonEvent:
-			if child.Hit(t.X, t.Y) {
-				if t.State == 1 {
-					if !child.OnMouseButtonDown(t.Button, t.X, t.Y) {
-						return
-					}
-				} else {
-					if !child.OnMouseButtonUp(t.Button, t.X, t.Y) {
-						return
-					}
-				}
-			}
-		default:
-		}
-		IterateEvent(child, event)
-	}
-}
-
 func (w *Window) GetX() int32 {
 	return 0
 }
 func (w *Window) GetY() int32 {
 	return 0
+}
+
+func (w *Window) IsContainer() bool {
+	return true
 }

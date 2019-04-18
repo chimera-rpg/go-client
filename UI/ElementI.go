@@ -26,6 +26,8 @@ type ElementI interface {
 	// Calculates the given Element's style. Should be called whenever Style is changed.
 	CalculateStyle()
 	//
+	// Returns whether or not this container constrains x,y to be relative to itself
+	IsContainer() bool
 	SetParent(p ElementI)
 	GetParent() ElementI
 	AdoptChild(e ElementI)
@@ -42,6 +44,16 @@ type ElementI interface {
 	OnTouchEnd(id uint32, x int32, y int32) bool
 	OnMouseButtonDown(button_id uint8, x int32, y int32) bool
 	OnMouseMove(x int32, y int32) bool
+	OnMouseIn(x int32, y int32) bool
+	OnMouseOut(x int32, y int32) bool
 	OnMouseButtonUp(button_id uint8, x int32, y int32) bool
+	OnKeyDown(key uint8, modifiers uint16) bool
+	OnKeyUp(key uint8, modifiers uint16) bool
+	OnTextInput(str string) bool
+	OnTextEdit(str string, start int32, length int32) bool
 	OnAdopted(parent ElementI)
+	CanFocus() bool
+	SetFocused(bool)
+	OnFocus() bool
+	OnBlur() bool
 }
