@@ -93,7 +93,8 @@ func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	el_password := UI.NewInputElement(UI.InputElementConfig{
+	var el_password UI.ElementI
+	el_password = UI.NewInputElement(UI.InputElementConfig{
 		Style: UI.Style{
 			ForegroundColor: UI.Color{255, 255, 255, 255, true},
 			BackgroundColor: UI.Color{0, 0, 0, 128, true},
@@ -145,6 +146,16 @@ func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, e
 			OnMouseOut: func(x int32, y int32) bool {
 				s.Client.Log.Printf("MouseOut\n")
 				return false
+			},
+			OnKeyDown: func(char uint8, modifiers uint16) bool {
+				if char == 13 { // Enter
+					s.Client.Send(Net.Command(Net.CommandLogin{
+						Type: Net.LOGIN,
+						User: el_username.GetValue(),
+						Pass: el_password.GetValue(),
+					}))
+				}
+				return true
 			},
 		},
 	})
