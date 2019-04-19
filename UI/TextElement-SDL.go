@@ -13,15 +13,20 @@ type TextElement struct {
 }
 
 type TextElementConfig struct {
-	Style  Style
+	Style  string
 	Value  string
 	Events Events
 }
 
+var TextElementStyle = `
+	ForegroundColor 0 0 0 255
+`
+
 func NewTextElement(c TextElementConfig) ElementI {
 	t := TextElement{}
 	t.This = ElementI(&t)
-	t.Style.Set(c.Style)
+	t.Style.Parse(TextElementStyle)
+	t.Style.Parse(c.Style)
 	t.SetValue(c.Value)
 	t.Events = c.Events
 

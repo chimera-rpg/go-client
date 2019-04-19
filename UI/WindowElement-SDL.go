@@ -10,7 +10,7 @@ type RenderFunc func(*Window)
 
 type WindowConfig struct {
 	Parent     *Window
-	Style      Style
+	Style      string
 	RenderFunc RenderFunc
 	Context    *Context
 	Value      string
@@ -25,6 +25,11 @@ type Window struct {
 	RenderMutex sync.Mutex
 }
 
+var WindowElementStyle = `
+	ForegroundColor 0 0 0 255
+	BackgroundColor 139 186 139 255
+`
+
 func NewWindow(c WindowConfig) (w *Window, err error) {
 	window := Window{}
 	err = window.Setup(c)
@@ -35,7 +40,8 @@ func (w *Window) Setup(c WindowConfig) (err error) {
 	w.This = ElementI(w)
 	w.RenderMutex = sync.Mutex{}
 	w.RenderFunc = c.RenderFunc
-	w.Style.Set(c.Style)
+	w.Style.Parse(WindowElementStyle)
+	w.Style.Parse(c.Style)
 	w.Context = c.Context
 	w.Value = c.Value
 	if c.Parent != nil {
@@ -116,6 +122,11 @@ func (w *Window) Render() {
 	if w.RenderFunc != nil {
 		w.RenderFunc(w)
 	}
+	if w.Style.BackgroundColor.A > 0 {
+		w.Context.Renderer.SetDrawColor(w.Style.BackgroundColor.R, w.Style.BackgroundColor.G, w.Style.BackgroundColor.B, w.Style.BackgroundColor.A)
+		w.Context.Renderer.Clear()
+	}
+
 	w.BaseElement.Render()
 	if w.Parent != nil {
 		w.Context.Renderer.SetRenderTarget(old_t)

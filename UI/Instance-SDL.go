@@ -37,14 +37,12 @@ func (i *Instance) Setup(data_root string) (err error) {
 
 	err = i.RootWindow.Setup(WindowConfig{
 		Value: "Chimera",
-		Style: Style{
-			X: Number{Value: 0},
-			Y: Number{Value: 0},
-			W: Number{Value: 1280},
-			H: Number{Value: 720},
-		},
+		Style: `
+			BackgroundColor 0 0 0 255
+			W 1280
+			H 720
+		`,
 		RenderFunc: func(w *Window) {
-			w.Context.Renderer.SetDrawColor(139, 186, 139, 255)
 			w.Context.Renderer.Clear()
 		},
 		Context: &i.Context,

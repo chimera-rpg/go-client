@@ -14,29 +14,16 @@ type Login struct {
 func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, err error) {
 	err = s.LoginWindow.Setup(UI.WindowConfig{
 		Value: "Selection",
-		Style: UI.Style{
-			X: UI.Number{
-				Value:      50,
-				Percentage: true,
-			},
-			Y: UI.Number{
-				Value:      50,
-				Percentage: true,
-			},
-			W: UI.Number{
-				Percentage: true,
-				Value:      60,
-			},
-			H: UI.Number{
-				Percentage: true,
-				Value:      30,
-			},
-			Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
-			//FitContent: UI.FITCONTENT_HEIGHT,
-		},
+		Style: `
+			X 50%
+			Y 50%
+			W 60%
+			H 30%
+			Origin CenterX CenterY
+			BackgroundColor 139 186 139 255
+		`,
 		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
-			w.Context.Renderer.SetDrawColor(32, 32, 128, 128)
 			w.Context.Renderer.Clear()
 		},
 	})
@@ -44,56 +31,30 @@ func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, e
 	var el_username, el_password, el_login UI.ElementI
 
 	el_username = UI.NewInputElement(UI.InputElementConfig{
-		Style: UI.Style{
-			ForegroundColor: UI.Color{255, 255, 255, 255, true},
-			BackgroundColor: UI.Color{0, 0, 0, 128, true},
-			PaddingLeft: UI.Number{
-				Percentage: true,
-				Value:      1,
-			},
-			PaddingRight: UI.Number{
-				Percentage: true,
-				Value:      1,
-			},
-			PaddingTop: UI.Number{
-				Percentage: true,
-				Value:      1,
-			},
-			PaddingBottom: UI.Number{
-				Percentage: true,
-				Value:      1,
-			},
-			Origin:        UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
-			CenterContent: UI.CENTERY | UI.CENTERX,
-			X:             UI.Number{Value: 50, Percentage: true},
-			Y:             UI.Number{Value: 10, Percentage: true},
-			H:             UI.Number{Value: 20, Percentage: true},
-			W:             UI.Number{Value: 100, Percentage: true},
-			MaxW:          UI.Number{Value: 200},
-			MaxH:          UI.Number{Value: 30},
-			MinH:          UI.Number{Value: 25},
-		},
+		Style: `
+			Origin CenterX CenterY
+			X 50%
+			Y 10%
+			H 20%
+			W 100%
+			MaxW 200
+			MaxH 30
+			MinH 25
+		`,
 		Placeholder: "username",
 	})
 	el_password = UI.NewInputElement(UI.InputElementConfig{
-		Style: UI.Style{
-			ForegroundColor: UI.Color{255, 255, 255, 255, true},
-			BackgroundColor: UI.Color{0, 0, 0, 128, true},
-			//Position: UI.POSITION_RELATIVE,
-			PaddingLeft:   UI.Number{Percentage: true, Value: 1},
-			PaddingRight:  UI.Number{Percentage: true, Value: 1},
-			PaddingTop:    UI.Number{Percentage: true, Value: 1},
-			PaddingBottom: UI.Number{Percentage: true, Value: 1},
-			Origin:        UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
-			CenterContent: UI.CENTERY | UI.CENTERX,
-			X:             UI.Number{Value: 50, Percentage: true},
-			Y:             UI.Number{Value: 40, Percentage: true},
-			H:             UI.Number{Value: 20, Percentage: true},
-			W:             UI.Number{Value: 100, Percentage: true},
-			MaxW:          UI.Number{Value: 200},
-			MaxH:          UI.Number{Value: 30},
-			MinH:          UI.Number{Value: 25},
-		},
+		Style: `
+			Origin CenterX CenterY
+			X 50%
+			Y 40%
+			H 20%
+			W 100%
+			MaxW 200
+			MaxH 30
+			MinH 25
+			ForegroundColor 255 0 0 255
+		`,
 		Password:    true,
 		Placeholder: "password",
 		Events: UI.Events{
@@ -107,23 +68,15 @@ func (s *Login) Init(t interface{}) (next Client.StateI, nextArgs interface{}, e
 	})
 
 	el_login = UI.NewButtonElement(UI.ButtonElementConfig{
-		Style: UI.Style{
-			ForegroundColor: UI.Color{255, 255, 255, 255, true},
-			BackgroundColor: UI.Color{128, 196, 128, 200, true},
-			//Position: UI.POSITION_RELATIVE,
-			PaddingLeft:   UI.Number{Percentage: true, Value: 1},
-			PaddingRight:  UI.Number{Percentage: true, Value: 1},
-			PaddingTop:    UI.Number{Percentage: true, Value: 1},
-			PaddingBottom: UI.Number{Percentage: true, Value: 1},
-			Origin:        UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
-			CenterContent: UI.CENTERY | UI.CENTERX,
-			X:             UI.Number{Value: 50, Percentage: true},
-			Y:             UI.Number{Value: 80, Percentage: true},
-			H:             UI.Number{Value: 20, Percentage: true},
-			W:             UI.Number{Value: 100, Percentage: true},
-			MaxW:          UI.Number{Value: 200},
-			MinH:          UI.Number{Value: 25},
-		},
+		Style: `
+			Origin CenterX CenterY
+			X 50%
+			Y 80%
+			H 20%
+			W 100%
+			MaxW 200
+			MinH 25
+		`,
 		Value: "LOGIN",
 		Events: UI.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {

@@ -21,25 +21,13 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 	// Sub-window: map
 	err = s.MapWindow.Setup(UI.WindowConfig{
 		Value: "Map",
-		Style: UI.Style{
-			X: UI.Number{
-				Percentage: true,
-				Value:      50,
-			},
-			Y: UI.Number{
-				Percentage: true,
-				Value:      50,
-			},
-			W: UI.Number{
-				Percentage: true,
-				Value:      100,
-			},
-			H: UI.Number{
-				Percentage: true,
-				Value:      100,
-			},
-			Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
-		},
+		Style: `
+			X 50%
+			Y 50%
+			W 100%
+			H 100%
+			Origin CenterX CenterY
+		`,
 		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
 			w.Context.Renderer.SetDrawColor(0, 128, 0, 128)
@@ -57,22 +45,12 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 	// Sub-window: chat
 	err = s.ChatWindow.Setup(UI.WindowConfig{
 		Value: "Chat",
-		Style: UI.Style{
-			X: UI.Number{
-				Value: 8,
-			},
-			Y: UI.Number{
-				Value: 8,
-			},
-			W: UI.Number{
-				Percentage: true,
-				Value:      70,
-			},
-			H: UI.Number{
-				Percentage: true,
-				Value:      20,
-			},
-		},
+		Style: `
+			X 8
+			Y 8
+			W 70%
+			H 20%
+		`,
 		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
 			w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
@@ -82,25 +60,13 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 	// Sub-window: inventory
 	err = s.InventoryWindow.Setup(UI.WindowConfig{
 		Value: "Inventory",
-		Style: UI.Style{
-			X: UI.Number{
-				Percentage: true,
-				Value:      50,
-			},
-			Y: UI.Number{
-				Percentage: true,
-				Value:      50,
-			},
-			W: UI.Number{
-				Percentage: true,
-				Value:      50,
-			},
-			H: UI.Number{
-				Percentage: true,
-				Value:      80,
-			},
-			Origin: UI.ORIGIN_CENTERX | UI.ORIGIN_CENTERY,
-		},
+		Style: `
+			X 50%
+			Y 50%
+			W 50%
+			H 80%
+			Origin CenterX CenterY
+		`,
 		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
 			w.Context.Renderer.SetDrawColor(0, 255, 0, 255)
@@ -111,23 +77,11 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 	// Sub-window: ground
 	err = s.GroundWindow.Setup(UI.WindowConfig{
 		Value: "Ground",
-		Style: UI.Style{
-			X: UI.Number{
-				Percentage: true,
-			},
-			Y: UI.Number{
-				Percentage: true,
-				Value:      70,
-			},
-			W: UI.Number{
-				Percentage: true,
-				Value:      30,
-			},
-			H: UI.Number{
-				Percentage: true,
-				Value:      30,
-			},
-		},
+		Style: `
+			Y 70%
+			W 30%
+			H 30%
+		`,
 		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
 			w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
@@ -137,23 +91,11 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 	// Sub-window: stats
 	err = s.StatsWindow.Setup(UI.WindowConfig{
 		Value: "Stats",
-		Style: UI.Style{
-			X: UI.Number{
-				Percentage: true,
-				Value:      30,
-			},
-			Y: UI.Number{
-				Percentage: true,
-			},
-			W: UI.Number{
-				Percentage: true,
-				Value:      40,
-			},
-			H: UI.Number{
-				Percentage: true,
-				Value:      20,
-			},
-		},
+		Style: `
+			X 30%
+			W 40%
+			H 20%
+		`,
 		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
 			w.Context.Renderer.SetDrawColor(0, 0, 255, 255)
@@ -164,24 +106,12 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 	// Sub-window: state
 	err = s.StateWindow.Setup(UI.WindowConfig{
 		Value: "State",
-		Style: UI.Style{
-			X: UI.Number{
-				Percentage: true,
-				Value:      30,
-			},
-			Y: UI.Number{
-				Percentage: true,
-				Value:      80,
-			},
-			W: UI.Number{
-				Percentage: true,
-				Value:      40,
-			},
-			H: UI.Number{
-				Percentage: true,
-				Value:      20,
-			},
-		},
+		Style: `
+			X 30%
+			Y 80%
+			W 40%
+			H 20%
+		`,
 		Parent: s.Client.RootWindow,
 		RenderFunc: func(w *UI.Window) {
 			w.Context.Renderer.SetDrawColor(0, 0, 255, 255)

@@ -13,17 +13,28 @@ type ButtonElement struct {
 }
 
 type ButtonElementConfig struct {
-	Style  Style
+	Style  string
 	Value  string
 	Events Events
 }
+
+var ButtonElementStyle = `
+	ForegroundColor 255 255 255 255
+	BackgroundColor 139 139 186 128
+	ContentOrigin CenterX CenterY
+	PaddingLeft 1%
+	PaddingRight 1%
+	PaddingTop 1%
+	PaddingBottom 1%
+`
 
 func NewButtonElement(c ButtonElementConfig) ElementI {
 	t := ButtonElement{}
 	t.This = ElementI(&t)
 	t.Holdable = true
 	t.Focusable = true
-	t.Style.Set(c.Style)
+	t.Style.Parse(ButtonElementStyle)
+	t.Style.Parse(c.Style)
 	t.SetValue(c.Value)
 	t.Events = c.Events
 
@@ -84,10 +95,10 @@ func (t *ButtonElement) Render() {
 	// Render text texture
 	tx := t.x + t.pl
 	ty := t.y + t.pt
-	if (t.Style.CenterContent & CENTERX) == CENTERX {
+	if t.Style.ContentOrigin.Has(CENTERX) {
 		tx += t.w/2 - t.tw/2
 	}
-	if (t.Style.CenterContent & CENTERY) == CENTERY {
+	if t.Style.ContentOrigin.Has(CENTERY) {
 		ty += t.h/2 - t.th/2
 	}
 	dst := sdl.Rect{

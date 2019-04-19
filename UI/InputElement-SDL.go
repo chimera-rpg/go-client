@@ -19,17 +19,28 @@ type InputElement struct {
 }
 
 type InputElementConfig struct {
-	Style       Style
+	Style       string
 	Value       string
 	Events      Events
 	Password    bool
 	Placeholder string
 }
 
+var InputElementStyle = `
+	ForegroundColor 255 255 255 255
+	BackgroundColor 0 0 0 128
+	PaddingLeft 1%
+	PaddingRight 1%
+	PaddingTop 1%
+	PaddingBottom 1%
+	ContentOrigin CenterY
+`
+
 func NewInputElement(c InputElementConfig) ElementI {
 	i := InputElement{}
 	i.This = ElementI(&i)
-	i.Style.Set(c.Style)
+	i.Style.Parse(InputElementStyle)
+	i.Style.Parse(c.Style)
 	i.composition = []rune(c.Value)
 	i.cursor = len(i.composition)
 	i.SyncComposition()
@@ -67,10 +78,10 @@ func (t *InputElement) Render() {
 	// Render text texture
 	tx := t.x + t.pl
 	ty := t.y + t.pt
-	if (t.Style.CenterContent & CENTERX) == CENTERX {
+	if t.Style.ContentOrigin.Has(CENTERX) {
 		tx += t.w/2 - t.tw/2
 	}
-	if (t.Style.CenterContent & CENTERY) == CENTERY {
+	if t.Style.ContentOrigin.Has(CENTERY) {
 		ty += t.h/2 - t.th/2
 	}
 	dst := sdl.Rect{

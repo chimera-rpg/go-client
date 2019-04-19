@@ -96,134 +96,110 @@ func (b *BaseElement) CalculateStyle() {
 	}
 	var x, y, w, minw, maxw, h, minh, maxh, pt, pb, pl, pr int32 = b.x, b.y, b.w, 0, 0, b.h, 0, 0, b.pt, b.pb, b.pl, b.pr
 	if b.Parent != nil {
-		if b.Style.X.IsSet {
-			if b.Style.X.Percentage {
-				x = int32(b.Style.X.PercentOf(float64(b.Parent.GetWidth())))
-			} else {
-				x = int32(b.Style.X.Value)
-			}
-			if b.Parent.IsContainer() {
-				//x = x + int32(b.Parent.GetX())
-			}
+		if b.Style.X.Percentage {
+			x = int32(b.Style.X.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			x = int32(b.Style.X.Value)
 		}
-		if b.Style.Y.IsSet {
-			if b.Style.Y.Percentage {
-				y = int32(b.Style.Y.PercentOf(float64(b.Parent.GetHeight())))
-			} else {
-				y = int32(b.Style.Y.Value)
-			}
-			if b.Parent.IsContainer() {
-				//y = y + int32(b.Parent.GetY())
-			}
+		if b.Parent.IsContainer() {
+			//x = x + int32(b.Parent.GetX())
 		}
-		if b.Style.W.IsSet {
-			if b.Style.W.Percentage {
-				w = int32(b.Style.W.PercentOf(float64(b.Parent.GetWidth())))
-			} else {
-				w = int32(b.Style.W.Value)
-			}
+		if b.Style.Y.Percentage {
+			y = int32(b.Style.Y.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			y = int32(b.Style.Y.Value)
 		}
-		if b.Style.H.IsSet {
-			if b.Style.H.Percentage {
-				h = int32(b.Style.H.PercentOf(float64(b.Parent.GetHeight())))
-			} else {
-				h = int32(b.Style.H.Value)
-			}
+		if b.Parent.IsContainer() {
+			//y = y + int32(b.Parent.GetY())
 		}
-		if b.Style.MinW.IsSet {
-			if b.Style.MinW.Percentage {
-				minw = int32(b.Style.MinW.PercentOf(float64(b.Parent.GetWidth())))
-			} else {
-				minw = int32(b.Style.MinW.Value)
-			}
+		if b.Style.W.Percentage {
+			w = int32(b.Style.W.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			w = int32(b.Style.W.Value)
 		}
-		if b.Style.MaxW.IsSet {
-			if b.Style.MaxW.Percentage {
-				maxw = int32(b.Style.MaxW.PercentOf(float64(b.Parent.GetWidth())))
-			} else {
-				maxw = int32(b.Style.MaxW.Value)
-			}
+		if b.Style.H.Percentage {
+			h = int32(b.Style.H.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			h = int32(b.Style.H.Value)
 		}
-		if b.Style.MinH.IsSet {
-			if b.Style.MinH.Percentage {
-				minh = int32(b.Style.MinH.PercentOf(float64(b.Parent.GetHeight())))
-			} else {
-				minh = int32(b.Style.MinH.Value)
-			}
+		if b.Style.MinW.Percentage {
+			minw = int32(b.Style.MinW.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			minw = int32(b.Style.MinW.Value)
 		}
-		if b.Style.MaxH.IsSet {
-			if b.Style.MaxH.Percentage {
-				maxh = int32(b.Style.MaxH.PercentOf(float64(b.Parent.GetHeight())))
-			} else {
-				maxh = int32(b.Style.MaxH.Value)
-			}
+		if b.Style.MaxW.Percentage {
+			maxw = int32(b.Style.MaxW.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			maxw = int32(b.Style.MaxW.Value)
+		}
+		if b.Style.MinH.Percentage {
+			minh = int32(b.Style.MinH.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			minh = int32(b.Style.MinH.Value)
+		}
+		if b.Style.MaxH.Percentage {
+			maxh = int32(b.Style.MaxH.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			maxh = int32(b.Style.MaxH.Value)
 		}
 
 		// Padding
-		if b.Style.PaddingLeft.IsSet {
-			if b.Style.PaddingLeft.Percentage {
-				pl = int32(b.Style.PaddingLeft.PercentOf(float64(b.Parent.GetWidth())))
-			} else {
-				pl = int32(b.Style.PaddingLeft.Value)
-			}
+		if b.Style.PaddingLeft.Percentage {
+			pl = int32(b.Style.PaddingLeft.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			pl = int32(b.Style.PaddingLeft.Value)
 		}
-		if b.Style.PaddingRight.IsSet {
-			if b.Style.PaddingRight.Percentage {
-				pr = int32(b.Style.PaddingRight.PercentOf(float64(b.Parent.GetWidth())))
-			} else {
-				pr = int32(b.Style.PaddingRight.Value)
-			}
+		if b.Style.PaddingRight.Percentage {
+			pr = int32(b.Style.PaddingRight.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			pr = int32(b.Style.PaddingRight.Value)
 		}
-		if b.Style.PaddingTop.IsSet {
-			if b.Style.PaddingTop.Percentage {
-				pt = int32(b.Style.PaddingTop.PercentOf(float64(b.Parent.GetHeight())))
-			} else {
-				pt = int32(b.Style.PaddingTop.Value)
-			}
+		if b.Style.PaddingTop.Percentage {
+			pt = int32(b.Style.PaddingTop.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			pt = int32(b.Style.PaddingTop.Value)
 		}
-		if b.Style.PaddingBottom.IsSet {
-			if b.Style.PaddingBottom.Percentage {
-				pb = int32(b.Style.PaddingBottom.PercentOf(float64(b.Parent.GetHeight())))
-			} else {
-				pb = int32(b.Style.PaddingBottom.Value)
-			}
+		if b.Style.PaddingBottom.Percentage {
+			pb = int32(b.Style.PaddingBottom.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			pb = int32(b.Style.PaddingBottom.Value)
 		}
 	} else {
-		if b.Style.X.IsSet && !b.Style.X.Percentage {
+		if !b.Style.X.Percentage {
 			x = int32(b.Style.X.Value)
 		}
-		if b.Style.Y.IsSet && !b.Style.Y.Percentage {
+		if !b.Style.Y.Percentage {
 			y = int32(b.Style.Y.Value)
 		}
-		if b.Style.W.IsSet && !b.Style.W.Percentage {
+		if !b.Style.W.Percentage {
 			w = int32(b.Style.W.Value)
 		}
-		if b.Style.H.IsSet && !b.Style.H.Percentage {
+		if !b.Style.H.Percentage {
 			h = int32(b.Style.H.Value)
 		}
-		if b.Style.MinW.IsSet && !b.Style.MinW.Percentage {
+		if !b.Style.MinW.Percentage {
 			minw = int32(b.Style.MinW.Value)
 		}
-		if b.Style.MaxW.IsSet && !b.Style.MaxW.Percentage {
+		if !b.Style.MaxW.Percentage {
 			maxw = int32(b.Style.MaxW.Value)
 		}
-		if b.Style.MinH.IsSet && !b.Style.MinH.Percentage {
+		if !b.Style.MinH.Percentage {
 			minh = int32(b.Style.MinH.Value)
 		}
-		if b.Style.MaxH.IsSet && !b.Style.MaxH.Percentage {
+		if !b.Style.MaxH.Percentage {
 			maxh = int32(b.Style.MaxH.Value)
 		}
 		// Padding
-		if b.Style.PaddingLeft.IsSet && !b.Style.PaddingLeft.Percentage {
+		if !b.Style.PaddingLeft.Percentage {
 			pl = int32(b.Style.PaddingLeft.Value)
 		}
-		if b.Style.PaddingRight.IsSet && !b.Style.PaddingRight.Percentage {
+		if !b.Style.PaddingRight.Percentage {
 			pr = int32(b.Style.PaddingRight.Value)
 		}
-		if b.Style.PaddingTop.IsSet && !b.Style.PaddingTop.Percentage {
+		if !b.Style.PaddingTop.Percentage {
 			pt = int32(b.Style.PaddingTop.Value)
 		}
-		if b.Style.PaddingBottom.IsSet && !b.Style.PaddingBottom.Percentage {
+		if !b.Style.PaddingBottom.Percentage {
 			pb = int32(b.Style.PaddingBottom.Value)
 		}
 	}
@@ -251,14 +227,14 @@ func (b *BaseElement) CalculateStyle() {
 		b.Dirty = true
 	}
 	if b.Dirty || b.LastStyle != b.Style {
-		if b.Style.Origin&ORIGIN_CENTERX != 0 {
+		if b.Style.Origin.Has(CENTERX) {
 			b.x = b.x - b.w/2
-		} else if b.Style.Origin&ORIGIN_RIGHT != 0 {
+		} else if b.Style.Origin.Has(RIGHT) {
 			b.x = b.x - b.w
 		}
-		if b.Style.Origin&ORIGIN_CENTERY != 0 {
+		if b.Style.Origin.Has(CENTERY) {
 			b.y = b.y - b.h/2
-		} else if b.Style.Origin&ORIGIN_BOTTOM != 0 {
+		} else if b.Style.Origin.Has(BOTTOM) {
 			b.y = b.y - b.h
 		}
 		b.LastStyle = b.Style
