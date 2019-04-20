@@ -56,9 +56,18 @@ func (t *TextElement) Render() {
 		t.Context.Renderer.SetDrawColor(t.Style.BackgroundColor.R, t.Style.BackgroundColor.G, t.Style.BackgroundColor.B, t.Style.BackgroundColor.A)
 		t.Context.Renderer.FillRect(&dst)
 	}
+	// Render text
+	tx := t.x + t.pl
+	ty := t.y + t.pt
+	if t.Style.ContentOrigin.Has(CENTERX) {
+		tx += t.w/2 - t.tw/2 - t.pr
+	}
+	if t.Style.ContentOrigin.Has(CENTERY) {
+		ty += t.h/2 - t.th/2 - t.pb
+	}
 	dst := sdl.Rect{
-		X: t.x + t.pl,
-		Y: t.y + t.pt,
+		X: tx,
+		Y: ty,
 		W: t.tw,
 		H: t.th,
 	}

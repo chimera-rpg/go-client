@@ -96,10 +96,10 @@ func (t *ButtonElement) Render() {
 	tx := t.x + t.pl
 	ty := t.y + t.pt
 	if t.Style.ContentOrigin.Has(CENTERX) {
-		tx += t.w/2 - t.tw/2
+		tx += t.w/2 - t.tw/2 - t.pr
 	}
 	if t.Style.ContentOrigin.Has(CENTERY) {
-		ty += t.h/2 - t.th/2
+		ty += t.h/2 - t.th/2 - t.pb
 	}
 	dst := sdl.Rect{
 		X: tx,
