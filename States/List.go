@@ -38,10 +38,11 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 
 	el_host = UI.NewInputElement(UI.InputElementConfig{
 		Style: `
-			X 10%
-			Y 80%
+			Origin Bottom
+			X 0%
+			Y 30
+			Margin 5%
 			W 60%
-			H 30
 		`,
 		Placeholder: "host:port",
 		Events: UI.Events{
@@ -56,10 +57,11 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 	el_host.Focus()
 	el_connect = UI.NewButtonElement(UI.ButtonElementConfig{
 		Style: `
-			X 80%
-			Y 80%
-			W 10%
-			H 30
+			Origin Bottom
+			X 65%
+			Y 30
+			Margin 5%
+			W 25%
 		`,
 		Value: "CONNECT",
 		Events: UI.Events{
@@ -89,8 +91,6 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 			Y 0
 			X 50%
 			W 100%
-			H 30
-			Padding 6
 		`,
 		Value: in_string,
 	})

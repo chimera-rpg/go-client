@@ -20,6 +20,10 @@ type TextElementConfig struct {
 
 var TextElementStyle = `
 	ForegroundColor 0 0 0 255
+	Padding 6
+	MinH 12
+	H 7%
+	MaxH 30
 `
 
 func NewTextElement(c TextElementConfig) ElementI {

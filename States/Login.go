@@ -1,6 +1,7 @@
 package States
 
 import (
+	"fmt"
 	"github.com/chimera-rpg/go-client/Client"
 	"github.com/chimera-rpg/go-client/UI"
 	"github.com/chimera-rpg/go-common/Net"
@@ -9,6 +10,7 @@ import (
 type Login struct {
 	Client.State
 	LoginWindow UI.Window
+	OutputText  UI.ElementI
 }
 
 type LoginStateID int
@@ -29,8 +31,6 @@ type LoginState struct {
 func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, err error) {
 	lstate := LoginState{DefaultState, "", "", ""}
 
-	s.Client.Log.Print("Login State!")
-
 	switch t := v.(type) {
 	case LoginState:
 		lstate = t
@@ -46,18 +46,15 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		Parent: s.Client.RootWindow,
 	})
 
-	var el_buttons, el_username, el_password, el_confirm, el_email, el_login, el_register, el_previous UI.ElementI
+	var el_username, el_password, el_confirm, el_email, el_login, el_previous UI.ElementI
 
 	el_username = UI.NewInputElement(UI.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
 			Y 10%
-			H 20%
 			W 100%
 			MaxW 200
-			MaxH 30
-			MinH 25
 		`,
 		Placeholder: "username",
 		Value:       lstate.username,
@@ -68,11 +65,8 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 			Origin CenterX CenterY
 			X 60%
 			Y 10%
-			H 20%
 			W 100%
 			MaxW 200
-			MaxH 30
-			MinH 25
 		`,
 		Placeholder: "email",
 		Value:       lstate.email,
@@ -126,31 +120,13 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		},
 	})
 
-	el_buttons, _ = UI.NewWindow(UI.WindowConfig{
-		Style: `
-			X 50%
-			Y 80%
-			W 60%
-			H 30%
-			Origin CenterX CenterY
-			BackgroundColor 139 139 139 255
-		`,
-		Parent: &s.LoginWindow,
-		RenderFunc: func(w *UI.Window) {
-			w.Context.Renderer.Clear()
-		},
-	})
-
 	el_previous = UI.NewButtonElement(UI.ButtonElementConfig{
 		Style: `
 			Origin Bottom
-			Margin 2%
-			H 20%
+			Y 30
+			Margin 5%
 			W 40%
-			MaxH 20
-			MaxW 200
 			MinW 100
-			Padding 6
 		`,
 		Value: "BACK",
 	})
@@ -158,13 +134,10 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 	el_login = UI.NewButtonElement(UI.ButtonElementConfig{
 		Style: `
 			Origin Right Bottom
-			Margin 2%
-			H 20%
+			Y 30
+			Margin 5%
 			W 40%
-			MaxH 20
-			MaxW 200
 			MinW 100
-			Padding 6
 		`,
 		Value: "LOGIN",
 		Events: UI.Events{
@@ -178,32 +151,19 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	el_register = UI.NewButtonElement(UI.ButtonElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 80%
-			H 20%
-			W 100%
-			MaxH 20
-			MaxW 200
-			MinH 25
-		`,
-		Value: "REGISTER",
-		Events: UI.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.Send(Net.Command(Net.CommandLogin{
-					Type:  Net.REGISTER,
-					User:  el_username.GetValue(),
-					Pass:  el_password.GetValue(),
-					Email: el_email.GetValue(),
-				}))
-				return false
-			},
-		},
-	})
 
-	s.Client.Log.Print("Login State")
+	s.OutputText = UI.NewTextElement(UI.TextElementConfig{
+		Style: `
+			Origin CenterX Bottom
+			ContentOrigin CenterX CenterY
+			ForegroundColor 255 255 255 128
+			BackgroundColor 0 0 0 128
+			Y 0
+			X 50%
+			W 100%
+		`,
+		Value: "Connected.",
+	})
 
 	switch lstate.state {
 	case DefaultState:
@@ -223,10 +183,23 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		s.LoginWindow.AdoptChild(el_password)
 		s.LoginWindow.AdoptChild(el_confirm)
 		s.LoginWindow.AdoptChild(el_email)
-		el_buttons.AdoptChild(el_register)
+		s.LoginWindow.AdoptChild(el_login)
+		el_login.SetValue("REGISTER")
+		el_login.SetEvents(UI.Events{
+			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+				s.Client.Send(Net.Command(Net.CommandLogin{
+					Type:  Net.REGISTER,
+					User:  el_username.GetValue(),
+					Pass:  el_password.GetValue(),
+					Email: el_email.GetValue(),
+				}))
+				return false
+			},
+		})
 		el_previous.SetValue("BACK")
 		s.LoginWindow.AdoptChild(el_previous)
 	}
+	s.LoginWindow.AdoptChild(s.OutputText)
 
 	go s.Loop()
 
@@ -260,15 +233,20 @@ func (s *Login) HandleNet(cmd Net.Command) bool {
 	case Net.CommandBasic:
 		s.Client.Log.Print("Got basic")
 		if t.Type == Net.REJECT {
-			s.Client.Log.Printf("Server rejected us: %s\n", t.String)
+			msg := fmt.Sprintf("Server rejected us: %s\n", t.String)
+			s.OutputText.SetValue(msg)
+			s.Client.Log.Printf(msg)
 		} else if t.Type == Net.OK {
-			s.Client.Log.Printf("Server accepted us: %s\n", t.String)
-			s.Client.StateChannel <- Client.StateMessage{&CharacterCreation{}, nil}
+			msg := fmt.Sprintf("Server accepted us: %s\n", t.String)
+			s.OutputText.SetValue(msg)
+			s.Client.Log.Printf(msg)
+			s.Client.StateChannel <- Client.StateMessage{&CharacterCreation{}, msg}
 			return true
 		}
 	default:
-		s.Client.Log.Print("Server sent non CommandBasic")
-		s.Client.StateChannel <- Client.StateMessage{&List{}, nil}
+		msg := fmt.Sprintf("Server sent non CommandBasic")
+		s.Client.Log.Print(msg)
+		s.Client.StateChannel <- Client.StateMessage{&List{}, msg}
 		return true
 	}
 	return false

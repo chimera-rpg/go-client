@@ -29,11 +29,11 @@ type InputElementConfig struct {
 var InputElementStyle = `
 	ForegroundColor 255 255 255 255
 	BackgroundColor 0 0 0 128
-	PaddingLeft 1%
-	PaddingRight 1%
-	PaddingTop 1%
-	PaddingBottom 1%
+	Padding 6
 	ContentOrigin CenterY
+	MinH 12
+	H 7%
+	MaxH 30
 `
 
 func NewInputElement(c InputElementConfig) ElementI {

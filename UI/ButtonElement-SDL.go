@@ -22,10 +22,9 @@ var ButtonElementStyle = `
 	ForegroundColor 255 255 255 255
 	BackgroundColor 139 139 186 128
 	ContentOrigin CenterX CenterY
-	PaddingLeft 1%
-	PaddingRight 1%
-	PaddingTop 1%
-	PaddingBottom 1%
+	MinH 12
+	H 7%
+	MaxH 40
 `
 
 func NewButtonElement(c ButtonElementConfig) ElementI {
