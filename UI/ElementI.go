@@ -39,6 +39,7 @@ type ElementI interface {
 	//
 	Hit(x int32, y int32) bool
 	// Events
+	SetEvents(e Events)
 	OnTouchBegin(id uint32, x int32, y int32) bool
 	OnTouchMove(id uint32, x int32, y int32) bool
 	OnTouchEnd(id uint32, x int32, y int32) bool

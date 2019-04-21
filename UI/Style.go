@@ -72,6 +72,10 @@ type Style struct {
 	PaddingRight    Number
 	PaddingTop      Number
 	PaddingBottom   Number
+	MarginLeft      Number
+	MarginRight     Number
+	MarginTop       Number
+	MarginBottom    Number
 	ForegroundColor Color
 	BackgroundColor Color
 	ResizeToContent bool

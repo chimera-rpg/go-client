@@ -51,6 +51,32 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.MinH = parseNumber(p.tokenValue())
 	case "MaxH":
 		s.MaxH = parseNumber(p.tokenValue())
+	case "Margin":
+		parts := strings.Split(p.tokenValue(), " ")
+		parts_len := len(parts)
+		if parts_len == 1 { // ltrb%
+			s.MarginRight, s.MarginLeft, s.MarginTop, s.MarginBottom = parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0])
+		} else if parts_len == 2 { // lr% tb%
+			s.MarginLeft, s.MarginRight = parseNumber(parts[0]), parseNumber(parts[0])
+			s.MarginTop, s.MarginBottom = parseNumber(parts[1]), parseNumber(parts[1])
+		} else if parts_len == 3 { // l% t% r%
+			s.MarginLeft = parseNumber(parts[0])
+			s.MarginTop = parseNumber(parts[1])
+			s.MarginRight = parseNumber(parts[2])
+		} else if parts_len == 4 { // l% t% r% b%
+			s.MarginLeft = parseNumber(parts[0])
+			s.MarginTop = parseNumber(parts[1])
+			s.MarginRight = parseNumber(parts[2])
+			s.MarginBottom = parseNumber(parts[3])
+		}
+	case "MarginLeft":
+		s.MarginLeft = parseNumber(p.tokenValue())
+	case "MarginRight":
+		s.MarginRight = parseNumber(p.tokenValue())
+	case "MarginTop":
+		s.MarginTop = parseNumber(p.tokenValue())
+	case "MarginBottom":
+		s.MarginBottom = parseNumber(p.tokenValue())
 	case "Padding":
 		parts := strings.Split(p.tokenValue(), " ")
 		parts_len := len(parts)

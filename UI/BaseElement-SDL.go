@@ -32,6 +32,10 @@ type BaseElement struct {
 	pb int32
 	pl int32
 	pr int32
+	mt int32
+	mb int32
+	ml int32
+	mr int32
 }
 
 func (b *BaseElement) Destroy() {
@@ -94,7 +98,7 @@ func (b *BaseElement) CalculateStyle() {
 	if b.Hidden {
 		return
 	}
-	var x, y, w, minw, maxw, h, minh, maxh, pt, pb, pl, pr int32 = b.x, b.y, b.w, 0, 0, b.h, 0, 0, b.pt, b.pb, b.pl, b.pr
+	var x, y, w, minw, maxw, h, minh, maxh, pt, pb, pl, pr, mt, mb, ml, mr int32 = b.x, b.y, b.w, 0, 0, b.h, 0, 0, b.pt, b.pb, b.pl, b.pr, b.mt, b.mb, b.ml, b.mr
 	if b.Parent != nil {
 		if b.Style.X.Percentage {
 			x = int32(b.Style.X.PercentOf(float64(b.Parent.GetWidth())))
@@ -170,6 +174,28 @@ func (b *BaseElement) CalculateStyle() {
 		} else {
 			pb = int32(b.Style.PaddingBottom.Value)
 		}
+		// Margin
+		if b.Style.MarginLeft.Percentage {
+			ml = int32(b.Style.MarginLeft.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			ml = int32(b.Style.MarginLeft.Value)
+		}
+		if b.Style.MarginRight.Percentage {
+			mr = int32(b.Style.MarginRight.PercentOf(float64(b.Parent.GetWidth())))
+		} else {
+			mr = int32(b.Style.MarginRight.Value)
+		}
+		if b.Style.MarginTop.Percentage {
+			mt = int32(b.Style.MarginTop.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			mt = int32(b.Style.MarginTop.Value)
+		}
+		if b.Style.MarginBottom.Percentage {
+			mb = int32(b.Style.MarginBottom.PercentOf(float64(b.Parent.GetHeight())))
+		} else {
+			mb = int32(b.Style.MarginBottom.Value)
+		}
+
 	} else {
 		if !b.Style.X.Percentage {
 			x = int32(b.Style.X.Value)
@@ -208,6 +234,19 @@ func (b *BaseElement) CalculateStyle() {
 		if !b.Style.PaddingBottom.Percentage {
 			pb = int32(b.Style.PaddingBottom.Value)
 		}
+		// Margin
+		if !b.Style.MarginLeft.Percentage {
+			ml = int32(b.Style.MarginLeft.Value)
+		}
+		if !b.Style.MarginRight.Percentage {
+			mr = int32(b.Style.MarginRight.Value)
+		}
+		if !b.Style.MarginTop.Percentage {
+			mt = int32(b.Style.MarginTop.Value)
+		}
+		if !b.Style.MarginBottom.Percentage {
+			mb = int32(b.Style.MarginBottom.Value)
+		}
 	}
 	if h < minh {
 		h = minh
@@ -221,7 +260,7 @@ func (b *BaseElement) CalculateStyle() {
 	if maxh > 0 && h > maxh {
 		h = maxh
 	}
-	if x != b.x || y != b.y || w != b.w || h != b.h || pl != b.pl || pr != b.pr || pt != b.pt || pb != b.pb {
+	if x != b.x || y != b.y || w != b.w || h != b.h || pl != b.pl || pr != b.pr || pt != b.pt || pb != b.pb || ml != b.ml || mr != b.mr || mt != b.mt || mb != b.mb {
 		b.x = x
 		b.y = y
 		b.w = w + pl + pr
@@ -230,18 +269,26 @@ func (b *BaseElement) CalculateStyle() {
 		b.pr = pr
 		b.pt = pt
 		b.pb = pb
+		b.ml = ml
+		b.mr = mr
+		b.mt = mt
+		b.mb = mb
 		b.Dirty = true
 	}
 	if b.Dirty || b.LastStyle != b.Style {
 		if b.Style.Origin.Has(CENTERX) {
 			b.x = b.x - b.w/2
 		} else if b.Style.Origin.Has(RIGHT) {
-			b.x = b.x - b.w
+			b.x = b.x - b.w - b.mr
+		} else {
+			b.x = b.x + b.ml
 		}
 		if b.Style.Origin.Has(CENTERY) {
 			b.y = b.y - b.h/2
 		} else if b.Style.Origin.Has(BOTTOM) {
-			b.y = b.y - b.h
+			b.y = b.y - b.h - b.mb
+		} else {
+			b.y = b.y + b.mt
 		}
 		b.LastStyle = b.Style
 		b.Dirty = true
@@ -310,6 +357,10 @@ func (b *BaseElement) SetHidden(v bool) {
 }
 func (b *BaseElement) IsHidden() bool {
 	return b.Hidden
+}
+
+func (b *BaseElement) SetEvents(e Events) {
+	b.Events = e
 }
 
 func (b *BaseElement) OnTouchBegin(id uint32, x int32, y int32) bool {
