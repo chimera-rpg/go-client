@@ -51,6 +51,24 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.MinH = parseNumber(p.tokenValue())
 	case "MaxH":
 		s.MaxH = parseNumber(p.tokenValue())
+	case "Padding":
+		parts := strings.Split(p.tokenValue(), " ")
+		parts_len := len(parts)
+		if parts_len == 1 { // ltrb%
+			s.PaddingRight, s.PaddingLeft, s.PaddingTop, s.PaddingBottom = parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0])
+		} else if parts_len == 2 { // lr% tb%
+			s.PaddingLeft, s.PaddingRight = parseNumber(parts[0]), parseNumber(parts[0])
+			s.PaddingTop, s.PaddingBottom = parseNumber(parts[1]), parseNumber(parts[1])
+		} else if parts_len == 3 { // l% t% r%
+			s.PaddingLeft = parseNumber(parts[0])
+			s.PaddingTop = parseNumber(parts[1])
+			s.PaddingRight = parseNumber(parts[2])
+		} else if parts_len == 4 { // l% t% r% b%
+			s.PaddingLeft = parseNumber(parts[0])
+			s.PaddingTop = parseNumber(parts[1])
+			s.PaddingRight = parseNumber(parts[2])
+			s.PaddingBottom = parseNumber(parts[3])
+		}
 	case "PaddingLeft":
 		s.PaddingLeft = parseNumber(p.tokenValue())
 	case "PaddingRight":
