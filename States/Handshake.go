@@ -1,69 +1,87 @@
 package States
 
 import (
-  "github.com/chimera-rpg/go-client/Client"
-  "github.com/chimera-rpg/go-client/UI"
-  "github.com/chimera-rpg/go-common/Net"
+	"fmt"
+	"github.com/chimera-rpg/go-client/Client"
+	"github.com/chimera-rpg/go-client/UI"
+	"github.com/chimera-rpg/go-common/Net"
+	"time"
 )
 
 type Handshake struct {
-  Client.State
-  ServersWindow UI.Window
+	Client.State
+	ServersWindow UI.Window
 }
 
 func (s *Handshake) Init(v interface{}) (state Client.StateI, nextArgs interface{}, err error) {
-  //var cmd Net.Command
-  defer func() {
-    if r := recover(); r != nil {
-      s.Client.Log.Print("Communication problematic with server, d/cing")
-      s.Client.Close()
-      err = r.(error)
-    }
-    return
-  }()
-  server, ok := v.(string)
-  if ok == false {
-    s.Client.Log.Print("Bad server value passed to Handshake State")
-    state = Client.StateI(&List{})
-    return
-  }
+	defer func() {
+		if r := recover(); r != nil {
+			s.Client.Log.Print("Communication problematic with server, d/cing")
+			s.Client.Close()
+			err = r.(error)
+		}
+		return
+	}()
+	server, ok := v.(string)
+	if ok == false {
+		msg := fmt.Sprintf("Bad server value.")
+		s.Client.Log.Print(msg)
+		state = Client.StateI(&List{})
+		nextArgs = msg
+		return
+	}
 
-  err = s.Client.ConnectTo(server)
-  if err != nil {
-    s.Client.Log.Print(err)
-    state = Client.StateI(&List{})
-    return
-  }
+	err = s.Client.ConnectTo(server)
+	if err != nil {
+		s.Client.Log.Print(err)
+		state = Client.StateI(&List{})
+		nextArgs = err
+		return
+	}
 
-  cmd := <- s.Client.CmdChan
-  switch cmd.(type) {
-  case Net.CommandHandshake:
-  default:
-    s.Client.Log.Print("Server sent non-handshake")
-    state = Client.StateI(&List{})
-    return
-  }
+	select {
+	case cmd := <-s.Client.CmdChan:
+		switch cmd.(type) {
+		case Net.CommandHandshake:
+		default:
+			msg := fmt.Sprintf("Server \"%s\" sent non-handshake..", server)
+			s.Client.Log.Print(msg)
+			state = Client.StateI(&List{})
+			nextArgs = msg
+			return
+		}
+	case <-time.After(2 * time.Second):
+		msg := fmt.Sprintf("Server \"%s\" took too long to respond.", server)
+		s.Client.Log.Printf(msg)
+		state = Client.StateI(&List{})
+		nextArgs = msg
+		return
+	}
 
-  s.Client.Send(Net.Command(Net.CommandHandshake{
-    Version: Net.VERSION,
-    Program: "Golang Client",
-  }))
+	s.Client.Send(Net.Command(Net.CommandHandshake{
+		Version: Net.VERSION,
+		Program: "Golang Client",
+	}))
 
-  cmd = <- s.Client.CmdChan
-  switch t := cmd.(type) {
-  case Net.CommandBasic:
-    if t.Type == Net.NOK {
-      s.Client.Log.Printf("Server rejected us: %s\n", t.String)
-      state = Client.StateI(&List{})
-      return
-    }
-  default:
-    s.Client.Log.Print("Server sent non CommandBasic")
-    state = Client.StateI(&List{})
-    return
-  }
+	cmd := <-s.Client.CmdChan
+	switch t := cmd.(type) {
+	case Net.CommandBasic:
+		if t.Type == Net.NOK {
+			msg := fmt.Sprintf("Server \"%s\" rejected us: %s", server, t.String)
+			s.Client.Log.Printf(msg)
+			state = Client.StateI(&List{})
+			nextArgs = msg
+			return
+		}
+	default:
+		msg := fmt.Sprintf("Server \"%s\" sent non CommandBasic.", server)
+		s.Client.Log.Print(msg)
+		state = Client.StateI(&List{})
+		nextArgs = msg
+		return
+	}
 
-  state = Client.StateI(&Login{})
+	state = Client.StateI(&Login{})
 
-  return
+	return
 }
