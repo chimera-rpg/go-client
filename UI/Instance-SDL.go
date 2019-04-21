@@ -21,6 +21,8 @@ func NewInstance() (inst *Instance, e error) {
 	return
 }
 
+var GlobalInstance *Instance
+
 func (i *Instance) Setup(data_root string) (err error) {
 	// Initialize SDL
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {

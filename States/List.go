@@ -27,10 +27,11 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 			PaddingTop 5%
 			PaddingBottom 5%
 			Origin CenterX CenterY
+			ContentOrigin CenterX CenterY
 			X 50%
 			Y 10%
 		`,
-		Value: "Please choose a server:",
+		Value: "Please choose a server.",
 	})
 
 	var el_host, el_connect, el_output_text UI.ElementI
@@ -52,6 +53,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
+	el_host.Focus()
 	el_connect = UI.NewButtonElement(UI.ButtonElementConfig{
 		Style: `
 			X 80%
@@ -59,7 +61,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 			W 10%
 			H 30
 		`,
-		Value: "Connect",
+		Value: "CONNECT",
 		Events: UI.Events{
 			OnMouseButtonUp: func(which uint8, x int32, y int32) bool {
 				s.Client.StateChannel <- Client.StateMessage{&Handshake{}, el_host.GetValue()}
@@ -120,7 +122,6 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 	})
 	el_img.AdoptChild(el_test)
 
-	s.Client.Print("Please choose a server: ")
 	return
 }
 

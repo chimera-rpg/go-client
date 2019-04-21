@@ -62,6 +62,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		Placeholder: "username",
 		Value:       lstate.username,
 	})
+	el_username.Focus()
 	el_email = UI.NewInputElement(UI.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY

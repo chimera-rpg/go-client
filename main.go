@@ -60,6 +60,7 @@ func main() {
 		showError("%s", err)
 		return
 	}
+	UI.GlobalInstance = ui
 
 	// Setup our UI
 	ui.Setup(client.DataRoot)

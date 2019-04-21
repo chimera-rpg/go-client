@@ -57,6 +57,8 @@ type ElementI interface {
 	SetFocused(bool)
 	CanHold() bool
 	SetHeld(bool)
+	Focus()
 	OnFocus() bool
+	Blur()
 	OnBlur() bool
 }

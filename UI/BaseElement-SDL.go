@@ -457,12 +457,22 @@ func (b *BaseElement) SetFocused(v bool) {
 	b.Focused = v
 }
 
+func (b *BaseElement) Focus() {
+	GlobalInstance.FocusElement(b.This)
+}
+
 func (b *BaseElement) OnFocus() bool {
 	b.Dirty = true
 	if b.Events.OnFocus != nil {
 		return b.Events.OnFocus()
 	}
 	return true
+}
+
+func (b *BaseElement) Blur() {
+	if GlobalInstance.FocusedElement == b.This {
+		GlobalInstance.BlurFocusedElement()
+	}
 }
 func (b *BaseElement) OnBlur() bool {
 	b.Dirty = true
