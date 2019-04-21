@@ -16,6 +16,8 @@ StateI provides the base interface for all Client States.
 */
 type StateI interface {
 	Init(v interface{}) (state StateI, nextArgs interface{}, err error)
+	CreateChannels()
+	GetCloseChannel() chan bool
 	Close()
 	CommandLoop()
 	SetClient(*Client)
@@ -35,11 +37,19 @@ ex.:
   }
 */
 type State struct {
-	Client *Client
+	Client    *Client
+	CloseChan chan bool
 }
 
 func (s *State) SetClient(c *Client) {
 	s.Client = c
+}
+
+func (s *State) CreateChannels() {
+	s.CloseChan = make(chan bool)
+}
+func (s *State) GetCloseChannel() chan bool {
+	return s.CloseChan
 }
 
 func (s *State) Init(t interface{}) (next StateI, nextArgs interface{}, err error) {

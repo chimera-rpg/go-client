@@ -80,8 +80,13 @@ func (c *Client) Print(format string, a ...interface{}) {
 func (c *Client) SetState(state StateI, v interface{}) {
 	if c.State != nil {
 		c.State.Close()
+		select {
+		case c.State.GetCloseChannel() <- true:
+		default:
+		}
 	}
 	state.SetClient(c)
+	state.CreateChannels()
 	c.State = state
 	next, nextArgs, err := c.State.Init(v)
 	if err != nil {
