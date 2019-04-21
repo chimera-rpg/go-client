@@ -101,6 +101,9 @@ func (b *BaseElement) CalculateStyle() {
 		} else {
 			x = int32(b.Style.X.Value)
 		}
+		if b.Style.Origin.Has(RIGHT) {
+			x = b.Parent.GetWidth() - x
+		}
 		if b.Parent.IsContainer() {
 			//x = x + int32(b.Parent.GetX())
 		}
@@ -111,6 +114,9 @@ func (b *BaseElement) CalculateStyle() {
 		}
 		if b.Parent.IsContainer() {
 			//y = y + int32(b.Parent.GetY())
+		}
+		if b.Style.Origin.Has(BOTTOM) {
+			y = b.Parent.GetHeight() - y
 		}
 		if b.Style.W.Percentage {
 			w = int32(b.Style.W.PercentOf(float64(b.Parent.GetWidth())))
