@@ -6,6 +6,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// TextElement is our main element for handling and drawing text.
 type TextElement struct {
 	BaseElement
 	SDL_texture *sdl.Texture
@@ -13,12 +14,14 @@ type TextElement struct {
 	th          int32 // Texture height
 }
 
+// TextElementConfig is the configuration object passed to NewTextElement.
 type TextElementConfig struct {
 	Style  string
 	Value  string
 	Events Events
 }
 
+// TextElementStyle is our default styling for TextElements.
 var TextElementStyle = `
 	ForegroundColor 0 0 0 255
 	Padding 6
@@ -27,6 +30,7 @@ var TextElementStyle = `
 	MaxH 30
 `
 
+// NewTextElement creates a new TextElement from the passed configuration.
 func NewTextElement(c TextElementConfig) ElementI {
 	t := TextElement{}
 	t.This = ElementI(&t)
@@ -38,12 +42,15 @@ func NewTextElement(c TextElementConfig) ElementI {
 	return ElementI(&t)
 }
 
+// Destroy handles the destruction of the underlying texture.
 func (t *TextElement) Destroy() {
 	if t.SDL_texture != nil {
 		t.SDL_texture.Destroy()
 	}
 }
 
+// Render renders our base styling before rendering its text texture using
+// the context renderer.
 func (t *TextElement) Render() {
 	if t.IsHidden() {
 		return
@@ -80,6 +87,8 @@ func (t *TextElement) Render() {
 	t.BaseElement.Render()
 }
 
+// SetValue sets the text value for the TextElement, (re)creating the
+// underlying SDL texture as needed.
 func (t *TextElement) SetValue(value string) (err error) {
 	t.Value = value
 	if t.Context == nil || t.Context.Font == nil {
@@ -115,6 +124,8 @@ func (t *TextElement) SetValue(value string) (err error) {
 	return
 }
 
+// CalculateStyle is the same as BaseElement with the addition of always
+// creating the SDL texture if it has not been created.
 func (t *TextElement) CalculateStyle() {
 	if t.SDL_texture == nil {
 		t.SetValue(t.Value)

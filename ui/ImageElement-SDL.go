@@ -7,6 +7,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// ImageElement is the element responsible for rendering an image.
 type ImageElement struct {
 	BaseElement
 	SDL_texture *sdl.Texture
@@ -15,15 +16,18 @@ type ImageElement struct {
 	th          int32 // Texture height
 }
 
+// ImageElementConfig is the configuration for construction.
 type ImageElementConfig struct {
 	Image []byte
 	Style string
 }
 
+// ImageElementStyle is our default style for ImageElement.
 var ImageElementStyle = `
 	ContentOrigin CenterX CenterY
 `
 
+// NewImageElement creates a new ImageElement from the passed configuration.
 func NewImageElement(c ImageElementConfig) ElementI {
 	i := ImageElement{}
 	i.This = ElementI(&i)
@@ -34,9 +38,14 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	return ElementI(&i)
 }
 
+// Destroy destroys the underlying ImageElement.
 func (i *ImageElement) Destroy() {
+	if t.SDL_texture != nil {
+		t.SDL_texture.Destroy()
+	}
 }
 
+// Render renders the ImageElement to the screen.
 func (i *ImageElement) Render() {
 	if i.IsHidden() {
 		return
@@ -64,6 +73,7 @@ func (i *ImageElement) Render() {
 	i.BaseElement.Render()
 }
 
+// SetImage sets the underlying texture to the passed PNG byte slice.
 func (i *ImageElement) SetImage(png []byte) {
 	if i.Context == nil {
 		return

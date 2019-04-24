@@ -8,6 +8,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// InputElement is the element that handles user input and display within a
+// field.
 type InputElement struct {
 	BaseElement
 	SDL_texture *sdl.Texture
@@ -20,6 +22,7 @@ type InputElement struct {
 	placeholder string
 }
 
+// InputElementConfig is the construction configuration for an InputElement.
 type InputElementConfig struct {
 	Style       string
 	Value       string
@@ -28,6 +31,7 @@ type InputElementConfig struct {
 	Placeholder string
 }
 
+// InputElementStyle is the default styling for an InputElement.
 var InputElementStyle = `
 	ForegroundColor 255 255 255 255
 	BackgroundColor 0 0 0 128
@@ -38,6 +42,7 @@ var InputElementStyle = `
 	MaxH 30
 `
 
+// NewInputElement creates a new InputElement using the passed configuration.
 func NewInputElement(c InputElementConfig) ElementI {
 	i := InputElement{}
 	i.This = ElementI(&i)
@@ -54,12 +59,15 @@ func NewInputElement(c InputElementConfig) ElementI {
 	return ElementI(&i)
 }
 
+// Destroy cleans up the InputElement's resources.
 func (t *InputElement) Destroy() {
 	if t.SDL_texture != nil {
 		t.SDL_texture.Destroy()
 	}
 }
 
+// Render renders the InputElement to the rendering context, with various
+// conditionally rendered aspects to represent state.
 func (t *InputElement) Render() {
 	if t.IsHidden() {
 		return
@@ -119,6 +127,8 @@ func (t *InputElement) Render() {
 	t.BaseElement.Render()
 }
 
+// SetValue sets the text value of the input field and recreates and renders
+// to its underlying texture.
 func (t *InputElement) SetValue(value string) (err error) {
 	t.Value = value
 	var render_str string
@@ -137,6 +147,8 @@ func (t *InputElement) SetValue(value string) (err error) {
 	}
 
 	if len(value) == 0 {
+		// NOTE: RenderUTF8Blended cannot take a zero-length string, so we're
+		// populating a blank space if needed.
 		if len(t.placeholder) == 0 {
 			render_str = " "
 		} else {
@@ -171,6 +183,8 @@ func (t *InputElement) SetValue(value string) (err error) {
 	return
 }
 
+// CalculateStyle sets the SDL_texture if it doesn't exist before calculating
+// the style.
 func (t *InputElement) CalculateStyle() {
 	if t.SDL_texture == nil {
 		t.SetValue(t.Value)
@@ -178,19 +192,26 @@ func (t *InputElement) CalculateStyle() {
 	t.BaseElement.CalculateStyle()
 }
 
+// OnFocus calls sdl.StartTextInput
 func (i *InputElement) OnFocus() bool {
 	sdl.StartTextInput()
 	return i.BaseElement.OnFocus()
 }
+
+// OnBlur calls sdl.StopTextInput
 func (i *InputElement) OnBlur() bool {
 	sdl.StopTextInput()
 	return i.BaseElement.OnBlur()
 }
 
+// SyncComposition is used to synchronize the element's value with the
+// current composition.
 func (i *InputElement) SyncComposition() {
 	i.SetValue(string(i.composition))
 }
 
+// OnKeyDown handles base key presses for moving the cursor, deleting runes, and
+// otherwise.
 func (i *InputElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	switch key {
 	case 27: // esc
@@ -227,6 +248,7 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	return true
 }
 
+// OnKeyUp handles base key releases.
 func (i *InputElement) OnKeyUp(key uint8, modifiers uint16) bool {
 	if i.Events.OnKeyUp != nil {
 		return i.Events.OnKeyUp(key, modifiers)
@@ -234,6 +256,8 @@ func (i *InputElement) OnKeyUp(key uint8, modifiers uint16) bool {
 	return true
 }
 
+// OnTextInput handles the input of complete runes and appends them to the
+// composition according to the cursor positining.
 func (i *InputElement) OnTextInput(str string) bool {
 	runes := []rune(str)
 	i.composition = append(i.composition[:i.cursor], append(runes, i.composition[i.cursor:]...)...)
@@ -244,6 +268,9 @@ func (i *InputElement) OnTextInput(str string) bool {
 	}
 	return true
 }
+
+// OnTextEdit does not handle anything yet but should be responsible for
+// text insertion (TODO).
 func (i *InputElement) OnTextEdit(str string, start int32, length int32) bool {
 	if i.Events.OnTextEdit != nil {
 		return i.Events.OnTextEdit(str, start, length)

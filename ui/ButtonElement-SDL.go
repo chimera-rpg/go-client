@@ -6,6 +6,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// ButtonElement is the element type responsible for receiving mouse or touch
+// events and updating its rendering appropriately.
 type ButtonElement struct {
 	BaseElement
 	SDL_texture *sdl.Texture
@@ -13,12 +15,14 @@ type ButtonElement struct {
 	th          int32 // Texture height
 }
 
+// ButtonElementConfig provides the configuration for a new ButtonElement.
 type ButtonElementConfig struct {
 	Style  string
 	Value  string
 	Events Events
 }
 
+// ButtonElementStyle is the default style for ButtonElements.
 var ButtonElementStyle = `
 	ForegroundColor 255 255 255 255
 	BackgroundColor 139 139 186 128
@@ -28,6 +32,7 @@ var ButtonElementStyle = `
 	MaxH 40
 `
 
+// NewButtonElement creates a ButtonElement using the passed configuration.
 func NewButtonElement(c ButtonElementConfig) ElementI {
 	t := ButtonElement{}
 	t.This = ElementI(&t)
@@ -41,12 +46,14 @@ func NewButtonElement(c ButtonElementConfig) ElementI {
 	return ElementI(&t)
 }
 
+// Destroy destroys the underlying SDL texture used for text rendering.
 func (t *ButtonElement) Destroy() {
 	if t.SDL_texture != nil {
 		t.SDL_texture.Destroy()
 	}
 }
 
+// Render draws the button and its state using the element's renderer context.
 func (t *ButtonElement) Render() {
 	if t.IsHidden() {
 		return
@@ -111,6 +118,8 @@ func (t *ButtonElement) Render() {
 	t.BaseElement.Render()
 }
 
+// SetValue sets the text value of the button and updates the SDL texture as
+// needed.
 func (t *ButtonElement) SetValue(value string) (err error) {
 	t.Value = value
 	if t.Context == nil || t.Context.Font == nil {
@@ -146,6 +155,8 @@ func (t *ButtonElement) SetValue(value string) (err error) {
 	return
 }
 
+// CalculateStyle creates the SDL texture if it doesn't exist before calling
+// BaseElement.CalculateStyle()
 func (t *ButtonElement) CalculateStyle() {
 	if t.SDL_texture == nil {
 		t.SetValue(t.Value)
@@ -153,6 +164,7 @@ func (t *ButtonElement) CalculateStyle() {
 	t.BaseElement.CalculateStyle()
 }
 
+// OnKeyDown sets the button's held state when the enter key is pressed.
 func (b *ButtonElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	switch key {
 	case 13: // Activate button when enter is hit
@@ -160,6 +172,9 @@ func (b *ButtonElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	}
 	return false
 }
+
+// OnKeyUp unsets the button's held state and triggers the OnMouseButtonUp
+// method when the enter key is released.
 func (b *ButtonElement) OnKeyUp(key uint8, modifiers uint16) bool {
 	switch key {
 	case 13: // Activate button when enter is released
