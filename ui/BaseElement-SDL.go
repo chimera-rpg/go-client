@@ -2,6 +2,9 @@
 
 package ui
 
+// BaseElement is our base implementation of the ElementI interface. Every
+// Element type must have BaseElement as an anonymous field and override
+// any core functionality that it wishes to implement itself.
 type BaseElement struct {
 	/* NOTE: I'm sure this is The Wrong Way(tm), but we're using an Element interface to point to "this" element via This. This "This" must be set by any BaseElement embedding structs to point to itself via pointer.
 
@@ -39,46 +42,57 @@ type BaseElement struct {
 	mr int32
 }
 
+// Destroy is our stub for destroying an element.
 func (b *BaseElement) Destroy() {
 }
+
+// Render handled the rendering of all children and the clearing of the Dirty flag.
+// Inheriting elements will generally call this as a super once their own
+// rendering is complete.
 func (b *BaseElement) Render() {
 	for _, child := range b.Children {
 		child.Render()
 	}
 	b.Dirty = false
 }
-func (b *BaseElement) TouchBegin() {
-}
-func (b *BaseElement) TouchEnd() {
-}
-func (b *BaseElement) Pressed(button uint8, state bool, x int, y int) bool {
-	return true
-}
 
-//
+// GetX gets the cached x value.
 func (b *BaseElement) GetX() int32 {
 	return b.x
 }
+
+// GetY gets the cached y value.
 func (b *BaseElement) GetY() int32 {
 	return b.y
 }
+
+// GetWidth gets the cached width value.
 func (b *BaseElement) GetWidth() int32 {
 	return b.w
 }
+
+// GetHeight gets the cached height value.
 func (b *BaseElement) GetHeight() int32 {
 	return b.h
 }
 
+// SetValue sets the text value of the element.
 func (b *BaseElement) SetValue(value string) error {
 	b.Value = value
 	return nil
 }
+
+// GetValue retrieves the text value of the element.
 func (b *BaseElement) GetValue() string {
 	return b.Value
 }
+
+// GetStyle returns a pointer to the element's Style.
 func (b *BaseElement) GetStyle() *Style {
 	return &b.Style
 }
+
+// Hit detects if the passed x and y arguments fall within the element's box
 func (b *BaseElement) Hit(x int32, y int32) bool {
 	if b.Hidden {
 		return false
@@ -95,6 +109,9 @@ func (b *BaseElement) Hit(x int32, y int32) bool {
 	}
 	return false
 }
+
+// CalculateStyle is a heavy method for updating and caching various properties
+// for rendering.
 func (b *BaseElement) CalculateStyle() {
 	if b.Hidden {
 		return
@@ -299,12 +316,17 @@ func (b *BaseElement) CalculateStyle() {
 	}
 }
 
+// SetDirty sets the element's dirty flag.
 func (b *BaseElement) SetDirty(v bool) {
 	b.Dirty = v
 }
+
+// IsDirty returns if the dirty flag is set.
 func (b *BaseElement) IsDirty() bool {
 	return b.Dirty
 }
+
+// HasDirt returns if the element is dirty or if any of its children are.
 func (b *BaseElement) HasDirt() (dirt bool) {
 	dirt = b.IsDirty()
 	if dirt == true {
@@ -319,14 +341,17 @@ func (b *BaseElement) HasDirt() (dirt bool) {
 	return
 }
 
+// GetContext returns the rendering context of the element.
 func (b *BaseElement) GetContext() *Context {
 	return b.Context
 }
+
+// SetContext sets the rendering context of the element.
 func (b *BaseElement) SetContext(c *Context) {
 	b.Context = c
 }
 
-/* Relationships */
+// SetParent sets the element's parent to a given Element interface.
 func (b *BaseElement) SetParent(e ElementI) {
 	if b.Parent != nil && e != nil {
 		b.Parent.DisownChild(b.This)
@@ -334,10 +359,12 @@ func (b *BaseElement) SetParent(e ElementI) {
 	b.Parent = e
 }
 
+// GetParent returns the Element interface parent.
 func (b *BaseElement) GetParent() (e ElementI) {
 	return b.Parent
 }
 
+// DisownChild disowns a given Element interface child.
 func (b *BaseElement) DisownChild(c ElementI) {
 	for i, child := range b.Children {
 		if child == c {
@@ -348,58 +375,77 @@ func (b *BaseElement) DisownChild(c ElementI) {
 	}
 }
 
+// AdoptChild adopts a given Element interface as a child.
 func (b *BaseElement) AdoptChild(c ElementI) {
 	b.Children = append(b.Children, c)
 	c.OnAdopted(b)
 }
 
+// SetHidden sets the Hidden flag to a particular value, signifying if
+// rendering should be skipped during the Render call.
 func (b *BaseElement) SetHidden(v bool) {
 	b.Hidden = v
 }
+
+// IsHidden returns if the element is hidden.
 func (b *BaseElement) IsHidden() bool {
 	return b.Hidden
 }
 
+// SetEvents sets the element's Events to the one passed in.
 func (b *BaseElement) SetEvents(e Events) {
 	b.Events = e
 }
 
+// OnTouchBegin handles touch begin events.
 func (b *BaseElement) OnTouchBegin(id uint32, x int32, y int32) bool {
 	if b.Events.OnTouchBegin != nil {
 		return b.Events.OnTouchBegin(id, x, y)
 	}
 	return true
 }
+
+// OnTouchMove handles touch move events.
 func (b *BaseElement) OnTouchMove(id uint32, x int32, y int32) bool {
 	if b.Events.OnTouchMove != nil {
 		return b.Events.OnTouchMove(id, x, y)
 	}
 	return true
 }
+
+// OnTouchEnd handles touch end events.
 func (b *BaseElement) OnTouchEnd(id uint32, x int32, y int32) bool {
 	if b.Events.OnTouchEnd != nil {
 		return b.Events.OnTouchEnd(id, x, y)
 	}
 	return true
 }
-func (b *BaseElement) OnMouseButtonDown(button_id uint8, x int32, y int32) bool {
+
+// OnMouseButtonDown handles when a mouse's button is pressed.
+func (b *BaseElement) OnMouseButtonDown(buttonID uint8, x int32, y int32) bool {
 	if b.Events.OnMouseButtonDown != nil {
-		return b.Events.OnMouseButtonDown(button_id, x, y)
+		return b.Events.OnMouseButtonDown(buttonID, x, y)
 	}
 	return true
 }
+
+// OnMouseMove handles when a mouse is moved.
 func (b *BaseElement) OnMouseMove(x int32, y int32) bool {
 	if b.Events.OnMouseMove != nil {
 		return b.Events.OnMouseMove(x, y)
 	}
 	return true
 }
+
+// OnMouseIn handles when a mouse enters into the Element.
 func (b *BaseElement) OnMouseIn(x int32, y int32) bool {
 	if b.Events.OnMouseIn != nil {
 		return b.Events.OnMouseIn(x, y)
 	}
 	return true
 }
+
+// OnMouseOut handles when a mouse leaves the Element.
 func (b *BaseElement) OnMouseOut(x int32, y int32) bool {
 	if b.Events.OnMouseOut != nil {
 		return b.Events.OnMouseOut(x, y)
@@ -407,13 +453,15 @@ func (b *BaseElement) OnMouseOut(x int32, y int32) bool {
 	return true
 }
 
-func (b *BaseElement) OnMouseButtonUp(button_id uint8, x int32, y int32) bool {
+// OnMouseButtonUp handles when a mouse's button is released.
+func (b *BaseElement) OnMouseButtonUp(buttonID uint8, x int32, y int32) bool {
 	if b.Events.OnMouseButtonUp != nil {
-		return b.Events.OnMouseButtonUp(button_id, x, y)
+		return b.Events.OnMouseButtonUp(buttonID, x, y)
 	}
 	return true
 }
 
+// OnKeyDown handles when a key is depresed.
 func (b *BaseElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	if b.Events.OnKeyDown != nil {
 		return b.Events.OnKeyDown(key, modifiers)
@@ -421,6 +469,7 @@ func (b *BaseElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	return true
 }
 
+// OnKeyUp handles when a key is released.
 func (b *BaseElement) OnKeyUp(key uint8, modifiers uint16) bool {
 	if b.Events.OnKeyUp != nil {
 		return b.Events.OnKeyUp(key, modifiers)
@@ -428,12 +477,15 @@ func (b *BaseElement) OnKeyUp(key uint8, modifiers uint16) bool {
 	return true
 }
 
+// OnTextInput handles when a text input event is received.
 func (b *BaseElement) OnTextInput(str string) bool {
 	if b.Events.OnTextInput != nil {
 		return b.Events.OnTextInput(str)
 	}
 	return true
 }
+
+// OnTextEdit handles when a text edit event is received.
 func (b *BaseElement) OnTextEdit(str string, start int32, length int32) bool {
 	if b.Events.OnTextEdit != nil {
 		return b.Events.OnTextEdit(str, start, length)
@@ -441,6 +493,7 @@ func (b *BaseElement) OnTextEdit(str string, start int32, length int32) bool {
 	return true
 }
 
+// OnAdopted is called when an Element is adopted.
 func (b *BaseElement) OnAdopted(parent ElementI) {
 	b.SetContext(parent.GetContext())
 	b.SetParent(parent)
@@ -451,17 +504,22 @@ func (b *BaseElement) OnAdopted(parent ElementI) {
 	}
 }
 
+// CanFocus returns if the element is focusable.
 func (b *BaseElement) CanFocus() bool {
 	return b.Focusable
 }
+
+// SetFocused sets if the element can be focused.
 func (b *BaseElement) SetFocused(v bool) {
 	b.Focused = v
 }
 
+// Focus globally sets the element as the currently focused element.
 func (b *BaseElement) Focus() {
 	GlobalInstance.FocusElement(b.This)
 }
 
+// OnFocus is called when the element is focused.
 func (b *BaseElement) OnFocus() bool {
 	b.Dirty = true
 	if b.Events.OnFocus != nil {
@@ -470,11 +528,14 @@ func (b *BaseElement) OnFocus() bool {
 	return true
 }
 
+// Blur globally blurs the element if it is currently focused.
 func (b *BaseElement) Blur() {
 	if GlobalInstance.FocusedElement == b.This {
 		GlobalInstance.BlurFocusedElement()
 	}
 }
+
+// OnBlur is called when the element is blurred.
 func (b *BaseElement) OnBlur() bool {
 	b.Dirty = true
 	if b.Events.OnBlur != nil {
@@ -483,18 +544,24 @@ func (b *BaseElement) OnBlur() bool {
 	return true
 }
 
+// CanHold returns if the element should be considered as holdable.
 func (b *BaseElement) CanHold() bool {
 	return b.Holdable
 }
+
+// SetHeld sets the element to be holdable or not.
 func (b *BaseElement) SetHeld(v bool) {
 	b.Held = v
 	b.SetDirty(true)
 }
 
+// IsContainer returns if the Element should be considered as an
+// element that containers other elements.
 func (b *BaseElement) IsContainer() bool {
 	return false
 }
 
+// GetChildren returns the ElementI children of the element.
 func (b *BaseElement) GetChildren() []ElementI {
 	return b.Children
 }
