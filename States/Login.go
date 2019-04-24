@@ -8,20 +8,24 @@ import (
 	"github.com/chimera-rpg/go-common/Net"
 )
 
+// Login is the state responsible for logging in, registering an account,
+// or recovering an account.
 type Login struct {
 	client.State
 	LoginWindow ui.Window
 	OutputText  ui.ElementI
 }
 
+// LoginStateID represents the current sub state of the Login state.
 type LoginStateID int
 
 const (
-	DefaultState LoginStateID = iota
-	RegisterState
-	ResetState
+	defaultState LoginStateID = iota
+	registerState
+	resetState
 )
 
+// LoginState is our Login state's current... state. Fancy that.
 type LoginState struct {
 	state    LoginStateID
 	username string
@@ -29,8 +33,9 @@ type LoginState struct {
 	email    string
 }
 
+// Init our Login state.
 func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, err error) {
-	lstate := LoginState{DefaultState, "", "", ""}
+	lstate := LoginState{defaultState, "", "", ""}
 
 	switch t := v.(type) {
 	case LoginState:
@@ -47,9 +52,9 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Parent: s.Client.RootWindow,
 	})
 
-	var el_username, el_password, el_confirm, el_email, el_login, el_previous ui.ElementI
+	var elUsername, elPassword, elConfirm, elEmail, elLogin, elPrevious ui.ElementI
 
-	el_username = ui.NewInputElement(ui.InputElementConfig{
+	elUsername = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -59,9 +64,17 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		`,
 		Placeholder: "username",
 		Value:       lstate.username,
+		Events: ui.Events{
+			OnKeyDown: func(char uint8, modifiers uint16) bool {
+				if char == 13 { // Enter
+					elLogin.OnMouseButtonUp(1, 0, 0)
+				}
+				return true
+			},
+		},
 	})
-	el_username.Focus()
-	el_email = ui.NewInputElement(ui.InputElementConfig{
+	elUsername.Focus()
+	elEmail = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 60%
@@ -73,7 +86,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value:       lstate.email,
 	})
 
-	el_password = ui.NewInputElement(ui.InputElementConfig{
+	elPassword = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -91,13 +104,13 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
-					el_login.OnMouseButtonUp(1, 0, 0)
+					elLogin.OnMouseButtonUp(1, 0, 0)
 				}
 				return true
 			},
 		},
 	})
-	el_confirm = ui.NewInputElement(ui.InputElementConfig{
+	elConfirm = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -114,14 +127,14 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
-					el_login.OnMouseButtonUp(1, 0, 0)
+					elLogin.OnMouseButtonUp(1, 0, 0)
 				}
 				return true
 			},
 		},
 	})
 
-	el_previous = ui.NewButtonElement(ui.ButtonElementConfig{
+	elPrevious = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Bottom
 			Y 30
@@ -132,7 +145,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: "BACK",
 	})
 
-	el_login = ui.NewButtonElement(ui.ButtonElementConfig{
+	elLogin = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Right Bottom
 			Y 30
@@ -145,8 +158,8 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Send(Net.Command(Net.CommandLogin{
 					Type: Net.LOGIN,
-					User: el_username.GetValue(),
-					Pass: el_password.GetValue(),
+					User: elUsername.GetValue(),
+					Pass: elPassword.GetValue(),
 				}))
 				return false
 			},
@@ -167,38 +180,38 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	})
 
 	switch lstate.state {
-	case DefaultState:
-		s.LoginWindow.AdoptChild(el_username)
-		s.LoginWindow.AdoptChild(el_password)
-		el_previous.SetValue("DISCONNECT")
-		el_previous.SetEvents(ui.Events{
+	case defaultState:
+		s.LoginWindow.AdoptChild(elUsername)
+		s.LoginWindow.AdoptChild(elPassword)
+		elPrevious.SetValue("DISCONNECT")
+		elPrevious.SetEvents(ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Close()
 				return false
 			},
 		})
-		s.LoginWindow.AdoptChild(el_previous)
-		s.LoginWindow.AdoptChild(el_login)
-	case RegisterState:
-		s.LoginWindow.AdoptChild(el_username)
-		s.LoginWindow.AdoptChild(el_password)
-		s.LoginWindow.AdoptChild(el_confirm)
-		s.LoginWindow.AdoptChild(el_email)
-		s.LoginWindow.AdoptChild(el_login)
-		el_login.SetValue("REGISTER")
-		el_login.SetEvents(ui.Events{
+		s.LoginWindow.AdoptChild(elPrevious)
+		s.LoginWindow.AdoptChild(elLogin)
+	case registerState:
+		s.LoginWindow.AdoptChild(elUsername)
+		s.LoginWindow.AdoptChild(elPassword)
+		s.LoginWindow.AdoptChild(elConfirm)
+		s.LoginWindow.AdoptChild(elEmail)
+		s.LoginWindow.AdoptChild(elLogin)
+		elLogin.SetValue("REGISTER")
+		elLogin.SetEvents(ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Send(Net.Command(Net.CommandLogin{
 					Type:  Net.REGISTER,
-					User:  el_username.GetValue(),
-					Pass:  el_password.GetValue(),
-					Email: el_email.GetValue(),
+					User:  elUsername.GetValue(),
+					Pass:  elPassword.GetValue(),
+					Email: elEmail.GetValue(),
 				}))
 				return false
 			},
 		})
-		el_previous.SetValue("BACK")
-		s.LoginWindow.AdoptChild(el_previous)
+		elPrevious.SetValue("BACK")
+		s.LoginWindow.AdoptChild(elPrevious)
 	}
 	s.LoginWindow.AdoptChild(s.OutputText)
 
@@ -207,10 +220,12 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	return
 }
 
+// Close our Login state.
 func (s *Login) Close() {
 	s.LoginWindow.Destroy()
 }
 
+// Loop handles our various state channels.
 func (s *Login) Loop() {
 	for {
 		select {
@@ -221,7 +236,7 @@ func (s *Login) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- client.StateMessage{&List{}, nil}
+			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 			return
 		case <-s.CloseChan:
 			return
@@ -229,6 +244,7 @@ func (s *Login) Loop() {
 	}
 }
 
+// HandleNet handles the network commands received in Loop().
 func (s *Login) HandleNet(cmd Net.Command) bool {
 	switch t := cmd.(type) {
 	case Net.CommandBasic:
@@ -241,13 +257,13 @@ func (s *Login) HandleNet(cmd Net.Command) bool {
 			msg := fmt.Sprintf("Server accepted us: %s\n", t.String)
 			s.OutputText.SetValue(msg)
 			s.Client.Log.Printf(msg)
-			s.Client.StateChannel <- client.StateMessage{&CharacterCreation{}, msg}
+			s.Client.StateChannel <- client.StateMessage{State: &CharacterCreation{}, Args: msg}
 			return true
 		}
 	default:
 		msg := fmt.Sprintf("Server sent non CommandBasic")
 		s.Client.Log.Print(msg)
-		s.Client.StateChannel <- client.StateMessage{&List{}, msg}
+		s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: msg}
 		return true
 	}
 	return false

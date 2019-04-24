@@ -54,17 +54,17 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.MaxH = parseNumber(p.tokenValue())
 	case "Margin":
 		parts := strings.Split(p.tokenValue(), " ")
-		parts_len := len(parts)
-		if parts_len == 1 { // ltrb%
+		partsLen := len(parts)
+		if partsLen == 1 { // ltrb%
 			s.MarginRight, s.MarginLeft, s.MarginTop, s.MarginBottom = parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0])
-		} else if parts_len == 2 { // lr% tb%
+		} else if partsLen == 2 { // lr% tb%
 			s.MarginLeft, s.MarginRight = parseNumber(parts[0]), parseNumber(parts[0])
 			s.MarginTop, s.MarginBottom = parseNumber(parts[1]), parseNumber(parts[1])
-		} else if parts_len == 3 { // l% t% r%
+		} else if partsLen == 3 { // l% t% r%
 			s.MarginLeft = parseNumber(parts[0])
 			s.MarginTop = parseNumber(parts[1])
 			s.MarginRight = parseNumber(parts[2])
-		} else if parts_len == 4 { // l% t% r% b%
+		} else if partsLen == 4 { // l% t% r% b%
 			s.MarginLeft = parseNumber(parts[0])
 			s.MarginTop = parseNumber(parts[1])
 			s.MarginRight = parseNumber(parts[2])
@@ -80,17 +80,17 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.MarginBottom = parseNumber(p.tokenValue())
 	case "Padding":
 		parts := strings.Split(p.tokenValue(), " ")
-		parts_len := len(parts)
-		if parts_len == 1 { // ltrb%
+		partsLen := len(parts)
+		if partsLen == 1 { // ltrb%
 			s.PaddingRight, s.PaddingLeft, s.PaddingTop, s.PaddingBottom = parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0]), parseNumber(parts[0])
-		} else if parts_len == 2 { // lr% tb%
+		} else if partsLen == 2 { // lr% tb%
 			s.PaddingLeft, s.PaddingRight = parseNumber(parts[0]), parseNumber(parts[0])
 			s.PaddingTop, s.PaddingBottom = parseNumber(parts[1]), parseNumber(parts[1])
-		} else if parts_len == 3 { // l% t% r%
+		} else if partsLen == 3 { // l% t% r%
 			s.PaddingLeft = parseNumber(parts[0])
 			s.PaddingTop = parseNumber(parts[1])
 			s.PaddingRight = parseNumber(parts[2])
-		} else if parts_len == 4 { // l% t% r% b%
+		} else if partsLen == 4 { // l% t% r% b%
 			s.PaddingLeft = parseNumber(parts[0])
 			s.PaddingTop = parseNumber(parts[1])
 			s.PaddingRight = parseNumber(parts[2])

@@ -5,11 +5,13 @@ import (
 	"github.com/chimera-rpg/go-client/ui"
 )
 
+// List is the state for showing a server list.
 type List struct {
 	client.State
 	ServersWindow ui.Window
 }
 
+// Init our state.
 func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	err = s.ServersWindow.Setup(ui.WindowConfig{
 		Value: "Server List",
@@ -34,9 +36,9 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		Value: "Please choose a server.",
 	})
 
-	var el_host, el_connect, el_output_text ui.ElementI
+	var elHost, elConnect, elOutputText ui.ElementI
 
-	el_host = ui.NewInputElement(ui.InputElementConfig{
+	elHost = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin Bottom
 			X 0%
@@ -48,14 +50,14 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
-					el_connect.OnMouseButtonUp(1, 0, 0)
+					elConnect.OnMouseButtonUp(1, 0, 0)
 				}
 				return true
 			},
 		},
 	})
-	el_host.Focus()
-	el_connect = ui.NewButtonElement(ui.ButtonElementConfig{
+	elHost.Focus()
+	elConnect = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Bottom
 			X 65%
@@ -66,23 +68,23 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		Value: "CONNECT",
 		Events: ui.Events{
 			OnMouseButtonUp: func(which uint8, x int32, y int32) bool {
-				s.Client.StateChannel <- client.StateMessage{&Handshake{}, el_host.GetValue()}
+				s.Client.StateChannel <- client.StateMessage{State: &Handshake{}, Args: elHost.GetValue()}
 				return false
 			},
 		},
 	})
 
-	var in_string string
+	var inString string
 	switch t := v.(type) {
 	case string:
-		in_string = t
+		inString = t
 	case error:
-		in_string = t.Error()
+		inString = t.Error()
 	default:
-		in_string = "Type in an address or select a server from above and connect."
+		inString = "Type in an address or select a server from above and connect."
 	}
 
-	el_output_text = ui.NewTextElement(ui.TextElementConfig{
+	elOutputText = ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			Origin CenterX Bottom
 			ContentOrigin CenterX CenterY
@@ -92,10 +94,10 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 			X 50%
 			W 100%
 		`,
-		Value: in_string,
+		Value: inString,
 	})
 
-	el_img := ui.NewImageElement(ui.ImageElementConfig{
+	elImg := ui.NewImageElement(ui.ImageElementConfig{
 		Style: `
 			X 50%
 			Y 50%
@@ -107,12 +109,12 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 	})
 
 	s.ServersWindow.AdoptChild(el)
-	s.ServersWindow.AdoptChild(el_host)
-	s.ServersWindow.AdoptChild(el_connect)
-	s.ServersWindow.AdoptChild(el_output_text)
-	el.AdoptChild(el_img)
+	s.ServersWindow.AdoptChild(elHost)
+	s.ServersWindow.AdoptChild(elConnect)
+	s.ServersWindow.AdoptChild(elOutputText)
+	el.AdoptChild(elImg)
 
-	el_test := ui.NewTextElement(ui.TextElementConfig{
+	elTest := ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			X 50%
 			Y 50%
@@ -120,11 +122,12 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		`,
 		Value: "Test",
 	})
-	el_img.AdoptChild(el_test)
+	elImg.AdoptChild(elTest)
 
 	return
 }
 
+// Close our state.
 func (s *List) Close() {
 	s.ServersWindow.Destroy()
 }

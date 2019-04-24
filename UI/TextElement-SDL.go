@@ -1,4 +1,5 @@
 // +build !MOBILE
+
 package ui
 
 import (
@@ -90,10 +91,10 @@ func (t *TextElement) SetValue(value string) (err error) {
 	}
 	surface, err := t.Context.Font.RenderUTF8Blended(t.Value,
 		sdl.Color{
-			t.Style.ForegroundColor.R,
-			t.Style.ForegroundColor.G,
-			t.Style.ForegroundColor.B,
-			t.Style.ForegroundColor.A,
+			R: t.Style.ForegroundColor.R,
+			G: t.Style.ForegroundColor.G,
+			B: t.Style.ForegroundColor.B,
+			A: t.Style.ForegroundColor.A,
 		})
 	defer surface.Free()
 	if err != nil {

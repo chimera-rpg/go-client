@@ -6,12 +6,15 @@ import (
 	"github.com/chimera-rpg/go-common/Net"
 )
 
+// CharacterCreation is our State for connecting as, creating, or deleting a
+// character.
 type CharacterCreation struct {
 	client.State
 	SelectionWindow ui.Window
 	CharacterWindow ui.Window
 }
 
+// Init is our CharacterCreation init state.
 func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
 	s.Client.Log.Print("CharacterCreation State")
 
@@ -31,7 +34,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		},
 	})
 
-	el_selection := ui.NewTextElement(ui.TextElementConfig{
+	elSelection := ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			PaddingLeft 5%
 			PaddingRight 5%
@@ -64,7 +67,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		},
 	})
 
-	s.SelectionWindow.AdoptChild(el_selection)
+	s.SelectionWindow.AdoptChild(elSelection)
 
 	go s.Loop()
 	/*for {
@@ -88,10 +91,12 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	return
 }
 
+// Close our CharacterCreation State.
 func (s *CharacterCreation) Close() {
 	s.SelectionWindow.Destroy()
 }
 
+// Loop is our loop for managing network activitiy and beyond.
 func (s *CharacterCreation) Loop() {
 	for {
 		select {
@@ -102,12 +107,13 @@ func (s *CharacterCreation) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- client.StateMessage{&List{}, nil}
+			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 			return
 		}
 	}
 }
 
+// HandleNet manages our network communications.
 func (s *CharacterCreation) HandleNet(cmd Net.Command) bool {
 	switch t := cmd.(type) {
 	case Net.CommandBasic:
@@ -115,12 +121,12 @@ func (s *CharacterCreation) HandleNet(cmd Net.Command) bool {
 			s.Client.Log.Printf("Server rejected us: %s\n", t.String)
 		} else if t.Type == Net.OK {
 			s.Client.Log.Printf("Server accepted us: %s\n", t.String)
-			s.Client.StateChannel <- client.StateMessage{&Game{}, nil}
+			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
 			return true
 		}
 	default:
 		s.Client.Log.Print("Server sent non CommandBasic")
-		s.Client.StateChannel <- client.StateMessage{&List{}, nil}
+		s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 		return true
 	}
 	return false

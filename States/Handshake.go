@@ -9,11 +9,14 @@ import (
 	"github.com/chimera-rpg/go-common/Net"
 )
 
+// Handshake is the state responsible for the initial handshake with a server,
+// ensuring that versions match and the server likes us in general.
 type Handshake struct {
 	client.State
 	ServersWindow ui.Window
 }
 
+// Init Handshake
 func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {

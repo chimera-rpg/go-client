@@ -6,6 +6,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// Game is our live Game state, used once the user has connected to the server
+// and joined as a player character.
 type Game struct {
 	client.State
 	ChatWindow      ui.Window
@@ -16,6 +18,7 @@ type Game struct {
 	StateWindow     ui.Window
 }
 
+// Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	s.Client.Log.Print("Game State")
 	// Sub-window: map
@@ -36,7 +39,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			for x := 0; x < 12; x++ {
 				for y := 0; y < 12; y++ {
 					w.Context.Renderer.FillRect(&sdl.Rect{
-						16 * 3 * int32(x), 16 * 3 * int32(y), 16 * 3, 16 * 3,
+						X: 16 * 3 * int32(x), Y: 16 * 3 * int32(y), W: 16 * 3, H: 16 * 3,
 					})
 				}
 			}
@@ -125,6 +128,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	return
 }
 
+// Close our Game state.
 func (s *Game) Close() {
 	s.MapWindow.Destroy()
 	s.StateWindow.Destroy()
@@ -134,6 +138,7 @@ func (s *Game) Close() {
 	s.ChatWindow.Destroy()
 }
 
+// HandleNet handles the network code for our Game state.
 func (s *Game) HandleNet() {
 	for s.Client.IsRunning() {
 		select {
@@ -141,7 +146,7 @@ func (s *Game) HandleNet() {
 			s.Client.Log.Printf("cmd! %d", cmd.GetType())
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- client.StateMessage{&List{}, nil}
+			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 		}
 	}
 	/*defer func() {

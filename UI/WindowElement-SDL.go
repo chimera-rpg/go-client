@@ -119,7 +119,7 @@ func (w *Window) updateTexture() (err error) {
 	}
 	if w.SDLTexture != nil {
 		w.Context.Renderer.SetRenderTarget(t)
-		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{0, 0, tw, th})
+		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{X: 0, Y: 0, W: tw, H: th})
 		w.SDLTexture.Destroy()
 	}
 	w.SDLTexture = t
@@ -146,7 +146,7 @@ func (w *Window) Render() {
 	w.BaseElement.Render()
 	if w.Parent != nil {
 		w.Context.Renderer.SetRenderTarget(oldTexture)
-		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{w.x, w.y, w.w, w.h})
+		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{X: w.x, Y: w.y, W: w.w, H: w.h})
 	} else {
 		w.Context.Renderer.Present()
 	}
