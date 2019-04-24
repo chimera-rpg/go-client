@@ -10,12 +10,12 @@ import (
 // events and updating its rendering appropriately.
 type ButtonElement struct {
 	BaseElement
-	SDL_texture *sdl.Texture
-	tw          int32 // Texture width
-	th          int32 // Texture height
+	SDLTexture *sdl.Texture
+	tw         int32 // Texture width
+	th         int32 // Texture height
 }
 
-// ButtonElementConfig provides the configuration for a new ButtonElement.
+// ButtonElementConfig provides the configuration for a new ButtonElemenb.
 type ButtonElementConfig struct {
 	Style  string
 	Value  string
@@ -34,134 +34,134 @@ var ButtonElementStyle = `
 
 // NewButtonElement creates a ButtonElement using the passed configuration.
 func NewButtonElement(c ButtonElementConfig) ElementI {
-	t := ButtonElement{}
-	t.This = ElementI(&t)
-	t.Holdable = true
-	t.Focusable = true
-	t.Style.Parse(ButtonElementStyle)
-	t.Style.Parse(c.Style)
-	t.SetValue(c.Value)
-	t.Events = c.Events
+	b := ButtonElement{}
+	b.This = ElementI(&b)
+	b.Holdable = true
+	b.Focusable = true
+	b.Style.Parse(ButtonElementStyle)
+	b.Style.Parse(c.Style)
+	b.SetValue(c.Value)
+	b.Events = c.Events
 
-	return ElementI(&t)
+	return ElementI(&b)
 }
 
 // Destroy destroys the underlying SDL texture used for text rendering.
-func (t *ButtonElement) Destroy() {
-	if t.SDL_texture != nil {
-		t.SDL_texture.Destroy()
+func (b *ButtonElement) Destroy() {
+	if b.SDLTexture != nil {
+		b.SDLTexture.Destroy()
 	}
 }
 
-// Render draws the button and its state using the element's renderer context.
-func (t *ButtonElement) Render() {
-	if t.IsHidden() {
+// Render draws the button and its state using the element's renderer contexb.
+func (b *ButtonElement) Render() {
+	if b.IsHidden() {
 		return
 	}
-	if t.SDL_texture == nil {
-		t.SetValue(t.Value)
+	if b.SDLTexture == nil {
+		b.SetValue(b.Value)
 	}
-	held_offset := int32(0)
-	if t.Style.BackgroundColor.A > 0 {
-		offset_y := int32(t.h / 10)
-		if t.Held {
-			held_offset = offset_y
+	heldOffset := int32(0)
+	if b.Style.BackgroundColor.A > 0 {
+		offsetY := int32(b.h / 10)
+		if b.Held {
+			heldOffset = offsetY
 		}
 		// Draw top portion
 		dst := sdl.Rect{
-			X: t.x,
-			Y: t.y + held_offset,
-			W: t.w,
-			H: t.h - offset_y,
+			X: b.x,
+			Y: b.y + heldOffset,
+			W: b.w,
+			H: b.h - offsetY,
 		}
-		t.Context.Renderer.SetDrawColor(t.Style.BackgroundColor.R, t.Style.BackgroundColor.G, t.Style.BackgroundColor.B, t.Style.BackgroundColor.A)
-		t.Context.Renderer.FillRect(&dst)
-		if !t.Held {
+		b.Context.Renderer.SetDrawColor(b.Style.BackgroundColor.R, b.Style.BackgroundColor.G, b.Style.BackgroundColor.B, b.Style.BackgroundColor.A)
+		b.Context.Renderer.FillRect(&dst)
+		if !b.Held {
 			// Draw bottom portion
 			dst = sdl.Rect{
-				X: t.x,
-				Y: t.y + (t.h - offset_y),
-				W: t.w,
-				H: offset_y,
+				X: b.x,
+				Y: b.y + (b.h - offsetY),
+				W: b.w,
+				H: offsetY,
 			}
-			t.Context.Renderer.SetDrawColor(t.Style.BackgroundColor.R-64, t.Style.BackgroundColor.G-64, t.Style.BackgroundColor.B-64, t.Style.BackgroundColor.A)
-			t.Context.Renderer.FillRect(&dst)
+			b.Context.Renderer.SetDrawColor(b.Style.BackgroundColor.R-64, b.Style.BackgroundColor.G-64, b.Style.BackgroundColor.B-64, b.Style.BackgroundColor.A)
+			b.Context.Renderer.FillRect(&dst)
 		}
-		if t.Focused {
+		if b.Focused {
 			// Draw our border
 			dst := sdl.Rect{
-				X: t.x,
-				Y: t.y + held_offset,
-				W: t.w,
-				H: t.h - held_offset,
+				X: b.x,
+				Y: b.y + heldOffset,
+				W: b.w,
+				H: b.h - heldOffset,
 			}
-			t.Context.Renderer.SetDrawColor(255-t.Style.BackgroundColor.R, 255-t.Style.BackgroundColor.G, 255-t.Style.BackgroundColor.B, 255-t.Style.BackgroundColor.A)
-			t.Context.Renderer.DrawRect(&dst)
+			b.Context.Renderer.SetDrawColor(255-b.Style.BackgroundColor.R, 255-b.Style.BackgroundColor.G, 255-b.Style.BackgroundColor.B, 255-b.Style.BackgroundColor.A)
+			b.Context.Renderer.DrawRect(&dst)
 		}
 	}
 	// Render text texture
-	tx := t.x + t.pl
-	ty := t.y + t.pt
-	if t.Style.ContentOrigin.Has(CENTERX) {
-		tx += t.w/2 - t.tw/2 - t.pr
+	tx := b.x + b.pl
+	ty := b.y + b.pt
+	if b.Style.ContentOrigin.Has(CENTERX) {
+		tx += b.w/2 - b.tw/2 - b.pr
 	}
-	if t.Style.ContentOrigin.Has(CENTERY) {
-		ty += t.h/2 - t.th/2 - t.pb
+	if b.Style.ContentOrigin.Has(CENTERY) {
+		ty += b.h/2 - b.th/2 - b.pb
 	}
 	dst := sdl.Rect{
 		X: tx,
-		Y: ty + held_offset,
-		W: t.tw,
-		H: t.th,
+		Y: ty + heldOffset,
+		W: b.tw,
+		H: b.th,
 	}
-	t.Context.Renderer.Copy(t.SDL_texture, nil, &dst)
-	t.BaseElement.Render()
+	b.Context.Renderer.Copy(b.SDLTexture, nil, &dst)
+	b.BaseElement.Render()
 }
 
 // SetValue sets the text value of the button and updates the SDL texture as
 // needed.
-func (t *ButtonElement) SetValue(value string) (err error) {
-	t.Value = value
-	if t.Context == nil || t.Context.Font == nil {
+func (b *ButtonElement) SetValue(value string) (err error) {
+	b.Value = value
+	if b.Context == nil || b.Context.Font == nil {
 		return
 	}
-	if t.SDL_texture != nil {
-		t.SDL_texture.Destroy()
-		t.SDL_texture = nil
+	if b.SDLTexture != nil {
+		b.SDLTexture.Destroy()
+		b.SDLTexture = nil
 	}
-	surface, err := t.Context.Font.RenderUTF8Blended(t.Value,
+	surface, err := b.Context.Font.RenderUTF8Blended(b.Value,
 		sdl.Color{
-			t.Style.ForegroundColor.R,
-			t.Style.ForegroundColor.G,
-			t.Style.ForegroundColor.B,
-			t.Style.ForegroundColor.A,
+			R: b.Style.ForegroundColor.R,
+			G: b.Style.ForegroundColor.G,
+			B: b.Style.ForegroundColor.B,
+			A: b.Style.ForegroundColor.A,
 		})
 	defer surface.Free()
 	if err != nil {
 		panic(err)
 	}
-	t.SDL_texture, err = t.Context.Renderer.CreateTextureFromSurface(surface)
+	b.SDLTexture, err = b.Context.Renderer.CreateTextureFromSurface(surface)
 	if err != nil {
 		panic(err)
 	}
 
-	t.tw = surface.W
-	t.th = surface.H
-	if t.Style.ResizeToContent {
-		t.Style.W.Set(float64(surface.W))
-		t.Style.H.Set(float64(surface.H))
+	b.tw = surface.W
+	b.th = surface.H
+	if b.Style.ResizeToContent {
+		b.Style.W.Set(float64(surface.W))
+		b.Style.H.Set(float64(surface.H))
 	}
-	t.Dirty = true
+	b.Dirty = true
 	return
 }
 
 // CalculateStyle creates the SDL texture if it doesn't exist before calling
 // BaseElement.CalculateStyle()
-func (t *ButtonElement) CalculateStyle() {
-	if t.SDL_texture == nil {
-		t.SetValue(t.Value)
+func (b *ButtonElement) CalculateStyle() {
+	if b.SDLTexture == nil {
+		b.SetValue(b.Value)
 	}
-	t.BaseElement.CalculateStyle()
+	b.BaseElement.CalculateStyle()
 }
 
 // OnKeyDown sets the button's held state when the enter key is pressed.

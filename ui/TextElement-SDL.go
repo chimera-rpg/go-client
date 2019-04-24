@@ -9,9 +9,9 @@ import (
 // TextElement is our main element for handling and drawing text.
 type TextElement struct {
 	BaseElement
-	SDL_texture *sdl.Texture
-	tw          int32 // Texture width
-	th          int32 // Texture height
+	SDLTexture *sdl.Texture
+	tw         int32 // Texture width
+	th         int32 // Texture height
 }
 
 // TextElementConfig is the configuration object passed to NewTextElement.
@@ -44,8 +44,8 @@ func NewTextElement(c TextElementConfig) ElementI {
 
 // Destroy handles the destruction of the underlying texture.
 func (t *TextElement) Destroy() {
-	if t.SDL_texture != nil {
-		t.SDL_texture.Destroy()
+	if t.SDLTexture != nil {
+		t.SDLTexture.Destroy()
 	}
 }
 
@@ -55,7 +55,7 @@ func (t *TextElement) Render() {
 	if t.IsHidden() {
 		return
 	}
-	if t.SDL_texture == nil {
+	if t.SDLTexture == nil {
 		t.SetValue(t.Value)
 	}
 	if t.Style.BackgroundColor.A > 0 {
@@ -83,7 +83,7 @@ func (t *TextElement) Render() {
 		W: t.tw,
 		H: t.th,
 	}
-	t.Context.Renderer.Copy(t.SDL_texture, nil, &dst)
+	t.Context.Renderer.Copy(t.SDLTexture, nil, &dst)
 	t.BaseElement.Render()
 }
 
@@ -94,9 +94,9 @@ func (t *TextElement) SetValue(value string) (err error) {
 	if t.Context == nil || t.Context.Font == nil {
 		return
 	}
-	if t.SDL_texture != nil {
-		t.SDL_texture.Destroy()
-		t.SDL_texture = nil
+	if t.SDLTexture != nil {
+		t.SDLTexture.Destroy()
+		t.SDLTexture = nil
 	}
 	surface, err := t.Context.Font.RenderUTF8Blended(t.Value,
 		sdl.Color{
@@ -109,7 +109,7 @@ func (t *TextElement) SetValue(value string) (err error) {
 	if err != nil {
 		panic(err)
 	}
-	t.SDL_texture, err = t.Context.Renderer.CreateTextureFromSurface(surface)
+	t.SDLTexture, err = t.Context.Renderer.CreateTextureFromSurface(surface)
 	if err != nil {
 		panic(err)
 	}
@@ -127,7 +127,7 @@ func (t *TextElement) SetValue(value string) (err error) {
 // CalculateStyle is the same as BaseElement with the addition of always
 // creating the SDL texture if it has not been created.
 func (t *TextElement) CalculateStyle() {
-	if t.SDL_texture == nil {
+	if t.SDLTexture == nil {
 		t.SetValue(t.Value)
 	}
 	t.BaseElement.CalculateStyle()

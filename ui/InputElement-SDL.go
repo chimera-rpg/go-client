@@ -12,7 +12,7 @@ import (
 // field.
 type InputElement struct {
 	BaseElement
-	SDL_texture *sdl.Texture
+	SDLTexture  *sdl.Texture
 	Image       []byte
 	tw          int32 // Texture width
 	th          int32 // Texture height
@@ -60,136 +60,136 @@ func NewInputElement(c InputElementConfig) ElementI {
 }
 
 // Destroy cleans up the InputElement's resources.
-func (t *InputElement) Destroy() {
-	if t.SDL_texture != nil {
-		t.SDL_texture.Destroy()
+func (i *InputElement) Destroy() {
+	if i.SDLTexture != nil {
+		i.SDLTexture.Destroy()
 	}
 }
 
 // Render renders the InputElement to the rendering context, with various
 // conditionally rendered aspects to represent state.
-func (t *InputElement) Render() {
-	if t.IsHidden() {
+func (i *InputElement) Render() {
+	if i.IsHidden() {
 		return
 	}
-	if t.SDL_texture == nil {
-		t.SetValue(t.Value)
+	if i.SDLTexture == nil {
+		i.SetValue(i.Value)
 	}
-	if t.Style.BackgroundColor.A > 0 {
+	if i.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
-			X: t.x,
-			Y: t.y,
-			W: t.w,
-			H: t.h,
+			X: i.x,
+			Y: i.y,
+			W: i.w,
+			H: i.h,
 		}
-		t.Context.Renderer.SetDrawColor(t.Style.BackgroundColor.R, t.Style.BackgroundColor.G, t.Style.BackgroundColor.B, t.Style.BackgroundColor.A)
-		t.Context.Renderer.FillRect(&dst)
+		i.Context.Renderer.SetDrawColor(i.Style.BackgroundColor.R, i.Style.BackgroundColor.G, i.Style.BackgroundColor.B, i.Style.BackgroundColor.A)
+		i.Context.Renderer.FillRect(&dst)
 	}
 	// Render text texture
-	tx := t.x + t.pl
-	ty := t.y + t.pt
-	if t.Style.ContentOrigin.Has(CENTERX) {
-		tx += t.w/2 - t.tw/2 - t.pr
+	tx := i.x + i.pl
+	ty := i.y + i.pt
+	if i.Style.ContentOrigin.Has(CENTERX) {
+		tx += i.w/2 - i.tw/2 - i.pr
 	}
-	if t.Style.ContentOrigin.Has(CENTERY) {
-		ty += t.h/2 - t.th/2 - t.pb
+	if i.Style.ContentOrigin.Has(CENTERY) {
+		ty += i.h/2 - i.th/2 - i.pb
 	}
 	dst := sdl.Rect{
 		X: tx,
 		Y: ty,
-		W: t.tw,
-		H: t.th,
+		W: i.tw,
+		H: i.th,
 	}
-	t.Context.Renderer.Copy(t.SDL_texture, nil, &dst)
-	if t.Focused {
+	i.Context.Renderer.Copy(i.SDLTexture, nil, &dst)
+	if i.Focused {
 		// Draw our border
-		if t.Style.BackgroundColor.A > 0 {
+		if i.Style.BackgroundColor.A > 0 {
 			dst := sdl.Rect{
-				X: t.x,
-				Y: t.y,
-				W: t.w,
-				H: t.h,
+				X: i.x,
+				Y: i.y,
+				W: i.w,
+				H: i.h,
 			}
-			t.Context.Renderer.SetDrawColor(255-t.Style.BackgroundColor.R, 255-t.Style.BackgroundColor.G, 255-t.Style.BackgroundColor.B, 255-t.Style.BackgroundColor.A)
-			t.Context.Renderer.DrawRect(&dst)
+			i.Context.Renderer.SetDrawColor(255-i.Style.BackgroundColor.R, 255-i.Style.BackgroundColor.G, 255-i.Style.BackgroundColor.B, 255-i.Style.BackgroundColor.A)
+			i.Context.Renderer.DrawRect(&dst)
 		}
 		// Get and draw our cursor position
-		cursor_start, cursor_height, _ := t.Context.Font.SizeUTF8(string(t.composition[:t.cursor]))
-		t.Context.Renderer.SetDrawColor(t.Style.ForegroundColor.R, t.Style.ForegroundColor.G, t.Style.ForegroundColor.B, t.Style.ForegroundColor.A)
-		cursor_dst := sdl.Rect{
-			X: tx + int32(cursor_start) - 1,
+		cursorStart, cursorHeight, _ := i.Context.Font.SizeUTF8(string(i.composition[:i.cursor]))
+		i.Context.Renderer.SetDrawColor(i.Style.ForegroundColor.R, i.Style.ForegroundColor.G, i.Style.ForegroundColor.B, i.Style.ForegroundColor.A)
+		cursorDst := sdl.Rect{
+			X: tx + int32(cursorStart) - 1,
 			Y: ty,
 			W: 1,
-			H: int32(cursor_height),
+			H: int32(cursorHeight),
 		}
-		t.Context.Renderer.FillRect(&cursor_dst)
+		i.Context.Renderer.FillRect(&cursorDst)
 	}
-	t.BaseElement.Render()
+	i.BaseElement.Render()
 }
 
 // SetValue sets the text value of the input field and recreates and renders
 // to its underlying texture.
-func (t *InputElement) SetValue(value string) (err error) {
-	t.Value = value
-	var render_str string
-	render_color := sdl.Color{
-		t.Style.ForegroundColor.R,
-		t.Style.ForegroundColor.G,
-		t.Style.ForegroundColor.B,
-		t.Style.ForegroundColor.A,
+func (i *InputElement) SetValue(value string) (err error) {
+	i.Value = value
+	var renderStr string
+	renderColor := sdl.Color{
+		R: i.Style.ForegroundColor.R,
+		G: i.Style.ForegroundColor.G,
+		B: i.Style.ForegroundColor.B,
+		A: i.Style.ForegroundColor.A,
 	}
-	if t.Context == nil || t.Context.Font == nil {
+	if i.Context == nil || i.Context.Font == nil {
 		return
 	}
-	if t.SDL_texture != nil {
-		t.SDL_texture.Destroy()
-		t.SDL_texture = nil
+	if i.SDLTexture != nil {
+		i.SDLTexture.Destroy()
+		i.SDLTexture = nil
 	}
 
 	if len(value) == 0 {
 		// NOTE: RenderUTF8Blended cannot take a zero-length string, so we're
 		// populating a blank space if needed.
-		if len(t.placeholder) == 0 {
-			render_str = " "
+		if len(i.placeholder) == 0 {
+			renderStr = " "
 		} else {
-			render_str = t.placeholder
-			render_color.A = render_color.A / 2
+			renderStr = i.placeholder
+			renderColor.A = renderColor.A / 2
 		}
 	} else {
-		if t.isPassword {
-			render_str = strings.Repeat("*", len(value))
+		if i.isPassword {
+			renderStr = strings.Repeat("*", len(value))
 		} else {
-			render_str = value
+			renderStr = value
 		}
 	}
 
-	surface, err := t.Context.Font.RenderUTF8Blended(render_str, render_color)
+	surface, err := i.Context.Font.RenderUTF8Blended(renderStr, renderColor)
 	defer surface.Free()
 	if err != nil {
 		panic(err)
 	}
-	t.SDL_texture, err = t.Context.Renderer.CreateTextureFromSurface(surface)
+	i.SDLTexture, err = i.Context.Renderer.CreateTextureFromSurface(surface)
 	if err != nil {
 		panic(err)
 	}
 
-	t.tw = surface.W
-	t.th = surface.H
-	if t.Style.ResizeToContent {
-		t.Style.W.Set(float64(surface.W))
-		t.Style.H.Set(float64(surface.H))
+	i.tw = surface.W
+	i.th = surface.H
+	if i.Style.ResizeToContent {
+		i.Style.W.Set(float64(surface.W))
+		i.Style.H.Set(float64(surface.H))
 	}
-	t.Dirty = true
+	i.Dirty = true
 	return
 }
 
-// CalculateStyle sets the SDL_texture if it doesn't exist before calculating
+// CalculateStyle sets the SDLTexture if it doesn't exist before calculating
 // the style.
-func (t *InputElement) CalculateStyle() {
-	if t.SDL_texture == nil {
-		t.SetValue(t.Value)
+func (i *InputElement) CalculateStyle() {
+	if i.SDLTexture == nil {
+		i.SetValue(i.Value)
 	}
-	t.BaseElement.CalculateStyle()
+	i.BaseElement.CalculateStyle()
 }
 
 // OnFocus calls sdl.StartTextInput
@@ -219,7 +219,7 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	case 8: // backspace
 		if i.cursor > 0 {
 			i.composition = append(i.composition[:i.cursor-1], i.composition[i.cursor:]...)
-			i.cursor -= 1
+			i.cursor--
 		}
 	case 127: // delete
 		if i.cursor < len(i.composition) {
@@ -227,12 +227,12 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16) bool {
 		}
 	case 9: // tab
 	case 79: // right
-		i.cursor += 1
+		i.cursor++
 		if i.cursor > len(i.composition) {
 			i.cursor = len(i.composition)
 		}
 	case 80: // left
-		i.cursor -= 1
+		i.cursor--
 		if i.cursor < 0 {
 			i.cursor = 0
 		}

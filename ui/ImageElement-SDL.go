@@ -10,10 +10,10 @@ import (
 // ImageElement is the element responsible for rendering an image.
 type ImageElement struct {
 	BaseElement
-	SDL_texture *sdl.Texture
-	Image       []byte
-	tw          int32 // Texture width
-	th          int32 // Texture height
+	SDLTexture *sdl.Texture
+	Image      []byte
+	tw         int32 // Texture width
+	th         int32 // Texture height
 }
 
 // ImageElementConfig is the configuration for construction.
@@ -40,8 +40,8 @@ func NewImageElement(c ImageElementConfig) ElementI {
 
 // Destroy destroys the underlying ImageElement.
 func (i *ImageElement) Destroy() {
-	if i.SDL_texture != nil {
-		i.SDL_texture.Destroy()
+	if i.SDLTexture != nil {
+		i.SDLTexture.Destroy()
 	}
 }
 
@@ -50,7 +50,7 @@ func (i *ImageElement) Render() {
 	if i.IsHidden() {
 		return
 	}
-	if i.SDL_texture == nil {
+	if i.SDLTexture == nil {
 		i.SetImage(i.Image)
 	}
 	if i.Style.BackgroundColor.A > 0 {
@@ -69,7 +69,7 @@ func (i *ImageElement) Render() {
 		W: i.w,
 		H: i.h,
 	}
-	i.Context.Renderer.Copy(i.SDL_texture, nil, &dst)
+	i.Context.Renderer.Copy(i.SDLTexture, nil, &dst)
 	i.BaseElement.Render()
 }
 
@@ -90,7 +90,7 @@ func (i *ImageElement) SetImage(png []byte) {
 			panic(err)
 		}
 	}
-	i.SDL_texture, err = i.Context.Renderer.CreateTextureFromSurface(surface)
+	i.SDLTexture, err = i.Context.Renderer.CreateTextureFromSurface(surface)
 	if err != nil {
 		panic(err)
 	}
