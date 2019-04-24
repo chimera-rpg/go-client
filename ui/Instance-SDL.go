@@ -9,6 +9,7 @@ import (
 	"github.com/veandco/go-sdl2/ttf"
 )
 
+// Instance is the managing instance of the entire UI system.
 type Instance struct {
 	HeldElement     ElementI
 	FocusedElement  ElementI
@@ -18,14 +19,19 @@ type Instance struct {
 	Context         Context
 }
 
-func NewInstance() (inst *Instance, e error) {
-	inst = &Instance{}
+// NewInstance constructs a new Instance.
+func NewInstance() (instance *Instance, e error) {
+	instance = &Instance{}
 	return
 }
 
+// GlobalInstance is our pointer to the GlobalInstance. Used for Focus/Blur
+// calls from within Elements.
 var GlobalInstance *Instance
 
-func (i *Instance) Setup(data_root string) (err error) {
+// Setup sets up the needed libraries and pulls all needed data from the
+// location passed in the call.
+func (instance *Instance) Setup(dataRoot string) (err error) {
 	// Initialize SDL
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		panic(err)
@@ -35,11 +41,11 @@ func (i *Instance) Setup(data_root string) (err error) {
 		panic(err)
 	}
 	// Set up our UI Context
-	if i.Context.Font, err = ttf.OpenFont(path.Join(data_root, "fonts", "DefaultFont.ttf"), 12); err != nil {
+	if instance.Context.Font, err = ttf.OpenFont(path.Join(dataRoot, "fonts", "DefaultFont.ttf"), 12); err != nil {
 		panic(err)
 	}
 
-	err = i.RootWindow.Setup(WindowConfig{
+	err = instance.RootWindow.Setup(WindowConfig{
 		Value: "Chimera",
 		Style: `
 			BackgroundColor 0 0 0 255
@@ -49,117 +55,123 @@ func (i *Instance) Setup(data_root string) (err error) {
 		RenderFunc: func(w *Window) {
 			w.Context.Renderer.Clear()
 		},
-		Context: &i.Context,
+		Context: &instance.Context,
 	})
 	return
 }
-func (i *Instance) Cleanup() {
-	i.RootWindow.Destroy()
+
+// Cleanup cleans up after our instance.
+func (instance *Instance) Cleanup() {
+	instance.RootWindow.Destroy()
 	sdl.Quit()
 }
 
-func (i *Instance) Loop() {
-	i.Running = true
+// Loop is our main event handling and rendering loop.
+func (instance *Instance) Loop() {
+	instance.Running = true
 	// Render initial view.
-	i.RootWindow.RenderMutex.Lock()
-	i.RootWindow.Render()
-	i.RootWindow.RenderMutex.Unlock()
-	for i.Running {
+	instance.RootWindow.RenderMutex.Lock()
+	instance.RootWindow.Render()
+	instance.RootWindow.RenderMutex.Unlock()
+	for instance.Running {
 		event := sdl.WaitEvent()
 		switch t := event.(type) {
 		case *sdl.QuitEvent:
-			i.Running = false
+			instance.Running = false
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_RESIZED {
-				i.RootWindow.RenderMutex.Lock()
-				i.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
-				i.RootWindow.RenderMutex.Unlock()
+				instance.RootWindow.RenderMutex.Lock()
+				instance.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
+				instance.RootWindow.RenderMutex.Unlock()
 			} else if t.Event == sdl.WINDOWEVENT_CLOSE {
-				i.Running = false
+				instance.Running = false
 			} else if t.Event == sdl.WINDOWEVENT_EXPOSED {
-				i.RootWindow.RenderMutex.Lock()
-				i.RootWindow.Render()
-				i.RootWindow.RenderMutex.Unlock()
+				instance.RootWindow.RenderMutex.Lock()
+				instance.RootWindow.Render()
+				instance.RootWindow.RenderMutex.Unlock()
 			}
 		default:
-			i.HandleEvent(event)
-			if i.RootWindow.HasDirt() {
-				i.RootWindow.RenderMutex.Lock()
-				i.RootWindow.Render()
-				i.RootWindow.RenderMutex.Unlock()
+			instance.HandleEvent(event)
+			if instance.RootWindow.HasDirt() {
+				instance.RootWindow.RenderMutex.Lock()
+				instance.RootWindow.Render()
+				instance.RootWindow.RenderMutex.Unlock()
 			}
 		}
 	}
 }
 
-func (i *Instance) HandleEvent(event sdl.Event) {
+// HandleEvent handles the passed SDL events from Loop.
+func (instance *Instance) HandleEvent(event sdl.Event) {
 	switch t := event.(type) {
 	case *sdl.WindowEvent:
 	case *sdl.MouseMotionEvent:
 	case *sdl.MouseButtonEvent:
-		if i.FocusedElement != nil {
-			if !i.FocusedElement.Hit(t.X, t.Y) {
+		if instance.FocusedElement != nil {
+			if !instance.FocusedElement.Hit(t.X, t.Y) {
 				if t.State == 1 {
-					i.BlurFocusedElement()
+					instance.BlurFocusedElement()
 				}
 			}
 		}
-		if i.HeldElement != nil {
+		if instance.HeldElement != nil {
 			if t.State == sdl.RELEASED && t.Button == sdl.BUTTON_LEFT {
-				i.HeldElement.SetHeld(false)
-				i.HeldElement = nil
+				instance.HeldElement.SetHeld(false)
+				instance.HeldElement = nil
 			}
 		}
 	case *sdl.KeyboardEvent:
-		if i.FocusedElement != nil {
+		if instance.FocusedElement != nil {
 			if t.Keysym.Sym == 27 {
-				i.BlurFocusedElement()
+				instance.BlurFocusedElement()
 				return
 			} else if t.Keysym.Sym == 9 && t.State == sdl.RELEASED { // tab
 				if t.Keysym.Mod&1 == 1 { // Shift
-					i.FocusPreviousElement(i.FocusedElement)
+					instance.FocusPreviousElement(instance.FocusedElement)
 				} else {
-					i.FocusNextElement(i.FocusedElement)
+					instance.FocusNextElement(instance.FocusedElement)
 				}
 				return
 			}
 			if t.State == sdl.PRESSED {
-				i.FocusedElement.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod)
+				instance.FocusedElement.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod)
 			} else {
-				i.FocusedElement.OnKeyUp(uint8(t.Keysym.Sym), t.Keysym.Mod)
+				instance.FocusedElement.OnKeyUp(uint8(t.Keysym.Sym), t.Keysym.Mod)
 			}
 			return
 		}
 	case *sdl.TextInputEvent:
-		if i.FocusedElement != nil {
-			i.FocusedElement.OnTextInput(t.GetText())
+		if instance.FocusedElement != nil {
+			instance.FocusedElement.OnTextInput(t.GetText())
 		}
 		return
 	case *sdl.TextEditingEvent:
-		if i.FocusedElement != nil {
-			i.FocusedElement.OnTextEdit(t.GetText(), t.Start, t.Length)
+		if instance.FocusedElement != nil {
+			instance.FocusedElement.OnTextEdit(t.GetText(), t.Start, t.Length)
 		}
 		return
 	}
 	// If any events weren't handled above, we send the event down the tree.
-	i.IterateEvent(i.RootWindow.This, event)
+	instance.IterateEvent(instance.RootWindow.This, event)
 }
 
-func (inst *Instance) IterateEvent(e ElementI, event sdl.Event) {
+// IterateEvent handles iterating an event down the entire Element tree
+// starting at the passed element.
+func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 	switch t := event.(type) {
 	case *sdl.WindowEvent:
 	case *sdl.MouseMotionEvent:
 		if e.Hit(t.X, t.Y) {
 			// OnMouseIn
 			existsInHovered := false
-			for _, he := range inst.HoveredElements {
+			for _, he := range instance.HoveredElements {
 				if he == e {
 					existsInHovered = true
 					break
 				}
 			}
 			if !existsInHovered {
-				inst.HoveredElements = append(inst.HoveredElements, e)
+				instance.HoveredElements = append(instance.HoveredElements, e)
 				e.OnMouseIn(t.X, t.Y)
 			}
 			// OnMouseMove
@@ -168,11 +180,11 @@ func (inst *Instance) IterateEvent(e ElementI, event sdl.Event) {
 			}
 		} else {
 			// OnMouseOut
-			for i, he := range inst.HoveredElements {
+			for i, he := range instance.HoveredElements {
 				if he == e {
 					he.OnMouseOut(t.X, t.Y)
-					inst.HoveredElements[i] = inst.HoveredElements[len(inst.HoveredElements)-1]
-					inst.HoveredElements = inst.HoveredElements[:len(inst.HoveredElements)-1]
+					instance.HoveredElements[i] = instance.HoveredElements[len(instance.HoveredElements)-1]
+					instance.HoveredElements = instance.HoveredElements[:len(instance.HoveredElements)-1]
 					break
 				}
 			}
@@ -181,10 +193,10 @@ func (inst *Instance) IterateEvent(e ElementI, event sdl.Event) {
 		if e.Hit(t.X, t.Y) {
 			if t.State == sdl.PRESSED {
 				if e.CanFocus() {
-					inst.FocusElement(e)
+					instance.FocusElement(e)
 				}
 				if t.Button == sdl.BUTTON_LEFT && e.CanHold() {
-					inst.HeldElement = e
+					instance.HeldElement = e
 					e.SetHeld(true)
 				}
 				if !e.OnMouseButtonDown(t.Button, t.X, t.Y) {
@@ -212,44 +224,52 @@ func (inst *Instance) IterateEvent(e ElementI, event sdl.Event) {
 		}
 	}
 	for _, child := range e.GetChildren() {
-		inst.IterateEvent(child, event)
+		instance.IterateEvent(child, event)
 	}
 }
 
-func (inst *Instance) BlurFocusedElement() {
-	if inst.FocusedElement != nil {
-		inst.FocusedElement.SetFocused(false)
-		inst.FocusedElement.OnBlur()
+// BlurFocusedElement blurs the current focused element if it exists.
+func (instance *Instance) BlurFocusedElement() {
+	if instance.FocusedElement != nil {
+		instance.FocusedElement.SetFocused(false)
+		instance.FocusedElement.OnBlur()
 	}
-	inst.FocusedElement = nil
+	instance.FocusedElement = nil
 }
 
-func (inst *Instance) FocusElement(e ElementI) {
-	if inst.FocusedElement != nil && inst.FocusedElement != e {
-		inst.FocusedElement.SetFocused(false)
-		inst.FocusedElement.OnBlur()
+// FocusElement focuses the target element, blurring the previous element if
+// it exists.
+func (instance *Instance) FocusElement(e ElementI) {
+	if instance.FocusedElement != nil && instance.FocusedElement != e {
+		instance.FocusedElement.SetFocused(false)
+		instance.FocusedElement.OnBlur()
 	}
 	e.SetFocused(true)
 	e.OnFocus()
-	inst.FocusedElement = e
+	instance.FocusedElement = e
 }
 
-func (inst *Instance) FocusNextElement(start ElementI) {
+// FocusNextElement finds and focuses the next focusable element after
+// the passed element.
+func (instance *Instance) FocusNextElement(start ElementI) {
 	found := false
 	for _, c := range start.GetParent().GetChildren() {
 		if c == start {
 			found = true
 		} else if found {
 			if c.CanFocus() {
-				inst.FocusElement(c)
+				instance.FocusElement(c)
 				return
 			}
 		}
 	}
 	// if we get here just Blur the focused one
-	inst.BlurFocusedElement()
+	instance.BlurFocusedElement()
 }
-func (inst *Instance) FocusPreviousElement(start ElementI) {
+
+// FocusPreviousElement finds and focuses the previous element before
+// the passed element.
+func (instance *Instance) FocusPreviousElement(start ElementI) {
 	found := false
 	children := start.GetParent().GetChildren()
 	for i := len(children) - 1; i >= 0; i-- {
@@ -258,11 +278,11 @@ func (inst *Instance) FocusPreviousElement(start ElementI) {
 			found = true
 		} else if found {
 			if c.CanFocus() {
-				inst.FocusElement(c)
+				instance.FocusElement(c)
 				return
 			}
 		}
 	}
 	// if we get here just Blur the focused one
-	inst.BlurFocusedElement()
+	instance.BlurFocusedElement()
 }

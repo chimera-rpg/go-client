@@ -12,6 +12,7 @@ type styleParser struct {
 	currentToken lexer.Token
 }
 
+// ParseStyle parses the given string into the passed Style.
 func ParseStyle(s *Style, str string) {
 	parser := new(styleParser)
 	parser.lexer = NewObjectLexer(str)
