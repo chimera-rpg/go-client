@@ -1,19 +1,18 @@
-package Client
+package client
 
 import (
 	"fmt"
-	"github.com/chimera-rpg/go-client/UI"
-	"github.com/chimera-rpg/go-common/Net"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/ttf"
 	"log"
 	"os"
 	"path"
+
+	"github.com/chimera-rpg/go-client/ui"
+	"github.com/chimera-rpg/go-common/Net"
 )
 
+// Client is the main handler of state, network transmission, and otherwise.
 type Client struct {
-	RootWindow  *UI.Window
-	DefaultFont *ttf.Font
+	RootWindow *ui.Window
 	Net.Connection
 	LogHistory    []string
 	State         StateI
@@ -22,42 +21,25 @@ type Client struct {
 	isRunning     bool
 	RenderChannel chan struct{}
 	StateChannel  chan StateMessage
-	EventChannel  chan sdl.Event
 }
 
+// NewClient returns a new instance of a Client
 func NewClient() (c *Client, e error) {
 	c = &Client{}
 	c.DataRoot = path.Join("share", "chimera", "client")
 	return
 }
 
-func (c *Client) Setup(inst *UI.Instance) (err error) {
+// Setup sets up a Client's base data structures for use.
+func (c *Client) Setup(inst *ui.Instance) (err error) {
 	c.Log = log.New(os.Stdout, "Client: ", log.Lshortfile)
 
-	/*err = UI.RootWindow.Setup(UI.WindowConfig{
-		Value: "Chimera",
-		Style: UI.Style{
-			X: UI.Number{Value: 0},
-			Y: UI.Number{Value: 0},
-			W: UI.Number{Value: 1280},
-			H: UI.Number{Value: 720},
-		},
-		RenderFunc: func(w *UI.Window) {
-			w.Context.Renderer.SetDrawColor(128, 196, 128, 255)
-			w.Context.Renderer.Clear()
-		},
-		Context: &UI.Context{},
-	})
-	if err != nil {
-		return
-	}*/
 	c.RootWindow = &inst.RootWindow
 
 	Net.RegisterCommands()
 
 	c.RenderChannel = make(chan struct{})
 	c.StateChannel = make(chan StateMessage)
-	c.EventChannel = make(chan sdl.Event)
 
 	// Render the initial window
 	c.RootWindow.Render()
@@ -66,17 +48,21 @@ func (c *Client) Setup(inst *UI.Instance) (err error) {
 	return
 }
 
+// Destroy cleans up the client and its last sate.
 func (c *Client) Destroy() {
 	c.isRunning = false
 	c.Close()
 	c.State.Close()
 }
 
+// Print provides an interface to Log that is instantiated to the Client itself.
 func (c *Client) Print(format string, a ...interface{}) {
 	c.Log.Printf(format, a...)
 	c.LogHistory = append(c.LogHistory, fmt.Sprintf(format, a...))
 }
 
+// SetState sets the current state to the provided one, optionally passing v
+// to the next state. Calls Close() on the current state.
 func (c *Client) SetState(state StateI, v interface{}) {
 	if c.State != nil {
 		c.State.Close()
@@ -97,6 +83,8 @@ func (c *Client) SetState(state StateI, v interface{}) {
 	}
 }
 
+// ChannelLoop is the client's go routine for listening to and responding to
+// its channels.
 func (c *Client) ChannelLoop() {
 	for c.isRunning {
 		select {
@@ -110,6 +98,7 @@ func (c *Client) ChannelLoop() {
 	}
 }
 
+// GetPNGData is (supposed) to return some form of cached PNG data.
 func (c *Client) GetPNGData(file string) (data []byte) {
 	reader, err := os.Open(path.Join(c.DataRoot, file))
 	if err != nil {
@@ -127,6 +116,7 @@ func (c *Client) GetPNGData(file string) (data []byte) {
 	return
 }
 
+// IsRunning returns whether the client is running or not.
 func (c *Client) IsRunning() bool {
 	return c.isRunning
 }

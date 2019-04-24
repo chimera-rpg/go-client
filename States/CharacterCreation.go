@@ -1,21 +1,21 @@
-package States
+package states
 
 import (
-	"github.com/chimera-rpg/go-client/Client"
-	"github.com/chimera-rpg/go-client/UI"
+	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/Net"
 )
 
 type CharacterCreation struct {
-	Client.State
-	SelectionWindow UI.Window
-	CharacterWindow UI.Window
+	client.State
+	SelectionWindow ui.Window
+	CharacterWindow ui.Window
 }
 
-func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs interface{}, err error) {
+func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
 	s.Client.Log.Print("CharacterCreation State")
 
-	err = s.SelectionWindow.Setup(UI.WindowConfig{
+	err = s.SelectionWindow.Setup(ui.WindowConfig{
 		Value: "Selection",
 		Style: `
 			X 5%
@@ -25,13 +25,13 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 			Origin CenterX CenterY
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *UI.Window) {
+		RenderFunc: func(w *ui.Window) {
 			w.Context.Renderer.SetDrawColor(32, 32, 128, 128)
 			w.Context.Renderer.Clear()
 		},
 	})
 
-	el_selection := UI.NewTextElement(UI.TextElementConfig{
+	el_selection := ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			PaddingLeft 5%
 			PaddingRight 5%
@@ -44,7 +44,7 @@ func (s *CharacterCreation) Init(t interface{}) (next Client.StateI, nextArgs in
 			Y 10%
 		`,
 		Value: "Select your Character",
-		Events: UI.Events{
+		Events: ui.Events{
 			OnMouseMove: func(x int32, y int32) bool {
 				s.Client.Log.Printf("Movement: %dx%d! :)\n", x, y)
 				return false
@@ -102,7 +102,7 @@ func (s *CharacterCreation) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- Client.StateMessage{&List{}, nil}
+			s.Client.StateChannel <- client.StateMessage{&List{}, nil}
 			return
 		}
 	}
@@ -115,12 +115,12 @@ func (s *CharacterCreation) HandleNet(cmd Net.Command) bool {
 			s.Client.Log.Printf("Server rejected us: %s\n", t.String)
 		} else if t.Type == Net.OK {
 			s.Client.Log.Printf("Server accepted us: %s\n", t.String)
-			s.Client.StateChannel <- Client.StateMessage{&Game{}, nil}
+			s.Client.StateChannel <- client.StateMessage{&Game{}, nil}
 			return true
 		}
 	default:
 		s.Client.Log.Print("Server sent non CommandBasic")
-		s.Client.StateChannel <- Client.StateMessage{&List{}, nil}
+		s.Client.StateChannel <- client.StateMessage{&List{}, nil}
 		return true
 	}
 	return false

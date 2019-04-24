@@ -1,5 +1,6 @@
 // +build !MOBILE
-package UI
+
+package ui
 
 type BaseElement struct {
 	/* NOTE: I'm sure this is The Wrong Way(tm), but we're using an Element interface to point to "this" element via This. This "This" must be set by any BaseElement embedding structs to point to itself via pointer.

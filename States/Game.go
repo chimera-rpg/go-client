@@ -1,25 +1,25 @@
-package States
+package states
 
 import (
-	"github.com/chimera-rpg/go-client/Client"
-	"github.com/chimera-rpg/go-client/UI"
+	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/ui"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 type Game struct {
-	Client.State
-	ChatWindow      UI.Window
-	MapWindow       UI.Window
-	InventoryWindow UI.Window
-	GroundWindow    UI.Window
-	StatsWindow     UI.Window
-	StateWindow     UI.Window
+	client.State
+	ChatWindow      ui.Window
+	MapWindow       ui.Window
+	InventoryWindow ui.Window
+	GroundWindow    ui.Window
+	StatsWindow     ui.Window
+	StateWindow     ui.Window
 }
 
-func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, err error) {
+func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	s.Client.Log.Print("Game State")
 	// Sub-window: map
-	err = s.MapWindow.Setup(UI.WindowConfig{
+	err = s.MapWindow.Setup(ui.WindowConfig{
 		Value: "Map",
 		Style: `
 			X 50%
@@ -29,7 +29,7 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 			Origin CenterX CenterY
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *UI.Window) {
+		RenderFunc: func(w *ui.Window) {
 			w.Context.Renderer.SetDrawColor(0, 128, 0, 128)
 			w.Context.Renderer.Clear()
 			//
@@ -43,7 +43,7 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 		},
 	})
 	// Sub-window: chat
-	err = s.ChatWindow.Setup(UI.WindowConfig{
+	err = s.ChatWindow.Setup(ui.WindowConfig{
 		Value: "Chat",
 		Style: `
 			X 8
@@ -52,13 +52,13 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 			H 20%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *UI.Window) {
+		RenderFunc: func(w *ui.Window) {
 			w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
 			w.Context.Renderer.Clear()
 		},
 	})
 	// Sub-window: inventory
-	err = s.InventoryWindow.Setup(UI.WindowConfig{
+	err = s.InventoryWindow.Setup(ui.WindowConfig{
 		Value: "Inventory",
 		Style: `
 			X 50%
@@ -68,14 +68,14 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 			Origin CenterX CenterY
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *UI.Window) {
+		RenderFunc: func(w *ui.Window) {
 			w.Context.Renderer.SetDrawColor(0, 255, 0, 255)
 			w.Context.Renderer.Clear()
 		},
 	})
 	s.InventoryWindow.SetHidden(true)
 	// Sub-window: ground
-	err = s.GroundWindow.Setup(UI.WindowConfig{
+	err = s.GroundWindow.Setup(ui.WindowConfig{
 		Value: "Ground",
 		Style: `
 			Y 70%
@@ -83,13 +83,13 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 			H 30%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *UI.Window) {
+		RenderFunc: func(w *ui.Window) {
 			w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
 			w.Context.Renderer.Clear()
 		},
 	})
 	// Sub-window: stats
-	err = s.StatsWindow.Setup(UI.WindowConfig{
+	err = s.StatsWindow.Setup(ui.WindowConfig{
 		Value: "Stats",
 		Style: `
 			X 30%
@@ -97,14 +97,14 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 			H 20%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *UI.Window) {
+		RenderFunc: func(w *ui.Window) {
 			w.Context.Renderer.SetDrawColor(0, 0, 255, 255)
 			w.Context.Renderer.Clear()
 		},
 	})
 	s.StatsWindow.SetHidden(true)
 	// Sub-window: state
-	err = s.StateWindow.Setup(UI.WindowConfig{
+	err = s.StateWindow.Setup(ui.WindowConfig{
 		Value: "State",
 		Style: `
 			X 30%
@@ -113,7 +113,7 @@ func (s *Game) Init(t interface{}) (state Client.StateI, nextArgs interface{}, e
 			H 20%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *UI.Window) {
+		RenderFunc: func(w *ui.Window) {
 			w.Context.Renderer.SetDrawColor(0, 0, 255, 255)
 			w.Context.Renderer.Clear()
 		},
@@ -141,7 +141,7 @@ func (s *Game) HandleNet() {
 			s.Client.Log.Printf("cmd! %d", cmd.GetType())
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- Client.StateMessage{&List{}, nil}
+			s.Client.StateChannel <- client.StateMessage{&List{}, nil}
 		}
 	}
 	/*defer func() {

@@ -1,5 +1,7 @@
-package UI
+package ui
 
+// ElementI is the interface that all Element(s) are generally passed around
+// and parented as.
 type ElementI interface {
 	// Handlers
 	Destroy()
@@ -43,11 +45,11 @@ type ElementI interface {
 	OnTouchBegin(id uint32, x int32, y int32) bool
 	OnTouchMove(id uint32, x int32, y int32) bool
 	OnTouchEnd(id uint32, x int32, y int32) bool
-	OnMouseButtonDown(button_id uint8, x int32, y int32) bool
+	OnMouseButtonDown(buttonID uint8, x int32, y int32) bool
 	OnMouseMove(x int32, y int32) bool
 	OnMouseIn(x int32, y int32) bool
 	OnMouseOut(x int32, y int32) bool
-	OnMouseButtonUp(button_id uint8, x int32, y int32) bool
+	OnMouseButtonUp(buttonID uint8, x int32, y int32) bool
 	OnKeyDown(key uint8, modifiers uint16) bool
 	OnKeyUp(key uint8, modifiers uint16) bool
 	OnTextInput(str string) bool

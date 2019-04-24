@@ -1,5 +1,6 @@
 // +build !MOBILE
-package UI
+
+package ui
 
 import (
 	"github.com/veandco/go-sdl2/sdl"

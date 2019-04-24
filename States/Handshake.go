@@ -1,19 +1,20 @@
-package States
+package states
 
 import (
 	"fmt"
-	"github.com/chimera-rpg/go-client/Client"
-	"github.com/chimera-rpg/go-client/UI"
-	"github.com/chimera-rpg/go-common/Net"
 	"time"
+
+	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/ui"
+	"github.com/chimera-rpg/go-common/Net"
 )
 
 type Handshake struct {
-	Client.State
-	ServersWindow UI.Window
+	client.State
+	ServersWindow ui.Window
 }
 
-func (s *Handshake) Init(v interface{}) (state Client.StateI, nextArgs interface{}, err error) {
+func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			s.Client.Log.Print("Communication problematic with server, d/cing")
@@ -26,7 +27,7 @@ func (s *Handshake) Init(v interface{}) (state Client.StateI, nextArgs interface
 	if ok == false {
 		msg := fmt.Sprintf("Bad server value.")
 		s.Client.Log.Print(msg)
-		state = Client.StateI(&List{})
+		state = client.StateI(&List{})
 		nextArgs = msg
 		return
 	}
@@ -34,7 +35,7 @@ func (s *Handshake) Init(v interface{}) (state Client.StateI, nextArgs interface
 	err = s.Client.ConnectTo(server)
 	if err != nil {
 		s.Client.Log.Print(err)
-		state = Client.StateI(&List{})
+		state = client.StateI(&List{})
 		nextArgs = err
 		return
 	}
@@ -46,14 +47,14 @@ func (s *Handshake) Init(v interface{}) (state Client.StateI, nextArgs interface
 		default:
 			msg := fmt.Sprintf("Server \"%s\" sent non-handshake..", server)
 			s.Client.Log.Print(msg)
-			state = Client.StateI(&List{})
+			state = client.StateI(&List{})
 			nextArgs = msg
 			return
 		}
 	case <-time.After(2 * time.Second):
 		msg := fmt.Sprintf("Server \"%s\" took too long to respond.", server)
 		s.Client.Log.Printf(msg)
-		state = Client.StateI(&List{})
+		state = client.StateI(&List{})
 		nextArgs = msg
 		return
 	}
@@ -69,19 +70,19 @@ func (s *Handshake) Init(v interface{}) (state Client.StateI, nextArgs interface
 		if t.Type == Net.NOK {
 			msg := fmt.Sprintf("Server \"%s\" rejected us: %s", server, t.String)
 			s.Client.Log.Printf(msg)
-			state = Client.StateI(&List{})
+			state = client.StateI(&List{})
 			nextArgs = msg
 			return
 		}
 	default:
 		msg := fmt.Sprintf("Server \"%s\" sent non CommandBasic.", server)
 		s.Client.Log.Print(msg)
-		state = Client.StateI(&List{})
+		state = client.StateI(&List{})
 		nextArgs = msg
 		return
 	}
 
-	state = Client.StateI(&Login{})
+	state = client.StateI(&Login{})
 
 	return
 }

@@ -1,8 +1,9 @@
-package UI
+package ui
 
 import (
-	"github.com/eczarny/lexer"
 	"unicode"
+
+	"github.com/eczarny/lexer"
 )
 
 const (

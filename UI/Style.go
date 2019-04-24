@@ -1,4 +1,4 @@
-package UI
+package ui
 
 type Bits uint8
 

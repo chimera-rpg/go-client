@@ -1,9 +1,10 @@
-package UI
+package ui
 
 import (
-	"github.com/eczarny/lexer"
 	"strconv"
 	"strings"
+
+	"github.com/eczarny/lexer"
 )
 
 type styleParser struct {

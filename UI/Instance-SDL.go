@@ -1,10 +1,12 @@
 // +build !MOBILE
-package UI
+
+package ui
 
 import (
+	"path"
+
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
-	"path"
 )
 
 type Instance struct {
@@ -62,7 +64,6 @@ func (i *Instance) Loop() {
 	i.RootWindow.RenderMutex.Lock()
 	i.RootWindow.Render()
 	i.RootWindow.RenderMutex.Unlock()
-
 	for i.Running {
 		event := sdl.WaitEvent()
 		switch t := event.(type) {

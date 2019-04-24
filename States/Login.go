@@ -1,16 +1,17 @@
-package States
+package states
 
 import (
 	"fmt"
-	"github.com/chimera-rpg/go-client/Client"
-	"github.com/chimera-rpg/go-client/UI"
+
+	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/Net"
 )
 
 type Login struct {
-	Client.State
-	LoginWindow UI.Window
-	OutputText  UI.ElementI
+	client.State
+	LoginWindow ui.Window
+	OutputText  ui.ElementI
 }
 
 type LoginStateID int
@@ -28,7 +29,7 @@ type LoginState struct {
 	email    string
 }
 
-func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, err error) {
+func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, err error) {
 	lstate := LoginState{DefaultState, "", "", ""}
 
 	switch t := v.(type) {
@@ -36,7 +37,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		lstate = t
 	}
 
-	err = s.LoginWindow.Setup(UI.WindowConfig{
+	err = s.LoginWindow.Setup(ui.WindowConfig{
 		Value: "Selection",
 		Style: `
 			W 100%
@@ -46,9 +47,9 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		Parent: s.Client.RootWindow,
 	})
 
-	var el_username, el_password, el_confirm, el_email, el_login, el_previous UI.ElementI
+	var el_username, el_password, el_confirm, el_email, el_login, el_previous ui.ElementI
 
-	el_username = UI.NewInputElement(UI.InputElementConfig{
+	el_username = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -60,7 +61,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		Value:       lstate.username,
 	})
 	el_username.Focus()
-	el_email = UI.NewInputElement(UI.InputElementConfig{
+	el_email = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 60%
@@ -72,7 +73,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		Value:       lstate.email,
 	})
 
-	el_password = UI.NewInputElement(UI.InputElementConfig{
+	el_password = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -87,7 +88,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		Password:    true,
 		Placeholder: "password",
 		Value:       lstate.username,
-		Events: UI.Events{
+		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
 					el_login.OnMouseButtonUp(1, 0, 0)
@@ -96,7 +97,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	el_confirm = UI.NewInputElement(UI.InputElementConfig{
+	el_confirm = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -110,7 +111,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		`,
 		Password:    true,
 		Placeholder: "password confirm",
-		Events: UI.Events{
+		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
 					el_login.OnMouseButtonUp(1, 0, 0)
@@ -120,7 +121,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		},
 	})
 
-	el_previous = UI.NewButtonElement(UI.ButtonElementConfig{
+	el_previous = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Bottom
 			Y 30
@@ -131,7 +132,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		Value: "BACK",
 	})
 
-	el_login = UI.NewButtonElement(UI.ButtonElementConfig{
+	el_login = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Right Bottom
 			Y 30
@@ -140,7 +141,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 			MinW 100
 		`,
 		Value: "LOGIN",
-		Events: UI.Events{
+		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Send(Net.Command(Net.CommandLogin{
 					Type: Net.LOGIN,
@@ -152,7 +153,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		},
 	})
 
-	s.OutputText = UI.NewTextElement(UI.TextElementConfig{
+	s.OutputText = ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			Origin CenterX Bottom
 			ContentOrigin CenterX CenterY
@@ -170,7 +171,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		s.LoginWindow.AdoptChild(el_username)
 		s.LoginWindow.AdoptChild(el_password)
 		el_previous.SetValue("DISCONNECT")
-		el_previous.SetEvents(UI.Events{
+		el_previous.SetEvents(ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Close()
 				return false
@@ -185,7 +186,7 @@ func (s *Login) Init(v interface{}) (next Client.StateI, nextArgs interface{}, e
 		s.LoginWindow.AdoptChild(el_email)
 		s.LoginWindow.AdoptChild(el_login)
 		el_login.SetValue("REGISTER")
-		el_login.SetEvents(UI.Events{
+		el_login.SetEvents(ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Send(Net.Command(Net.CommandLogin{
 					Type:  Net.REGISTER,
@@ -220,7 +221,7 @@ func (s *Login) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- Client.StateMessage{&List{}, nil}
+			s.Client.StateChannel <- client.StateMessage{&List{}, nil}
 			return
 		case <-s.CloseChan:
 			return
@@ -240,13 +241,13 @@ func (s *Login) HandleNet(cmd Net.Command) bool {
 			msg := fmt.Sprintf("Server accepted us: %s\n", t.String)
 			s.OutputText.SetValue(msg)
 			s.Client.Log.Printf(msg)
-			s.Client.StateChannel <- Client.StateMessage{&CharacterCreation{}, msg}
+			s.Client.StateChannel <- client.StateMessage{&CharacterCreation{}, msg}
 			return true
 		}
 	default:
 		msg := fmt.Sprintf("Server sent non CommandBasic")
 		s.Client.Log.Print(msg)
-		s.Client.StateChannel <- Client.StateMessage{&List{}, msg}
+		s.Client.StateChannel <- client.StateMessage{&List{}, msg}
 		return true
 	}
 	return false

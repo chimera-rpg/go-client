@@ -1,8 +1,4 @@
-package Client
-
-import (
-	"github.com/veandco/go-sdl2/sdl"
-)
+package client
 
 /*
 ~~~~ States In Brief ~~~~
@@ -19,9 +15,7 @@ type StateI interface {
 	CreateChannels()
 	GetCloseChannel() chan bool
 	Close()
-	CommandLoop()
 	SetClient(*Client)
-	HandleRender()
 }
 
 /*
@@ -41,32 +35,26 @@ type State struct {
 	CloseChan chan bool
 }
 
+// SetClient sets the state's Client pointer to the one provided.
 func (s *State) SetClient(c *Client) {
 	s.Client = c
 }
 
+// CreateChannels creates any channels needed by the State.
 func (s *State) CreateChannels() {
 	s.CloseChan = make(chan bool)
 }
+
+// GetCloseChannel returns the Close channel of the State.
 func (s *State) GetCloseChannel() chan bool {
 	return s.CloseChan
 }
 
+// Init is called to set up the State's initial... state.
 func (s *State) Init(t interface{}) (next StateI, nextArgs interface{}, err error) {
 	return
 }
 
+// Close cleans up the State.
 func (s *State) Close() {
-}
-
-func (s *State) HandleRender() {
-}
-
-func (s *State) HandleNet() {
-}
-
-func (s *State) CommandLoop() {
-}
-
-func (s *State) HandleEvent(e *sdl.Event) {
 }

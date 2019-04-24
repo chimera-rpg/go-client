@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/chimera-rpg/go-client/Client"
-	"github.com/chimera-rpg/go-client/States"
-	"github.com/chimera-rpg/go-client/UI"
-	"github.com/veandco/go-sdl2/sdl"
 	"log"
 	"runtime/debug"
+
+	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/states"
+	"github.com/chimera-rpg/go-client/ui"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 func showWindow(flags uint32, format string, a ...interface{}) {
@@ -45,47 +46,45 @@ func main() {
 			debug.PrintStack()
 		}
 	}()
-	log.Print("Starting Chimera client (golang)")
+	log.Print("Starting Chimera clientInstance (golang)")
 
-	client, err := Client.NewClient()
-	defer client.Destroy()
+	clientInstance, err := client.NewClient()
+	defer clientInstance.Destroy()
 	if err != nil {
 		showError("%s", err)
 		return
 	}
 
-	ui, err := UI.NewInstance()
-	defer ui.Cleanup()
+	uiInstance, err := ui.NewInstance()
+	defer uiInstance.Cleanup()
 	if err != nil {
 		showError("%s", err)
 		return
 	}
-	UI.GlobalInstance = ui
+	ui.GlobalInstance = uiInstance
 
 	// Setup our UI
-	ui.Setup(client.DataRoot)
+	uiInstance.Setup(clientInstance.DataRoot)
 
 	// Setup our Client
-	if err = client.Setup(ui); err != nil {
+	if err = clientInstance.Setup(uiInstance); err != nil {
 		showError("%s", err)
 		return
 	}
-
-	// Start the client's channel listening loop as a coroutine
-	go client.ChannelLoop()
+	// Start the clientInstance's channel listening loop as a coroutine
+	go clientInstance.ChannelLoop()
 
 	netPtr := flag.String("connect", "", "SERVER:PORT")
 	flag.Parse()
-
 	// Automatically attempt to connect if the server flag was passed
 	if len(*netPtr) > 0 {
-		client.StateChannel <- Client.StateMessage{&States.Handshake{}, *netPtr}
+		clientInstance.StateChannel <- client.StateMessage{&states.Handshake{}, *netPtr}
 	} else {
-		client.StateChannel <- Client.StateMessage{&States.List{}, nil}
+		clientInstance.StateChannel <- client.StateMessage{&states.List{}, nil}
 	}
 
 	// Start our UI Loop.
-	ui.Loop()
+	uiInstance.Loop()
 
 	log.Print("Sayonara!")
 }

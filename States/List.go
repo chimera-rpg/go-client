@@ -1,17 +1,17 @@
-package States
+package states
 
 import (
-	"github.com/chimera-rpg/go-client/Client"
-	"github.com/chimera-rpg/go-client/UI"
+	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/ui"
 )
 
 type List struct {
-	Client.State
-	ServersWindow UI.Window
+	client.State
+	ServersWindow ui.Window
 }
 
-func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, err error) {
-	err = s.ServersWindow.Setup(UI.WindowConfig{
+func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, err error) {
+	err = s.ServersWindow.Setup(ui.WindowConfig{
 		Value: "Server List",
 		Style: `
 			W 100%
@@ -20,7 +20,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 		Parent: s.Client.RootWindow,
 	})
 
-	el := UI.NewTextElement(UI.TextElementConfig{
+	el := ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			PaddingLeft 5%
 			PaddingRight 5%
@@ -34,9 +34,9 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 		Value: "Please choose a server.",
 	})
 
-	var el_host, el_connect, el_output_text UI.ElementI
+	var el_host, el_connect, el_output_text ui.ElementI
 
-	el_host = UI.NewInputElement(UI.InputElementConfig{
+	el_host = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin Bottom
 			X 0%
@@ -45,7 +45,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 			W 60%
 		`,
 		Placeholder: "host:port",
-		Events: UI.Events{
+		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
 					el_connect.OnMouseButtonUp(1, 0, 0)
@@ -55,7 +55,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 		},
 	})
 	el_host.Focus()
-	el_connect = UI.NewButtonElement(UI.ButtonElementConfig{
+	el_connect = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Bottom
 			X 65%
@@ -64,9 +64,9 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 			W 25%
 		`,
 		Value: "CONNECT",
-		Events: UI.Events{
+		Events: ui.Events{
 			OnMouseButtonUp: func(which uint8, x int32, y int32) bool {
-				s.Client.StateChannel <- Client.StateMessage{&Handshake{}, el_host.GetValue()}
+				s.Client.StateChannel <- client.StateMessage{&Handshake{}, el_host.GetValue()}
 				return false
 			},
 		},
@@ -82,7 +82,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 		in_string = "Type in an address or select a server from above and connect."
 	}
 
-	el_output_text = UI.NewTextElement(UI.TextElementConfig{
+	el_output_text = ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			Origin CenterX Bottom
 			ContentOrigin CenterX CenterY
@@ -95,7 +95,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 		Value: in_string,
 	})
 
-	el_img := UI.NewImageElement(UI.ImageElementConfig{
+	el_img := ui.NewImageElement(ui.ImageElementConfig{
 		Style: `
 			X 50%
 			Y 50%
@@ -112,7 +112,7 @@ func (s *List) Init(v interface{}) (state Client.StateI, nextArgs interface{}, e
 	s.ServersWindow.AdoptChild(el_output_text)
 	el.AdoptChild(el_img)
 
-	el_test := UI.NewTextElement(UI.TextElementConfig{
+	el_test := ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			X 50%
 			Y 50%
