@@ -40,8 +40,8 @@ func NewImageElement(c ImageElementConfig) ElementI {
 
 // Destroy destroys the underlying ImageElement.
 func (i *ImageElement) Destroy() {
-	if t.SDL_texture != nil {
-		t.SDL_texture.Destroy()
+	if i.SDL_texture != nil {
+		i.SDL_texture.Destroy()
 	}
 }
 
