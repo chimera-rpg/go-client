@@ -1,5 +1,3 @@
-// +build !MOBILE
-
 package ui
 
 // BaseElement is our base implementation of the ElementI interface. Every
