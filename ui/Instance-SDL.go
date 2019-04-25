@@ -3,6 +3,7 @@
 package ui
 
 import (
+	"fmt"
 	"path"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -285,4 +286,42 @@ func (instance *Instance) FocusPreviousElement(start ElementI) {
 	}
 	// if we get here just Blur the focused one
 	instance.BlurFocusedElement()
+}
+
+func showWindow(flags uint32, format string, a ...interface{}) {
+	var win *sdl.Window
+
+	buttons := []sdl.MessageBoxButtonData{
+		{Flags: sdl.MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, ButtonID: 1, Text: "OH NO"},
+	}
+
+	if GlobalInstance != nil && GlobalInstance.RootWindow.SDLWindow != nil {
+		win = GlobalInstance.RootWindow.SDLWindow
+	}
+
+	messageboxdata := sdl.MessageBoxData{
+		Flags:       flags,
+		Window:      win,
+		Title:       "Chimera",
+		Message:     fmt.Sprintf(format, a...),
+		Buttons:     buttons,
+		ColorScheme: nil,
+	}
+
+	sdl.ShowMessageBox(&messageboxdata)
+}
+
+// ShowError shows a popup error window.
+func ShowError(format string, a ...interface{}) {
+	showWindow(sdl.MESSAGEBOX_ERROR, format, a...)
+}
+
+// ShowWarning shows a popup warning window.
+func ShowWarning(format string, a ...interface{}) {
+	showWindow(sdl.MESSAGEBOX_WARNING, format, a...)
+}
+
+// ShowInfo shows a popup info window.
+func ShowInfo(format string, a ...interface{}) {
+	showWindow(sdl.MESSAGEBOX_INFORMATION, format, a...)
 }
