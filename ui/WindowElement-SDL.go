@@ -42,6 +42,7 @@ var WindowElementStyle = `
 func NewWindow(c WindowConfig) (w *Window, err error) {
 	window := Window{}
 	err = window.Setup(c)
+	window.OnCreated()
 	return &window, err
 }
 

@@ -7,13 +7,13 @@ import (
 	"path"
 
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/Net"
+	"github.com/chimera-rpg/go-common/network"
 )
 
 // Client is the main handler of state, network transmission, and otherwise.
 type Client struct {
 	RootWindow *ui.Window
-	Net.Connection
+	network.Connection
 	LogHistory    []string
 	State         StateI
 	DataRoot      string
@@ -36,7 +36,7 @@ func (c *Client) Setup(inst *ui.Instance) (err error) {
 
 	c.RootWindow = &inst.RootWindow
 
-	Net.RegisterCommands()
+	network.RegisterCommands()
 
 	c.RenderChannel = make(chan struct{})
 	c.StateChannel = make(chan StateMessage)

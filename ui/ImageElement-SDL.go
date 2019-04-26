@@ -35,6 +35,8 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	i.Style.Parse(c.Style)
 	i.Image = c.Image
 
+	i.OnCreated()
+
 	return ElementI(&i)
 }
 

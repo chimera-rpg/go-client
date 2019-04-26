@@ -6,7 +6,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/Net"
+	"github.com/chimera-rpg/go-common/network"
 )
 
 // Handshake is the state responsible for the initial handshake with a server,
@@ -46,7 +46,7 @@ func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface
 	select {
 	case cmd := <-s.Client.CmdChan:
 		switch cmd.(type) {
-		case Net.CommandHandshake:
+		case network.CommandHandshake:
 		default:
 			msg := fmt.Sprintf("Server \"%s\" sent non-handshake..", server)
 			s.Client.Log.Print(msg)
@@ -62,15 +62,15 @@ func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface
 		return
 	}
 
-	s.Client.Send(Net.Command(Net.CommandHandshake{
-		Version: Net.VERSION,
+	s.Client.Send(network.Command(network.CommandHandshake{
+		Version: network.VERSION,
 		Program: "Golang Client",
 	}))
 
 	cmd := <-s.Client.CmdChan
 	switch t := cmd.(type) {
-	case Net.CommandBasic:
-		if t.Type == Net.NOK {
+	case network.CommandBasic:
+		if t.Type == network.NOK {
 			msg := fmt.Sprintf("Server \"%s\" rejected us: %s", server, t.String)
 			s.Client.Log.Printf(msg)
 			state = client.StateI(&List{})

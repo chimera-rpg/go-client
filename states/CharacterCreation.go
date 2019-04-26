@@ -3,7 +3,7 @@ package states
 import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/Net"
+	"github.com/chimera-rpg/go-common/network"
 )
 
 // CharacterCreation is our State for connecting as, creating, or deleting a
@@ -73,10 +73,10 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	/*for {
 		cmd := <-s.Client.CmdChan
 		switch t := cmd.(type) {
-		case Net.CommandBasic:
-			if t.Type == Net.REJECT {
+		case network.CommandBasic:
+			if t.Type == network.REJECT {
 				s.Client.Log.Printf("Server rejected us: %s\n", t.String)
-			} else if t.Type == Net.OK {
+			} else if t.Type == network.OK {
 				s.Client.Log.Printf("Server accepted us: %s\n", t.String)
 				break
 			}
@@ -114,12 +114,12 @@ func (s *CharacterCreation) Loop() {
 }
 
 // HandleNet manages our network communications.
-func (s *CharacterCreation) HandleNet(cmd Net.Command) bool {
+func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
-	case Net.CommandBasic:
-		if t.Type == Net.REJECT {
+	case network.CommandBasic:
+		if t.Type == network.REJECT {
 			s.Client.Log.Printf("Server rejected us: %s\n", t.String)
-		} else if t.Type == Net.OK {
+		} else if t.Type == network.OK {
 			s.Client.Log.Printf("Server accepted us: %s\n", t.String)
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
 			return true

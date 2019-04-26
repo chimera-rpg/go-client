@@ -39,6 +39,8 @@ func NewTextElement(c TextElementConfig) ElementI {
 	t.SetValue(c.Value)
 	t.Events = c.Events
 
+	t.OnCreated()
+
 	return ElementI(&t)
 }
 

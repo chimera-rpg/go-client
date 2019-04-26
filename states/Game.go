@@ -155,7 +155,7 @@ func (s *Game) HandleNet() {
 	    }
 	  }()
 	  for s.NetListening {
-	    var cmd Net.Command
+	    var cmd network.Command
 	    s.Client.Log.Print("Pre cmd")
 	    s.Client.Receive(&cmd)
 	    s.Client.Log.Print("Post cmd")

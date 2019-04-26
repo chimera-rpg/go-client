@@ -5,7 +5,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/Net"
+	"github.com/chimera-rpg/go-common/network"
 )
 
 // Login is the state responsible for logging in, registering an account,
@@ -65,6 +65,9 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Placeholder: "username",
 		Value:       lstate.username,
 		Events: ui.Events{
+			OnAdopted: func(parent ui.ElementI) {
+				elUsername.Focus()
+			},
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
 					elLogin.OnMouseButtonUp(1, 0, 0)
@@ -73,7 +76,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	elUsername.Focus()
+
 	elEmail = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
@@ -156,8 +159,8 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: "LOGIN",
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.Send(Net.Command(Net.CommandLogin{
-					Type: Net.LOGIN,
+				s.Client.Send(network.Command(network.CommandLogin{
+					Type: network.LOGIN,
 					User: elUsername.GetValue(),
 					Pass: elPassword.GetValue(),
 				}))
@@ -201,8 +204,8 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		elLogin.SetValue("REGISTER")
 		elLogin.SetEvents(ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.Send(Net.Command(Net.CommandLogin{
-					Type:  Net.REGISTER,
+				s.Client.Send(network.Command(network.CommandLogin{
+					Type:  network.REGISTER,
 					User:  elUsername.GetValue(),
 					Pass:  elPassword.GetValue(),
 					Email: elEmail.GetValue(),
@@ -245,15 +248,15 @@ func (s *Login) Loop() {
 }
 
 // HandleNet handles the network commands received in Loop().
-func (s *Login) HandleNet(cmd Net.Command) bool {
+func (s *Login) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
-	case Net.CommandBasic:
+	case network.CommandBasic:
 		s.Client.Log.Print("Got basic")
-		if t.Type == Net.REJECT {
+		if t.Type == network.REJECT {
 			msg := fmt.Sprintf("Server rejected us: %s\n", t.String)
 			s.OutputText.SetValue(msg)
 			s.Client.Log.Printf(msg)
-		} else if t.Type == Net.OK {
+		} else if t.Type == network.OK {
 			msg := fmt.Sprintf("Server accepted us: %s\n", t.String)
 			s.OutputText.SetValue(msg)
 			s.Client.Log.Printf(msg)

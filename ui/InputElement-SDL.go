@@ -56,6 +56,8 @@ func NewInputElement(c InputElementConfig) ElementI {
 	i.placeholder = c.Placeholder
 	i.Focusable = true
 
+	i.OnCreated()
+
 	return ElementI(&i)
 }
 

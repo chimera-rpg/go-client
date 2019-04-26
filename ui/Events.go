@@ -3,6 +3,7 @@ package ui
 // Events provide all the event handlers that may be implemented within an
 // Element instance.
 type Events struct {
+	OnCreated         func()
 	OnTouchBegin      func(id uint32, x int32, y int32) bool
 	OnTouchMove       func(id uint32, x int32, y int32) bool
 	OnTouchEnd        func(id uint32, x int32, y int32) bool

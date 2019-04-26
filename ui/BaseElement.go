@@ -1,5 +1,7 @@
 package ui
 
+import "sync"
+
 // BaseElement is our base implementation of the ElementI interface. Every
 // Element type must have BaseElement as an anonymous field and override
 // any core functionality that it wishes to implement itself.
@@ -25,6 +27,7 @@ type BaseElement struct {
 	Held      bool
 	// Context is cached when the object is created.
 	Context *Context
+	lock    sync.Mutex
 	// x, y, w, h are cached values from CalculateStyle
 	x  int32
 	y  int32
@@ -393,6 +396,13 @@ func (b *BaseElement) IsHidden() bool {
 // SetEvents sets the element's Events to the one passed in.
 func (b *BaseElement) SetEvents(e Events) {
 	b.Events = e
+}
+
+// OnCreated is called when the object is first created.
+func (b *BaseElement) OnCreated() {
+	if b.Events.OnCreated != nil {
+		b.Events.OnCreated()
+	}
 }
 
 // OnTouchBegin handles touch begin events.

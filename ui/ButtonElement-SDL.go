@@ -42,6 +42,7 @@ func NewButtonElement(c ButtonElementConfig) ElementI {
 	b.Style.Parse(c.Style)
 	b.SetValue(c.Value)
 	b.Events = c.Events
+	b.OnCreated()
 
 	return ElementI(&b)
 }
