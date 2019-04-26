@@ -3,8 +3,6 @@
 package ui
 
 import (
-	"sync"
-
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -28,8 +26,7 @@ type Window struct {
 	SDLWindow  *sdl.Window
 	SDLTexture *sdl.Texture
 
-	RenderFunc  RenderFunc
-	RenderMutex sync.Mutex
+	RenderFunc RenderFunc
 }
 
 // WindowElementStyle provides the default Style that is applied to all windows.
@@ -49,7 +46,6 @@ func NewWindow(c WindowConfig) (w *Window, err error) {
 // Setup our window object according to the passed WindowConfig.
 func (w *Window) Setup(c WindowConfig) (err error) {
 	w.This = ElementI(w)
-	w.RenderMutex = sync.Mutex{}
 	w.RenderFunc = c.RenderFunc
 	w.Style.Parse(WindowElementStyle)
 	w.Style.Parse(c.Style)
@@ -58,9 +54,9 @@ func (w *Window) Setup(c WindowConfig) (err error) {
 	if c.Parent != nil {
 		w.SDLWindow = c.Parent.SDLWindow
 		// NOTE: AdoptChild calls CalculateStyle
-		c.Parent.RenderMutex.Lock()
+		c.Parent.lock.Lock()
+		defer c.Parent.lock.Unlock()
 		c.Parent.AdoptChild(w)
-		c.Parent.RenderMutex.Unlock()
 	} else {
 		w.SDLWindow, err = sdl.CreateWindow(c.Value, int32(w.Style.X.Value), int32(w.Style.Y.Value), int32(w.Style.W.Value), int32(w.Style.H.Value), sdl.WINDOW_SHOWN|sdl.WINDOW_RESIZABLE)
 	}
@@ -105,6 +101,8 @@ func (w *Window) updateTexture() (err error) {
 	if w.Parent == nil {
 		return
 	}
+	w.lock.Lock()
+	defer w.lock.Unlock()
 	var tw, th int32 = 0, 0
 	if w.SDLTexture != nil {
 		_, _, tw, th, err = w.SDLTexture.Query()
@@ -134,6 +132,8 @@ func (w *Window) Render() {
 	if w.IsHidden() {
 		return
 	}
+	w.lock.Lock()
+	defer w.lock.Unlock()
 	oldTexture := w.Context.Renderer.GetRenderTarget()
 	w.Context.Renderer.SetRenderTarget(w.SDLTexture)
 	if w.RenderFunc != nil {
@@ -163,6 +163,8 @@ func (w *Window) CalculateStyle() {
 
 // Destroy the window, clearing the SDL context and destroying the SDLWindow if it is a top-level window.
 func (w *Window) Destroy() {
+	w.lock.Lock()
+	defer w.lock.Unlock()
 	if w.Parent == nil {
 		w.SDLWindow.Destroy()
 		w.Context.Renderer.Destroy()

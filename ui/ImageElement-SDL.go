@@ -52,6 +52,8 @@ func (i *ImageElement) Render() {
 	if i.IsHidden() {
 		return
 	}
+	i.lock.Lock()
+	defer i.lock.Unlock()
 	if i.SDLTexture == nil {
 		i.SetImage(i.Image)
 	}

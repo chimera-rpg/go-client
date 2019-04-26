@@ -77,6 +77,8 @@ func (i *InputElement) Render() {
 	if i.SDLTexture == nil {
 		i.SetValue(i.Value)
 	}
+	i.lock.Lock()
+	defer i.lock.Unlock()
 	if i.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
 			X: i.x,
@@ -143,6 +145,8 @@ func (i *InputElement) SetValue(value string) (err error) {
 	if i.Context == nil || i.Context.Font == nil {
 		return
 	}
+	i.lock.Lock()
+	defer i.lock.Unlock()
 	if i.SDLTexture != nil {
 		i.SDLTexture.Destroy()
 		i.SDLTexture = nil

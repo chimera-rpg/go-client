@@ -60,6 +60,8 @@ func (t *TextElement) Render() {
 	if t.SDLTexture == nil {
 		t.SetValue(t.Value)
 	}
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	if t.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
 			X: t.x,
@@ -96,6 +98,8 @@ func (t *TextElement) SetValue(value string) (err error) {
 	if t.Context == nil || t.Context.Font == nil {
 		return
 	}
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	if t.SDLTexture != nil {
 		t.SDLTexture.Destroy()
 		t.SDLTexture = nil

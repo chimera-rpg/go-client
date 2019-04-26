@@ -62,6 +62,8 @@ func (b *ButtonElement) Render() {
 	if b.SDLTexture == nil {
 		b.SetValue(b.Value)
 	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	heldOffset := int32(0)
 	if b.Style.BackgroundColor.A > 0 {
 		offsetY := int32(b.h / 10)
@@ -126,6 +128,8 @@ func (b *ButtonElement) SetValue(value string) (err error) {
 	if b.Context == nil || b.Context.Font == nil {
 		return
 	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.SDLTexture != nil {
 		b.SDLTexture.Destroy()
 		b.SDLTexture = nil

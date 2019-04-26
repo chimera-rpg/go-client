@@ -71,9 +71,7 @@ func (instance *Instance) Cleanup() {
 func (instance *Instance) Loop() {
 	instance.Running = true
 	// Render initial view.
-	instance.RootWindow.RenderMutex.Lock()
 	instance.RootWindow.Render()
-	instance.RootWindow.RenderMutex.Unlock()
 	for instance.Running {
 		event := sdl.WaitEvent()
 		switch t := event.(type) {
@@ -81,22 +79,16 @@ func (instance *Instance) Loop() {
 			instance.Running = false
 		case *sdl.WindowEvent:
 			if t.Event == sdl.WINDOWEVENT_RESIZED {
-				instance.RootWindow.RenderMutex.Lock()
 				instance.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
-				instance.RootWindow.RenderMutex.Unlock()
 			} else if t.Event == sdl.WINDOWEVENT_CLOSE {
 				instance.Running = false
 			} else if t.Event == sdl.WINDOWEVENT_EXPOSED {
-				instance.RootWindow.RenderMutex.Lock()
 				instance.RootWindow.Render()
-				instance.RootWindow.RenderMutex.Unlock()
 			}
 		default:
 			instance.HandleEvent(event)
 			if instance.RootWindow.HasDirt() {
-				instance.RootWindow.RenderMutex.Lock()
 				instance.RootWindow.Render()
-				instance.RootWindow.RenderMutex.Unlock()
 			}
 		}
 	}
