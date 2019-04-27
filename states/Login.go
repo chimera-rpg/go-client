@@ -52,7 +52,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Parent: s.Client.RootWindow,
 	})
 
-	var elUsername, elPassword, elConfirm, elEmail, elLogin, elPrevious ui.ElementI
+	var elUsername, elPassword, elConfirm, elEmail, elLogin, elRegister, elPrevious ui.ElementI
 
 	elUsername = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
@@ -148,13 +148,24 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: "BACK",
 	})
 
-	elLogin = ui.NewButtonElement(ui.ButtonElementConfig{
+	elRegister = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
-			Origin Right Bottom
+			Origin Bottom
+			X 50%
 			Y 30
 			Margin 5%
 			W 40%
 			MinW 100
+		`,
+		Value: "REGISTER",
+	})
+
+	elLogin = ui.NewButtonElement(ui.ButtonElementConfig{
+		Style: `
+			Origin CenterX CenterY
+			X 50%
+			Y 60%
+			W 40%
 		`,
 		Value: "LOGIN",
 		Events: ui.Events{
@@ -193,8 +204,9 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 				return false
 			},
 		})
-		s.LoginWindow.AdoptChild(elPrevious)
 		s.LoginWindow.AdoptChild(elLogin)
+		s.LoginWindow.AdoptChild(elPrevious)
+		s.LoginWindow.AdoptChild(elRegister)
 	case registerState:
 		s.LoginWindow.AdoptChild(elUsername)
 		s.LoginWindow.AdoptChild(elPassword)
