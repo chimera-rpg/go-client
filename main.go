@@ -20,18 +20,18 @@ func main() {
 	log.Print("Starting Chimera client (golang)")
 
 	clientInstance, err := client.NewClient()
-	defer clientInstance.Destroy()
 	if err != nil {
 		ui.ShowError("%s", err)
 		return
 	}
+	defer clientInstance.Destroy()
 
 	uiInstance, err := ui.NewInstance()
-	defer uiInstance.Cleanup()
 	if err != nil {
 		ui.ShowError("%s", err)
 		return
 	}
+	defer uiInstance.Cleanup()
 	ui.GlobalInstance = uiInstance
 
 	// Setup our UI

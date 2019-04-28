@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
@@ -17,6 +18,7 @@ type Client struct {
 	LogHistory    []string
 	State         StateI
 	DataRoot      string
+	UserRoot	  string
 	Log           *log.Logger
 	isRunning     bool
 	RenderChannel chan struct{}
@@ -24,9 +26,17 @@ type Client struct {
 }
 
 // NewClient returns a new instance of a Client
-func NewClient() (c *Client, e error) {
+func NewClient() (c *Client, err error) {
+	var dir string
 	c = &Client{}
-	c.DataRoot = path.Join("share", "chimera", "client")
+	// Set our path which should be <parent of cmd>/share/chimera/client.
+	if dir, err = filepath.Abs(os.Args[0]); err != nil {
+		return
+	}
+	c.DataRoot = path.Join(filepath.Dir(filepath.Dir(dir)), "share", "chimera", "client")
+	// Ensure this path exists.
+	_, err = os.Stat(c.DataRoot)
+	// TODO: We also need UserRoot for config and data caching.
 	return
 }
 
