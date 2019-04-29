@@ -75,3 +75,20 @@ func (m *Manager) acquireDataPath() (err error) {
 	m.DataPath = dir
 	return
 }
+
+// GetBytes returns the given file as a slice of bytes.
+func (m *Manager) GetBytes(file string) (data []byte, err error) {
+	var reader *os.File
+	var info os.FileInfo
+	reader, err = os.Open(file)
+	if err != nil {
+		return
+	}
+	info, err = reader.Stat()
+	if err != nil {
+		return
+	}
+	data = make([]byte, info.Size())
+	_, err = reader.Read(data)
+	return
+}

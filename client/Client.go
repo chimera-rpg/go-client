@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
@@ -13,8 +12,8 @@ import (
 
 // Client is the main handler of state, network transmission, and otherwise.
 type Client struct {
-	dataManager *data.Manager
-	RootWindow *ui.Window
+	DataManager *data.Manager
+	RootWindow  *ui.Window
 	network.Connection
 	LogHistory    []string
 	State         StateI
@@ -29,7 +28,7 @@ func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance) (err error)
 	c.Log = log.New(os.Stdout, "Client: ", log.Lshortfile)
 
 	c.RootWindow = &inst.RootWindow
-	c.dataManager = dataManager
+	c.DataManager = dataManager
 
 	network.RegisterCommands()
 
@@ -91,24 +90,6 @@ func (c *Client) ChannelLoop() {
 			}
 		}
 	}
-}
-
-// GetPNGData is (supposed) to return some form of cached PNG data.
-func (c *Client) GetPNGData(file string) (data []byte) {
-	reader, err := os.Open(path.Join(c.dataManager.DataPath, file))
-	if err != nil {
-		panic(err)
-	}
-	info, err := reader.Stat()
-	if err != nil {
-		panic(err)
-	}
-	data = make([]byte, info.Size())
-	_, err = reader.Read(data)
-	if err != nil {
-		panic(err)
-	}
-	return
 }
 
 // IsRunning returns whether the client is running or not.
