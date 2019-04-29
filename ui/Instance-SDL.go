@@ -4,14 +4,15 @@ package ui
 
 import (
 	"fmt"
-	"path"
 
+	"github.com/chimera-rpg/go-client/data"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
 
 // Instance is the managing instance of the entire UI system.
 type Instance struct {
+	dataManager     *data.Manager
 	HeldElement     ElementI
 	FocusedElement  ElementI
 	HoveredElements []ElementI
@@ -20,30 +21,25 @@ type Instance struct {
 	Context         Context
 }
 
-// NewInstance constructs a new Instance.
-func NewInstance() (instance *Instance, e error) {
-	instance = &Instance{}
-	return
-}
-
 // GlobalInstance is our pointer to the GlobalInstance. Used for Focus/Blur
 // calls from within Elements.
 var GlobalInstance *Instance
 
 // Setup sets up the needed libraries and pulls all needed data from the
 // location passed in the call.
-func (instance *Instance) Setup(dataRoot string) (err error) {
+func (instance *Instance) Setup(dataManager *data.Manager) (err error) {
+	instance.dataManager = dataManager
 	// Initialize SDL
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(err)
+		return err
 	}
 	// Initialize TTF
 	if err = ttf.Init(); err != nil {
-		panic(err)
+		return err
 	}
 	// Set up our UI Context
-	if instance.Context.Font, err = ttf.OpenFont(path.Join(dataRoot, "fonts", "DefaultFont.ttf"), 12); err != nil {
-		panic(err)
+	if instance.Context.Font, err = ttf.OpenFont(dataManager.GetDataPath("fonts", "DefaultFont.ttf"), 12); err != nil {
+		return err
 	}
 
 	err = instance.RootWindow.Setup(WindowConfig{

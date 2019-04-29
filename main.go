@@ -5,12 +5,18 @@ import (
 	"log"
 	"runtime/debug"
 
+	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/states"
 	"github.com/chimera-rpg/go-client/ui"
 )
 
 func main() {
+	var err error
+	var dataManager data.Manager
+	var clientInstance client.Client
+	var uiInstance ui.Instance
+
 	defer func() {
 		if r := recover(); r != nil {
 			ui.ShowError("%v", r.(error).Error())
@@ -19,29 +25,25 @@ func main() {
 	}()
 	log.Print("Starting Chimera client (golang)")
 
-	clientInstance, err := client.NewClient()
-	if err != nil {
+	if err = dataManager.Setup(); err != nil {
 		ui.ShowError("%s", err)
-		return
 	}
-	defer clientInstance.Destroy()
 
-	uiInstance, err := ui.NewInstance()
-	if err != nil {
+	// Setup our UI
+	if err = uiInstance.Setup(&dataManager); err != nil {
 		ui.ShowError("%s", err)
 		return
 	}
 	defer uiInstance.Cleanup()
-	ui.GlobalInstance = uiInstance
 
-	// Setup our UI
-	uiInstance.Setup(clientInstance.DataRoot)
+	ui.GlobalInstance = &uiInstance
 
 	// Setup our Client
-	if err = clientInstance.Setup(uiInstance); err != nil {
+	if err = clientInstance.Setup(&dataManager, &uiInstance); err != nil {
 		ui.ShowError("%s", err)
 		return
 	}
+	defer clientInstance.Destroy()
 	// Start the clientInstance's channel listening loop as a coroutine
 	go clientInstance.ChannelLoop()
 

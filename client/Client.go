@@ -5,46 +5,31 @@ import (
 	"log"
 	"os"
 	"path"
-	"path/filepath"
 
+	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
 )
 
 // Client is the main handler of state, network transmission, and otherwise.
 type Client struct {
+	dataManager *data.Manager
 	RootWindow *ui.Window
 	network.Connection
 	LogHistory    []string
 	State         StateI
-	DataRoot      string
-	UserRoot	  string
 	Log           *log.Logger
 	isRunning     bool
 	RenderChannel chan struct{}
 	StateChannel  chan StateMessage
 }
 
-// NewClient returns a new instance of a Client
-func NewClient() (c *Client, err error) {
-	var dir string
-	c = &Client{}
-	// Set our path which should be <parent of cmd>/share/chimera/client.
-	if dir, err = filepath.Abs(os.Args[0]); err != nil {
-		return
-	}
-	c.DataRoot = path.Join(filepath.Dir(filepath.Dir(dir)), "share", "chimera", "client")
-	// Ensure this path exists.
-	_, err = os.Stat(c.DataRoot)
-	// TODO: We also need UserRoot for config and data caching.
-	return
-}
-
 // Setup sets up a Client's base data structures for use.
-func (c *Client) Setup(inst *ui.Instance) (err error) {
+func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance) (err error) {
 	c.Log = log.New(os.Stdout, "Client: ", log.Lshortfile)
 
 	c.RootWindow = &inst.RootWindow
+	c.dataManager = dataManager
 
 	network.RegisterCommands()
 
@@ -110,7 +95,7 @@ func (c *Client) ChannelLoop() {
 
 // GetPNGData is (supposed) to return some form of cached PNG data.
 func (c *Client) GetPNGData(file string) (data []byte) {
-	reader, err := os.Open(path.Join(c.DataRoot, file))
+	reader, err := os.Open(path.Join(c.dataManager.DataPath, file))
 	if err != nil {
 		panic(err)
 	}
