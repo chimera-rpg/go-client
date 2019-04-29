@@ -51,6 +51,7 @@ func (w *Window) Setup(c WindowConfig) (err error) {
 	w.Style.Parse(c.Style)
 	w.Context = c.Context
 	w.Value = c.Value
+	w.SetDirty(true)
 	if c.Parent != nil {
 		w.SDLWindow = c.Parent.SDLWindow
 		// NOTE: AdoptChild calls CalculateStyle

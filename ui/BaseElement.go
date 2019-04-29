@@ -501,6 +501,13 @@ func (b *BaseElement) OnTextEdit(str string, start int32, length int32) bool {
 	return true
 }
 
+// OnChange is called when the object's value is changed.
+func (b *BaseElement) OnChange() {
+	if b.Events.OnChange != nil {
+		b.Events.OnChange()
+	}
+}
+
 // OnAdopted is called when an Element is adopted.
 func (b *BaseElement) OnAdopted(parent ElementI) {
 	b.SetContext(parent.GetContext())

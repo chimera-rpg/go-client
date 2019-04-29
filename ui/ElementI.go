@@ -55,6 +55,7 @@ type ElementI interface {
 	OnKeyUp(key uint8, modifiers uint16) bool
 	OnTextInput(str string) bool
 	OnTextEdit(str string, start int32, length int32) bool
+	OnChange()
 	OnAdopted(parent ElementI)
 	CanFocus() bool
 	SetFocused(bool)

@@ -152,7 +152,7 @@ func parseResize(s string) (f Flags) {
 	parts := strings.Split(s, " ")
 	for _, n := range parts {
 		switch n {
-		case "ToContents":
+		case "ToContent":
 			f.Set(TOCONTENT)
 		}
 	}

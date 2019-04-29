@@ -186,6 +186,7 @@ func (i *InputElement) SetValue(value string) (err error) {
 		i.Style.H.Set(float64(surface.H))
 	}
 	i.Dirty = true
+	i.OnChange()
 	return
 }
 

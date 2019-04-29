@@ -95,6 +95,9 @@ func (t *TextElement) Render() {
 // underlying SDL texture as needed.
 func (t *TextElement) SetValue(value string) (err error) {
 	t.Value = value
+	if value == "" {
+		value = " "
+	}
 	if t.Context == nil || t.Context.Font == nil {
 		return
 	}
@@ -104,7 +107,7 @@ func (t *TextElement) SetValue(value string) (err error) {
 		t.SDLTexture.Destroy()
 		t.SDLTexture = nil
 	}
-	surface, err := t.Context.Font.RenderUTF8Blended(t.Value,
+	surface, err := t.Context.Font.RenderUTF8Blended(value,
 		sdl.Color{
 			R: t.Style.ForegroundColor.R,
 			G: t.Style.ForegroundColor.G,
@@ -127,6 +130,7 @@ func (t *TextElement) SetValue(value string) (err error) {
 		t.Style.H.Set(float64(surface.H))
 	}
 	t.Dirty = true
+	t.OnChange()
 	return
 }
 
