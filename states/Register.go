@@ -1,10 +1,12 @@
 package states
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
+	"github.com/chimera-rpg/go-common/network"
 )
 
 // Register is a state for user Registration.
@@ -234,6 +236,12 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 					s.OutputText.SetValue("Fix errors in registration form.")
 				} else {
 					s.OutputText.SetValue("Registering...")
+					s.Client.Send(network.Command(network.CommandLogin{
+						Type:  network.REGISTER,
+						User:  s.elUsername.GetValue(),
+						Pass:  s.elPassword.GetValue(),
+						Email: s.elEmail.GetValue(),
+					}))
 				}
 				return true
 			},
@@ -343,13 +351,34 @@ func (s *Register) verifyAll() bool {
 func (s *Register) Loop() {
 	for {
 		select {
+		case <-s.CloseChan:
+			return
 		case cmd := <-s.Client.CmdChan:
-			s.Client.Log.Printf("%v\n", cmd)
+			s.HandleNet(cmd)
 		case <-s.Client.ClosedChan:
 			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 			return
-		case <-s.CloseChan:
-			return
 		}
 	}
+}
+
+// HandleNet handles the network commands received in Loop().
+func (s *Register) HandleNet(cmd network.Command) bool {
+	switch t := cmd.(type) {
+	case network.CommandBasic:
+		if t.Type == network.REJECT {
+			msg := fmt.Sprintf("%s\n", t.String)
+			s.OutputText.SetValue(msg)
+		} else if t.Type == network.OK {
+			msg := fmt.Sprintf("%s\n", t.String)
+			s.Client.StateChannel <- client.StateMessage{State: &Login{}, Args: LoginState{defaultState, s.elUsername.GetValue(), s.elPassword.GetValue(), msg}}
+			return true
+		}
+	default:
+		msg := fmt.Sprintf("Server sent non CommandBasic")
+		s.Client.Log.Print(msg)
+		s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: msg}
+		return true
+	}
+	return false
 }

@@ -30,12 +30,17 @@ type LoginState struct {
 	state    LoginStateID
 	username string
 	password string
-	email    string
+	message  string
 }
 
 // Init our Login state.
 func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, err error) {
-	lstate := LoginState{defaultState, "", "", ""}
+	lstate := LoginState{
+		state:    defaultState,
+		username: "",
+		password: "",
+		message:  "Connected.",
+	}
 
 	switch t := v.(type) {
 	case LoginState:
@@ -91,7 +96,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		`,
 		Password:    true,
 		Placeholder: "password",
-		Value:       lstate.username,
+		Value:       lstate.password,
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
 				if char == 13 { // Enter
@@ -147,6 +152,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: "LOGIN",
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+				s.Client.Log.Printf("Sending %s and %s\n", elUsername.GetValue(), elPassword.GetValue())
 				s.Client.Send(network.Command(network.CommandLogin{
 					Type: network.LOGIN,
 					User: elUsername.GetValue(),
@@ -167,7 +173,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			X 50%
 			W 100%
 		`,
-		Value: "Connected.",
+		Value: lstate.message,
 	})
 
 	s.LoginWindow.AdoptChild(elUsername)
