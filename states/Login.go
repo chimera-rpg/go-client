@@ -52,7 +52,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Parent: s.Client.RootWindow,
 	})
 
-	var elUsername, elPassword, elConfirm, elEmail, elLogin, elRegister, elPrevious ui.ElementI
+	var elUsername, elPassword, elLogin, elRegister, elDisconnect ui.ElementI
 
 	elUsername = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
@@ -75,18 +75,6 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 				return true
 			},
 		},
-	})
-
-	elEmail = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 60%
-			Y 10%
-			W 100%
-			MaxW 200
-		`,
-		Placeholder: "email",
-		Value:       lstate.email,
 	})
 
 	elPassword = ui.NewInputElement(ui.InputElementConfig{
@@ -113,31 +101,8 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	elConfirm = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 60%
-			H 20%
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-			ForegroundColor 255 0 0 255
-		`,
-		Password:    true,
-		Placeholder: "password confirm",
-		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16) bool {
-				if char == 13 { // Enter
-					elLogin.OnMouseButtonUp(1, 0, 0)
-				}
-				return true
-			},
-		},
-	})
 
-	elPrevious = ui.NewButtonElement(ui.ButtonElementConfig{
+	elDisconnect = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Bottom
 			Y 30
@@ -145,7 +110,13 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			W 40%
 			MinW 100
 		`,
-		Value: "BACK",
+		Value: "DISCONNECT",
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+				s.Client.Close()
+				return false
+			},
+		},
 	})
 
 	elRegister = ui.NewButtonElement(ui.ButtonElementConfig{
@@ -158,6 +129,12 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			MinW 100
 		`,
 		Value: "REGISTER",
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+				s.Client.StateChannel <- client.StateMessage{State: &Register{}}
+				return false
+			},
+		},
 	})
 
 	elLogin = ui.NewButtonElement(ui.ButtonElementConfig{
@@ -193,41 +170,12 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: "Connected.",
 	})
 
-	switch lstate.state {
-	case defaultState:
-		s.LoginWindow.AdoptChild(elUsername)
-		s.LoginWindow.AdoptChild(elPassword)
-		elPrevious.SetValue("DISCONNECT")
-		elPrevious.SetEvents(ui.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.Close()
-				return false
-			},
-		})
-		s.LoginWindow.AdoptChild(elLogin)
-		s.LoginWindow.AdoptChild(elPrevious)
-		s.LoginWindow.AdoptChild(elRegister)
-	case registerState:
-		s.LoginWindow.AdoptChild(elUsername)
-		s.LoginWindow.AdoptChild(elPassword)
-		s.LoginWindow.AdoptChild(elConfirm)
-		s.LoginWindow.AdoptChild(elEmail)
-		s.LoginWindow.AdoptChild(elLogin)
-		elLogin.SetValue("REGISTER")
-		elLogin.SetEvents(ui.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.Send(network.Command(network.CommandLogin{
-					Type:  network.REGISTER,
-					User:  elUsername.GetValue(),
-					Pass:  elPassword.GetValue(),
-					Email: elEmail.GetValue(),
-				}))
-				return false
-			},
-		})
-		elPrevious.SetValue("BACK")
-		s.LoginWindow.AdoptChild(elPrevious)
-	}
+	s.LoginWindow.AdoptChild(elUsername)
+	s.LoginWindow.AdoptChild(elPassword)
+	s.LoginWindow.AdoptChild(elLogin)
+	s.LoginWindow.AdoptChild(elDisconnect)
+	s.LoginWindow.AdoptChild(elRegister)
+
 	s.LoginWindow.AdoptChild(s.OutputText)
 
 	go s.Loop()
