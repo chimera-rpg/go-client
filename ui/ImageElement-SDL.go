@@ -100,7 +100,9 @@ func (i *ImageElement) SetImage(png []byte) {
 	}
 	i.tw = surface.W
 	i.th = surface.H
-	i.Style.W.Set(float64(surface.W))
-	i.Style.H.Set(float64(surface.H))
+	if i.Style.Resize.Has(TOCONTENT) {
+		i.Style.W.Set(float64(surface.W))
+		i.Style.H.Set(float64(surface.H))
+	}
 	i.Dirty = true
 }

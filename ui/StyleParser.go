@@ -113,6 +113,8 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.Origin = parseOrigin(p.tokenValue())
 	case "ContentOrigin":
 		s.ContentOrigin = parseOrigin(p.tokenValue())
+	case "Resize":
+		s.Resize = parseResize(p.tokenValue())
 	}
 }
 
@@ -141,6 +143,17 @@ func parseColor(s string) (c Color) {
 			c.B = uint8(v)
 		case 3: // a
 			c.A = uint8(v)
+		}
+	}
+	return
+}
+
+func parseResize(s string) (f Flags) {
+	parts := strings.Split(s, " ")
+	for _, n := range parts {
+		switch n {
+		case "ToContents":
+			f.Set(TOCONTENT)
 		}
 	}
 	return

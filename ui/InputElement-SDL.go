@@ -181,7 +181,7 @@ func (i *InputElement) SetValue(value string) (err error) {
 
 	i.tw = surface.W
 	i.th = surface.H
-	if i.Style.ResizeToContent {
+	if i.Style.Resize.Has(TOCONTENT) {
 		i.Style.W.Set(float64(surface.W))
 		i.Style.H.Set(float64(surface.H))
 	}

@@ -122,7 +122,7 @@ func (t *TextElement) SetValue(value string) (err error) {
 
 	t.tw = surface.W
 	t.th = surface.H
-	if t.Style.ResizeToContent {
+	if t.Style.Resize.Has(TOCONTENT) {
 		t.Style.W.Set(float64(surface.W))
 		t.Style.H.Set(float64(surface.H))
 	}

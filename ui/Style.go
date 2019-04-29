@@ -12,6 +12,12 @@ const (
 	RIGHT
 )
 
+// These const values are the underlying bit flags used for various
+// resizing options.
+const (
+	TOCONTENT Bits = 1 << iota
+)
+
 // Number is our special number container type.
 type Number struct {
 	Value      float64
@@ -79,6 +85,7 @@ func (c *Color) Set(r uint8, g uint8, b uint8, a uint8) {
 type Style struct {
 	Origin          Flags
 	ContentOrigin   Flags
+	Resize          Flags
 	X               Number
 	Y               Number
 	W               Number
@@ -97,7 +104,6 @@ type Style struct {
 	MarginBottom    Number
 	ForegroundColor Color
 	BackgroundColor Color
-	ResizeToContent bool
 }
 
 // Parse parses the given style string into property changes in the given Style.

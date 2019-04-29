@@ -152,7 +152,7 @@ func (b *ButtonElement) SetValue(value string) (err error) {
 
 	b.tw = surface.W
 	b.th = surface.H
-	if b.Style.ResizeToContent {
+	if b.Style.Resize.Has(TOCONTENT) {
 		b.Style.W.Set(float64(surface.W))
 		b.Style.H.Set(float64(surface.H))
 	}
