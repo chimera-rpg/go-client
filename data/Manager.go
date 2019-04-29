@@ -8,11 +8,12 @@ import (
 
 // Manager handles access to files on the system.
 type Manager struct {
-    DataPath string     // Path for client data (fonts, etc.)
-    ConfigPath string   // Path for user configuration (style overrides, bindings, etc.)
-    CachePath string    // Path for local cache (downloaded PNGs, etc.)
+	DataPath   string // Path for client data (fonts, etc.)
+	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
+	CachePath  string // Path for local cache (downloaded PNGs, etc.)
 }
 
+// Setup gets the required data/config/cache paths and creates them if needed.
 func (m *Manager) Setup() (err error) {
 	// Acquire our various paths.
 	if err = m.acquireDataPath(); err != nil {
@@ -48,6 +49,21 @@ func (m *Manager) Setup() (err error) {
 	return
 }
 
+// GetDataPath gets a path relative to the data path directory.
+func (m *Manager) GetDataPath(parts ...string) string {
+	return path.Join(m.DataPath, path.Clean("/"+path.Join(parts...)))
+}
+
+// GetCachePath gets a path relative to the cache path directory.
+func (m *Manager) GetCachePath(parts ...string) string {
+	return path.Join(m.CachePath, path.Clean("/"+path.Join(parts...)))
+}
+
+// GetConfigPath gets a path relative to the config path directory.
+func (m *Manager) GetConfigPath(parts ...string) string {
+	return path.Join(m.ConfigPath, path.Clean("/"+path.Join(parts...)))
+}
+
 func (m *Manager) acquireDataPath() (err error) {
 	var dir string
 	// Set our path which should be <parent of cmd>/share/chimera/client.
@@ -58,8 +74,4 @@ func (m *Manager) acquireDataPath() (err error) {
 
 	m.DataPath = dir
 	return
-}
-
-func (m *Manager) GetDataPath(parts ...string) string {
-	return path.Join(m.DataPath, path.Join(parts...))
 }
