@@ -104,6 +104,7 @@ type Style struct {
 	MarginBottom    Number
 	ForegroundColor Color
 	BackgroundColor Color
+	OutlineColor    Color
 }
 
 // Parse parses the given style string into property changes in the given Style.

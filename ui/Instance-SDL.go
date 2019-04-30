@@ -41,6 +41,10 @@ func (instance *Instance) Setup(dataManager *data.Manager) (err error) {
 	if instance.Context.Font, err = ttf.OpenFont(dataManager.GetDataPath("fonts", "DefaultFont.ttf"), 12); err != nil {
 		return err
 	}
+	if instance.Context.OutlineFont, err = ttf.OpenFont(dataManager.GetDataPath("fonts", "DefaultFont.ttf"), 12); err != nil {
+		return err
+	}
+	instance.Context.OutlineFont.SetOutline(2)
 
 	err = instance.RootWindow.Setup(WindowConfig{
 		Value: "Chimera",

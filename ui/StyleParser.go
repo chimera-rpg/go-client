@@ -109,6 +109,8 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.ForegroundColor = parseColor(p.tokenValue())
 	case "BackgroundColor":
 		s.BackgroundColor = parseColor(p.tokenValue())
+	case "OutlineColor":
+		s.OutlineColor = parseColor(p.tokenValue())
 	case "Origin":
 		s.Origin = parseOrigin(p.tokenValue())
 	case "ContentOrigin":

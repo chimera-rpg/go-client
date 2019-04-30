@@ -10,6 +10,7 @@ import (
 // Context contains the current renderer, font, and other necessary information
 // for rendering.
 type Context struct {
-	Renderer *sdl.Renderer
-	Font     *ttf.Font
+	Renderer    *sdl.Renderer
+	Font        *ttf.Font
+	OutlineFont *ttf.Font
 }

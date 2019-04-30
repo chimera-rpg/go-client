@@ -3,6 +3,7 @@
 package ui
 
 import (
+	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -107,28 +108,105 @@ func (t *TextElement) SetValue(value string) (err error) {
 		t.SDLTexture.Destroy()
 		t.SDLTexture = nil
 	}
-	surface, err := t.Context.Font.RenderUTF8Blended(value,
+	// Create text Outline
+	var textSurface, outlineSurface *sdl.Surface
+	var textTexture, outlineTexture *sdl.Texture
+
+	if t.Style.OutlineColor.A > 0 {
+		outlineSurface, err = t.Context.OutlineFont.RenderUTF8Blended(value,
+			sdl.Color{
+				R: t.Style.OutlineColor.R,
+				G: t.Style.OutlineColor.G,
+				B: t.Style.OutlineColor.B,
+				A: 255,
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
+		defer outlineSurface.Free()
+		if outlineTexture, err = t.Context.Renderer.CreateTextureFromSurface(outlineSurface); err != nil {
+			panic(err)
+		}
+		defer outlineTexture.Destroy()
+	}
+	textSurface, err = t.Context.Font.RenderUTF8Blended(value,
 		sdl.Color{
 			R: t.Style.ForegroundColor.R,
 			G: t.Style.ForegroundColor.G,
 			B: t.Style.ForegroundColor.B,
 			A: t.Style.ForegroundColor.A,
-		})
-	defer surface.Free()
+		},
+	)
 	if err != nil {
 		panic(err)
 	}
-	t.SDLTexture, err = t.Context.Renderer.CreateTextureFromSurface(surface)
+	defer textSurface.Free()
+	textTexture, err = t.Context.Renderer.CreateTextureFromSurface(textSurface)
 	if err != nil {
+		panic(err)
+	}
+	defer textTexture.Destroy()
+
+	if outlineTexture != nil {
+		t.tw = outlineSurface.W
+		t.th = outlineSurface.H
+	} else {
+		t.tw = textSurface.W
+		t.th = textSurface.H
+	}
+
+	// Create our target texture.
+	t.SDLTexture, err = t.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, t.tw, t.th)
+	if err != nil {
+		ShowError("%s", sdl.GetError())
+		panic(err)
+	}
+	if err = t.SDLTexture.SetBlendMode(sdl.BLENDMODE_BLEND); err != nil {
+		ShowError("%s", sdl.GetError())
 		panic(err)
 	}
 
-	t.tw = surface.W
-	t.th = surface.H
-	if t.Style.Resize.Has(TOCONTENT) {
-		t.Style.W.Set(float64(surface.W))
-		t.Style.H.Set(float64(surface.H))
+	// Render our Text and Outline to it.
+	oldTarget := t.Context.Renderer.GetRenderTarget()
+
+	if err = t.Context.Renderer.SetRenderTarget(t.SDLTexture); err != nil {
+		ShowError("%s", sdl.GetError())
+		panic(err)
 	}
+
+	// Clear texture or we get errors (at least w/ intel gfx)
+	t.Context.Renderer.SetDrawColor(0, 0, 0, 0)
+	t.Context.Renderer.Clear()
+
+	if outlineTexture != nil {
+		if err = outlineTexture.SetAlphaMod(t.Style.OutlineColor.A); err != nil {
+			fmt.Printf("%s\n", sdl.GetError())
+			panic(err)
+		}
+		if err = t.Context.Renderer.Copy(outlineTexture, nil, nil); err != nil {
+			panic(err)
+		}
+	}
+	if textTexture != nil {
+		dest := sdl.Rect{
+			X: 0,
+			Y: 0,
+			W: textSurface.W,
+			H: textSurface.H,
+		}
+		if outlineTexture != nil {
+			dest.X = 2
+			dest.Y = 2
+		}
+		if err = t.Context.Renderer.Copy(textTexture, nil, &dest); err != nil {
+			panic(err)
+		}
+	}
+	if err = t.Context.Renderer.SetRenderTarget(oldTarget); err != nil {
+		panic(err)
+	}
+
 	t.Dirty = true
 	t.OnChange()
 	return

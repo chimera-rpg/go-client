@@ -65,7 +65,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 				str, ok := s.verifyUsername()
 				if !ok {
 					s.textUsername.GetStyle().ForegroundColor = ui.Color{
-						R: 200,
+						R: 255,
 						G: 32,
 						B: 32,
 						A: 255,
@@ -73,7 +73,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 				} else {
 					s.textUsername.GetStyle().ForegroundColor = ui.Color{
 						R: 32,
-						G: 200,
+						G: 255,
 						B: 32,
 						A: 255,
 					}
@@ -91,6 +91,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			Y 30
 			H 20
 			W 100%
+			OutlineColor 0 0 0 200
 		`,
 	})
 
@@ -111,7 +112,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 				str, ok := s.verifyPassword()
 				if !ok {
 					s.textPassword.GetStyle().ForegroundColor = ui.Color{
-						R: 200,
+						R: 255,
 						G: 32,
 						B: 32,
 						A: 255,
@@ -119,7 +120,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 				} else {
 					s.textPassword.GetStyle().ForegroundColor = ui.Color{
 						R: 32,
-						G: 200,
+						G: 255,
 						B: 32,
 						A: 255,
 					}
@@ -146,7 +147,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 				str, ok := s.verifyPassword()
 				if !ok {
 					s.textPassword.GetStyle().ForegroundColor = ui.Color{
-						R: 200,
+						R: 255,
 						G: 32,
 						B: 32,
 						A: 255,
@@ -154,7 +155,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 				} else {
 					s.textPassword.GetStyle().ForegroundColor = ui.Color{
 						R: 32,
-						G: 200,
+						G: 255,
 						B: 32,
 						A: 255,
 					}
@@ -172,6 +173,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			Y 140
 			H 20
 			W 100%
+			OutlineColor 0 0 0 200
 		`,
 	})
 
@@ -217,6 +219,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			Y 200
 			H 20
 			W 100%
+			OutlineColor 0 0 0 200
 		`,
 	})
 
@@ -269,7 +272,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		Style: `
 			Origin CenterX Bottom
 			ContentOrigin CenterX CenterY
-			ForegroundColor 255 255 255 128
+			ForegroundColor 255 255 255 255
 			BackgroundColor 0 0 0 128
 			Y 0
 			X 50%

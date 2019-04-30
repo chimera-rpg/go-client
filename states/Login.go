@@ -167,7 +167,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Style: `
 			Origin CenterX Bottom
 			ContentOrigin CenterX CenterY
-			ForegroundColor 255 255 255 128
+			ForegroundColor 255 255 255 255
 			BackgroundColor 0 0 0 128
 			Y 0
 			X 50%
