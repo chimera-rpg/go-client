@@ -219,13 +219,13 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 	case network.CommandBasic:
 		s.Client.Log.Print("Got basic")
 		if t.Type == network.REJECT {
-			msg := fmt.Sprintf("Server rejected us: %s\n", t.String)
+			msg := fmt.Sprintf("Server rejected us: %s", t.String)
 			s.OutputText.SetValue(msg)
-			s.Client.Log.Printf(msg)
+			s.Client.Log.Println(msg)
 		} else if t.Type == network.OK {
-			msg := fmt.Sprintf("Server accepted us: %s\n", t.String)
+			msg := fmt.Sprintf("Server accepted us: %s", t.String)
 			s.OutputText.SetValue(msg)
-			s.Client.Log.Printf(msg)
+			s.Client.Log.Println(msg)
 			s.Client.StateChannel <- client.StateMessage{State: &CharacterCreation{}, Args: msg}
 			return true
 		}

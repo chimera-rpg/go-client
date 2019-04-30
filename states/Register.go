@@ -367,11 +367,9 @@ func (s *Register) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
 	case network.CommandBasic:
 		if t.Type == network.REJECT {
-			msg := fmt.Sprintf("%s\n", t.String)
-			s.OutputText.SetValue(msg)
+			s.OutputText.SetValue(t.String)
 		} else if t.Type == network.OK {
-			msg := fmt.Sprintf("%s\n", t.String)
-			s.Client.StateChannel <- client.StateMessage{State: &Login{}, Args: LoginState{defaultState, s.elUsername.GetValue(), s.elPassword.GetValue(), msg}}
+			s.Client.StateChannel <- client.StateMessage{State: &Login{}, Args: LoginState{defaultState, s.elUsername.GetValue(), s.elPassword.GetValue(), t.String}}
 			return true
 		}
 	default:
