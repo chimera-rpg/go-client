@@ -34,6 +34,7 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	i.Style.Parse(ImageElementStyle)
 	i.Style.Parse(c.Style)
 	i.Image = c.Image
+	i.SetupChannels()
 
 	i.OnCreated()
 
@@ -52,8 +53,6 @@ func (i *ImageElement) Render() {
 	if i.IsHidden() {
 		return
 	}
-	i.lock.Lock()
-	defer i.lock.Unlock()
 	if i.SDLTexture == nil {
 		i.SetImage(i.Image)
 	}

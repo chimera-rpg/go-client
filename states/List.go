@@ -8,19 +8,19 @@ import (
 // List is the state for showing a server list.
 type List struct {
 	client.State
-	ServersWindow ui.Window
+	ServersContainer ui.Container
 }
 
 // Init our state.
 func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, err error) {
-	err = s.ServersWindow.Setup(ui.WindowConfig{
+	err = s.ServersContainer.Setup(ui.ContainerConfig{
 		Value: "Server List",
 		Style: `
 			W 100%
 			H 100%
 		`,
-		Parent: s.Client.RootWindow,
 	})
+	s.Client.RootWindow.AdoptChannel <- s.ServersContainer.This
 
 	el := ui.NewTextElement(ui.TextElementConfig{
 		Style: `
@@ -56,7 +56,8 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	elHost.Focus()
+	//elHost.Focus()
+	// elHost.UpdateChannel <- ui.Update{ run: &elHost.Focus }
 	elConnect = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Bottom
@@ -110,11 +111,11 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		Image: imageData,
 	})
 
-	s.ServersWindow.AdoptChild(el)
-	s.ServersWindow.AdoptChild(elHost)
-	s.ServersWindow.AdoptChild(elConnect)
-	s.ServersWindow.AdoptChild(elOutputText)
-	el.AdoptChild(elImg)
+	s.ServersContainer.AdoptChannel <- el
+	s.ServersContainer.AdoptChannel <- elHost
+	s.ServersContainer.AdoptChannel <- elConnect
+	s.ServersContainer.AdoptChannel <- elOutputText
+	el.GetAdoptChannel() <- elImg
 
 	elTest := ui.NewTextElement(ui.TextElementConfig{
 		Style: `
@@ -124,12 +125,12 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		`,
 		Value: "Test",
 	})
-	elImg.AdoptChild(elTest)
+	elTest.GetAdoptChannel() <- elImg
 
 	return
 }
 
 // Close our state.
 func (s *List) Close() {
-	s.ServersWindow.Destroy()
+	s.ServersContainer.GetDestroyChannel() <- true
 }

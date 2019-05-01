@@ -12,8 +12,8 @@ import (
 // or recovering an account.
 type Login struct {
 	client.State
-	LoginWindow ui.Window
-	OutputText  ui.ElementI
+	LoginContainer ui.Container
+	OutputText     ui.ElementI
 }
 
 // LoginStateID represents the current sub state of the Login state.
@@ -47,14 +47,13 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		lstate = t
 	}
 
-	err = s.LoginWindow.Setup(ui.WindowConfig{
+	err = s.LoginContainer.Setup(ui.ContainerConfig{
 		Value: "Selection",
 		Style: `
 			W 100%
 			H 100%
 			BackgroundColor 139 186 139 255
 		`,
-		Parent: s.Client.RootWindow,
 	})
 
 	var elUsername, elPassword, elLogin, elRegister, elDisconnect ui.ElementI
@@ -176,13 +175,15 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: lstate.message,
 	})
 
-	s.LoginWindow.AdoptChild(elUsername)
-	s.LoginWindow.AdoptChild(elPassword)
-	s.LoginWindow.AdoptChild(elLogin)
-	s.LoginWindow.AdoptChild(elDisconnect)
-	s.LoginWindow.AdoptChild(elRegister)
+	s.LoginContainer.AdoptChannel <- elUsername
+	s.LoginContainer.AdoptChannel <- elPassword
+	s.LoginContainer.AdoptChannel <- elLogin
+	s.LoginContainer.AdoptChannel <- elDisconnect
+	s.LoginContainer.AdoptChannel <- elRegister
 
-	s.LoginWindow.AdoptChild(s.OutputText)
+	s.LoginContainer.AdoptChannel <- s.OutputText
+
+	s.Client.RootWindow.AdoptChannel <- s.LoginContainer.This
 
 	go s.Loop()
 
@@ -191,7 +192,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 
 // Close our Login state.
 func (s *Login) Close() {
-	s.LoginWindow.Destroy()
+	s.LoginContainer.GetDestroyChannel() <- true
 }
 
 // Loop handles our various state channels.
@@ -220,11 +221,11 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 		s.Client.Log.Print("Got basic")
 		if t.Type == network.REJECT {
 			msg := fmt.Sprintf("Server rejected us: %s", t.String)
-			s.OutputText.SetValue(msg)
+			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
 		} else if t.Type == network.OK {
 			msg := fmt.Sprintf("Server accepted us: %s", t.String)
-			s.OutputText.SetValue(msg)
+			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
 			s.Client.StateChannel <- client.StateMessage{State: &CharacterCreation{}, Args: msg}
 			return true

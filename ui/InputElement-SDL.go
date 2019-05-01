@@ -55,6 +55,7 @@ func NewInputElement(c InputElementConfig) ElementI {
 	i.isPassword = c.Password
 	i.placeholder = c.Placeholder
 	i.Focusable = true
+	i.SetupChannels()
 
 	i.OnCreated()
 
@@ -77,8 +78,6 @@ func (i *InputElement) Render() {
 	if i.SDLTexture == nil {
 		i.SetValue(i.Value)
 	}
-	i.lock.Lock()
-	defer i.lock.Unlock()
 	if i.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
 			X: i.x,
@@ -145,8 +144,6 @@ func (i *InputElement) SetValue(value string) (err error) {
 	if i.Context == nil || i.Context.Font == nil {
 		return
 	}
-	i.lock.Lock()
-	defer i.lock.Unlock()
 	if i.SDLTexture != nil {
 		i.SDLTexture.Destroy()
 		i.SDLTexture = nil
@@ -283,4 +280,12 @@ func (i *InputElement) OnTextEdit(str string, start int32, length int32) bool {
 		return i.Events.OnTextEdit(str, start, length)
 	}
 	return true
+}
+
+// HandleUpdate is the method for handling update messages.
+func (i *InputElement) HandleUpdate(update UpdateI) {
+	switch u := update.(type) {
+	case UpdateValue:
+		i.SetValue(u.Value)
+	}
 }

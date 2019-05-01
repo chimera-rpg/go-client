@@ -1,7 +1,5 @@
 package ui
 
-import "sync"
-
 // BaseElement is our base implementation of the ElementI interface. Every
 // Element type must have BaseElement as an anonymous field and override
 // any core functionality that it wishes to implement itself.
@@ -16,6 +14,10 @@ type BaseElement struct {
 	Style     Style
 	LastStyle Style
 	Events    Events
+	//
+	AdoptChannel   chan ElementI
+	DestroyChannel chan bool
+	UpdateChannel  chan UpdateI
 	// Dirty should be set whenever the Element should be re-rendered
 	Dirty bool
 	//
@@ -27,7 +29,6 @@ type BaseElement struct {
 	Held      bool
 	// Context is cached when the object is created.
 	Context *Context
-	lock    sync.Mutex
 	// x, y, w, h are cached values from CalculateStyle
 	x  int32
 	y  int32
@@ -579,4 +580,34 @@ func (b *BaseElement) IsContainer() bool {
 // GetChildren returns the ElementI children of the element.
 func (b *BaseElement) GetChildren() []ElementI {
 	return b.Children
+}
+
+// SetupChannels sets up the various communication channels.
+func (b *BaseElement) SetupChannels() {
+	b.AdoptChannel = make(chan ElementI, 1000)
+	b.DestroyChannel = make(chan bool, 1)
+	b.UpdateChannel = make(chan UpdateI, 1000)
+}
+
+// GetAdoptChannel returns the channel used for adopting new elements.
+func (b *BaseElement) GetAdoptChannel() chan ElementI {
+	return b.AdoptChannel
+}
+
+// GetDestroyChannel returns the channel used for destroying the element.
+func (b *BaseElement) GetDestroyChannel() chan bool {
+	return b.DestroyChannel
+}
+
+// GetUpdateChannel returns the channel used for updating the element.
+func (b *BaseElement) GetUpdateChannel() chan UpdateI {
+	return b.UpdateChannel
+}
+
+// HandleUpdate is the base stub for handling update messages.
+func (b *BaseElement) HandleUpdate(update UpdateI) {
+	switch u := update.(type) {
+	case UpdateValue:
+		b.SetValue(u.Value)
+	}
 }

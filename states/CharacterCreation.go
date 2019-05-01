@@ -10,15 +10,15 @@ import (
 // character.
 type CharacterCreation struct {
 	client.State
-	SelectionWindow ui.Window
-	CharacterWindow ui.Window
+	SelectionContainer ui.Container
+	CharacterContainer ui.Container
 }
 
 // Init is our CharacterCreation init state.
 func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
 	s.Client.Log.Print("CharacterCreation State")
 
-	err = s.SelectionWindow.Setup(ui.WindowConfig{
+	err = s.SelectionContainer.Setup(ui.ContainerConfig{
 		Value: "Selection",
 		Style: `
 			X 5%
@@ -27,11 +27,6 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 			H 20%
 			Origin CenterX CenterY
 		`,
-		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *ui.Window) {
-			w.Context.Renderer.SetDrawColor(32, 32, 128, 128)
-			w.Context.Renderer.Clear()
-		},
 	})
 
 	elSelection := ui.NewTextElement(ui.TextElementConfig{
@@ -67,7 +62,8 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		},
 	})
 
-	s.SelectionWindow.AdoptChild(elSelection)
+	s.SelectionContainer.AdoptChannel <- elSelection
+	s.Client.RootWindow.AdoptChannel <- s.SelectionContainer.This
 
 	go s.Loop()
 	/*for {
@@ -93,7 +89,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 
 // Close our CharacterCreation State.
 func (s *CharacterCreation) Close() {
-	s.SelectionWindow.Destroy()
+	s.SelectionContainer.DestroyChannel <- true
 }
 
 // Loop is our loop for managing network activitiy and beyond.

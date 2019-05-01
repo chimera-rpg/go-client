@@ -7,6 +7,11 @@ type ElementI interface {
 	Destroy()
 	Render()
 	//
+	GetAdoptChannel() chan ElementI
+	GetDestroyChannel() chan bool
+	GetUpdateChannel() chan UpdateI
+	HandleUpdate(UpdateI)
+	//
 	GetX() int32
 	GetY() int32
 	GetWidth() int32

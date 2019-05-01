@@ -23,8 +23,7 @@ type WindowConfig struct {
 // sub-window contained within another Window.
 type Window struct {
 	BaseElement
-	SDLWindow  *sdl.Window
-	SDLTexture *sdl.Texture
+	SDLWindow *sdl.Window
 
 	RenderFunc RenderFunc
 }
@@ -46,30 +45,28 @@ func NewWindow(c WindowConfig) (w *Window, err error) {
 // Setup our window object according to the passed WindowConfig.
 func (w *Window) Setup(c WindowConfig) (err error) {
 	w.This = ElementI(w)
+	w.SetupChannels()
 	w.RenderFunc = c.RenderFunc
 	w.Style.Parse(WindowElementStyle)
 	w.Style.Parse(c.Style)
 	w.Context = c.Context
 	w.Value = c.Value
 	w.SetDirty(true)
-	if c.Parent != nil {
-		w.SDLWindow = c.Parent.SDLWindow
-		// NOTE: AdoptChild calls CalculateStyle
-		c.Parent.lock.Lock()
-		defer c.Parent.lock.Unlock()
-		c.Parent.AdoptChild(w)
-	} else {
-		w.SDLWindow, err = sdl.CreateWindow(c.Value, int32(w.Style.X.Value), int32(w.Style.Y.Value), int32(w.Style.W.Value), int32(w.Style.H.Value), sdl.WINDOW_SHOWN|sdl.WINDOW_RESIZABLE)
-	}
+	w.SDLWindow, err = sdl.CreateWindow(
+		c.Value,
+		int32(w.Style.X.Value),
+		int32(w.Style.Y.Value),
+		int32(w.Style.W.Value),
+		int32(w.Style.H.Value),
+		sdl.WINDOW_SHOWN|sdl.WINDOW_RESIZABLE,
+	)
+
 	if err != nil {
 		return err
 	}
 	// Create our Renderer
-	w.Context.Renderer, err = w.SDLWindow.GetRenderer()
-	if w.Context.Renderer == nil {
-		w.Context.Renderer, err = sdl.CreateRenderer(w.SDLWindow, -1, sdl.RENDERER_ACCELERATED)
-		w.Context.Renderer.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
-	}
+	w.Context.Renderer, err = sdl.CreateRenderer(w.SDLWindow, -1, sdl.RENDERER_ACCELERATED)
+	w.Context.Renderer.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
 	if err != nil {
 		return err
 	}
@@ -87,43 +84,11 @@ func (w *Window) Setup(c WindowConfig) (err error) {
 func (w *Window) Resize(id uint32, width int32, height int32) (err error) {
 	wid, err := w.SDLWindow.GetID()
 	if wid == id {
-		if w.Parent == nil {
-			w.Style.W.Set(float64(width))
-			w.Style.H.Set(float64(height))
-			w.CalculateStyle()
-		} else {
-			w.CalculateStyle()
-		}
+		w.Style.W.Set(float64(width))
+		w.Style.H.Set(float64(height))
+		w.CalculateStyle()
 	}
 	return nil
-}
-
-func (w *Window) updateTexture() (err error) {
-	if w.Parent == nil {
-		return
-	}
-	w.lock.Lock()
-	defer w.lock.Unlock()
-	var tw, th int32 = 0, 0
-	if w.SDLTexture != nil {
-		_, _, tw, th, err = w.SDLTexture.Query()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	t, err := w.Context.Renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_TARGET, w.w, w.h)
-	t.SetBlendMode(sdl.BLENDMODE_BLEND)
-	if err != nil {
-		return err
-	}
-	if w.SDLTexture != nil {
-		w.Context.Renderer.SetRenderTarget(t)
-		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{X: 0, Y: 0, W: tw, H: th})
-		w.SDLTexture.Destroy()
-	}
-	w.SDLTexture = t
-	return
 }
 
 // Render the window, its renderer function, and its children to its texture,
@@ -133,51 +98,39 @@ func (w *Window) Render() {
 	if w.IsHidden() {
 		return
 	}
-	w.lock.Lock()
-	defer w.lock.Unlock()
-	oldTexture := w.Context.Renderer.GetRenderTarget()
-	w.Context.Renderer.SetRenderTarget(w.SDLTexture)
+
+	w.Context.Renderer.SetRenderTarget(nil)
 	if w.RenderFunc != nil {
 		w.RenderFunc(w)
 	}
 	if w.Style.BackgroundColor.A > 0 {
-		w.Context.Renderer.SetDrawColor(w.Style.BackgroundColor.R, w.Style.BackgroundColor.G, w.Style.BackgroundColor.B, w.Style.BackgroundColor.A)
+		w.Context.Renderer.SetDrawColor(
+			w.Style.BackgroundColor.R,
+			w.Style.BackgroundColor.G,
+			w.Style.BackgroundColor.B,
+			w.Style.BackgroundColor.A,
+		)
 		w.Context.Renderer.Clear()
 	}
 
 	w.BaseElement.Render()
-	if w.Parent != nil {
-		w.Context.Renderer.SetRenderTarget(oldTexture)
-		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{X: w.x, Y: w.y, W: w.w, H: w.h})
-	} else {
-		w.Context.Renderer.Present()
-	}
+
+	w.Context.Renderer.Present()
 }
 
 // CalculateStyle recalculates the style and updates the Window texture if it is dirty. See BaseElement.CalculateStyle().
 func (w *Window) CalculateStyle() {
 	w.BaseElement.CalculateStyle()
-	if w.IsDirty() {
-		w.updateTexture()
-	}
 }
 
 // Destroy the window, clearing the SDL context and destroying the SDLWindow if it is a top-level window.
 func (w *Window) Destroy() {
-	w.lock.Lock()
-	defer w.lock.Unlock()
-	if w.Parent == nil {
-		w.SDLWindow.Destroy()
-		w.Context.Renderer.Destroy()
-	} else {
-		w.Parent.DisownChild(w)
-	}
-	if w.SDLTexture != nil {
-		w.SDLTexture.Destroy()
-	}
 	for _, child := range w.Children {
 		child.Destroy()
 	}
+
+	w.SDLWindow.Destroy()
+	w.Context.Renderer.Destroy()
 }
 
 // GetX returns the cached x property. In the case of Windows this is 0.

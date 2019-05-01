@@ -74,6 +74,7 @@ func (instance *Instance) Loop() {
 	instance.RootWindow.Render()
 	for instance.Running {
 		event := sdl.WaitEvent()
+		instance.CheckChannels(instance.RootWindow.This)
 		switch t := event.(type) {
 		case *sdl.QuitEvent:
 			instance.Running = false
@@ -219,6 +220,54 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 	for _, child := range e.GetChildren() {
 		instance.IterateEvent(child, event)
 	}
+}
+
+// CheckChannels handles iterating through all element channels.
+func (instance *Instance) CheckChannels(e ElementI) {
+	var ok, valid bool
+	// Destruction checking
+	select {
+	case <-e.GetDestroyChannel():
+		e.Destroy()
+		return
+	default:
+		break
+	}
+	// Adoption checking
+	for {
+		var adoption ElementI
+		select {
+		case adoption, valid = <-e.GetAdoptChannel():
+			ok = true
+		default:
+			ok = false
+		}
+		if ok && valid {
+			//fmt.Printf("Got child: %v\n", adoption)
+			e.AdoptChild(adoption)
+		} else if !ok {
+			break
+		}
+	}
+	// Update checking
+	for {
+		var update UpdateI
+		select {
+		case update, valid = <-e.GetUpdateChannel():
+			ok = true
+		default:
+			ok = false
+		}
+		if ok && valid {
+			e.HandleUpdate(update)
+		} else if !ok {
+			break
+		}
+	}
+	for _, child := range e.GetChildren() {
+		instance.CheckChannels(child)
+	}
+
 }
 
 // BlurFocusedElement blurs the current focused element if it exists.

@@ -13,7 +13,7 @@ import (
 // It follows after Login and returns to Login.
 type Register struct {
 	client.State
-	RegisterWindow, InputWindow                  ui.Window
+	RegisterContainer, InputContainer            ui.Container
 	OutputText                                   ui.ElementI
 	elUsername, elPassword, elPassword2, elEmail ui.ElementI
 	textUsername, textPassword, textEmail        ui.ElementI
@@ -23,17 +23,16 @@ type Register struct {
 func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}, err error) {
 	var elBack, elConfirm ui.ElementI
 
-	err = s.RegisterWindow.Setup(ui.WindowConfig{
+	err = s.RegisterContainer.Setup(ui.ContainerConfig{
 		Value: "Register",
 		Style: `
 			W 100%
 			H 100%
 			BackgroundColor 139 186 139 255
 		`,
-		Parent: s.Client.RootWindow,
 	})
 
-	err = s.InputWindow.Setup(ui.WindowConfig{
+	err = s.InputContainer.Setup(ui.ContainerConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -43,7 +42,6 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			MinH 300
 			MaxH 100%
 		`,
-		Parent: &s.RegisterWindow,
 	})
 
 	s.elUsername = ui.NewInputElement(ui.InputElementConfig{
@@ -281,16 +279,20 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		Value: " ",
 	})
 
-	s.InputWindow.AdoptChild(s.elUsername)
-	s.InputWindow.AdoptChild(s.textUsername)
-	s.InputWindow.AdoptChild(s.elPassword)
-	s.InputWindow.AdoptChild(s.elPassword2)
-	s.InputWindow.AdoptChild(s.textPassword)
-	s.InputWindow.AdoptChild(s.elEmail)
-	s.InputWindow.AdoptChild(s.textEmail)
-	s.InputWindow.AdoptChild(elConfirm)
-	s.RegisterWindow.AdoptChild(elBack)
-	s.RegisterWindow.AdoptChild(s.OutputText)
+	s.InputContainer.AdoptChannel <- s.elUsername
+	s.InputContainer.AdoptChannel <- s.textUsername
+	s.InputContainer.AdoptChannel <- s.elPassword
+	s.InputContainer.AdoptChannel <- s.elPassword2
+	s.InputContainer.AdoptChannel <- s.textPassword
+	s.InputContainer.AdoptChannel <- s.elEmail
+	s.InputContainer.AdoptChannel <- s.textEmail
+	s.InputContainer.AdoptChannel <- elConfirm
+
+	s.RegisterContainer.AdoptChannel <- s.InputContainer.This
+	s.RegisterContainer.AdoptChannel <- elBack
+	s.RegisterContainer.AdoptChannel <- s.OutputText
+
+	s.Client.RootWindow.AdoptChannel <- s.RegisterContainer.This
 
 	go s.Loop()
 
@@ -299,8 +301,8 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 
 // Close our Register state.
 func (s *Register) Close() {
-	s.InputWindow.Destroy()
-	s.RegisterWindow.Destroy()
+	s.InputContainer.DestroyChannel <- true
+	s.RegisterContainer.DestroyChannel <- true
 }
 
 func (s *Register) verifyUsername() (string, bool) {
@@ -370,7 +372,7 @@ func (s *Register) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
 	case network.CommandBasic:
 		if t.Type == network.REJECT {
-			s.OutputText.SetValue(t.String)
+			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: t.String}
 		} else if t.Type == network.OK {
 			s.Client.StateChannel <- client.StateMessage{State: &Login{}, Args: LoginState{defaultState, s.elUsername.GetValue(), s.elPassword.GetValue(), t.String}}
 			return true
