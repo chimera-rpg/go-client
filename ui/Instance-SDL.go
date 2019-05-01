@@ -4,6 +4,7 @@ package ui
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/veandco/go-sdl2/sdl"
@@ -67,8 +68,46 @@ func (instance *Instance) Cleanup() {
 	sdl.Quit()
 }
 
-// Loop is our main event handling and rendering loop.
+// Loop is our main event handling and rendering loop. It runs at 60 frames
+// per second.
 func (instance *Instance) Loop() {
+	instance.Running = true
+	// Render initial view.
+	instance.RootWindow.Render()
+	// Tick at 60fps. TODO: Make this configurable.
+	ticker := time.NewTicker(time.Second / 60)
+
+	for _ = range ticker.C {
+		if !instance.Running {
+			ticker.Stop()
+			return
+		}
+		instance.CheckChannels(instance.RootWindow.This)
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch t := event.(type) {
+			case *sdl.QuitEvent:
+				instance.Running = false
+			case *sdl.WindowEvent:
+				if t.Event == sdl.WINDOWEVENT_RESIZED {
+					instance.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
+				} else if t.Event == sdl.WINDOWEVENT_CLOSE {
+					instance.Running = false
+				} else if t.Event == sdl.WINDOWEVENT_EXPOSED {
+					instance.RootWindow.Render()
+				}
+			default:
+				instance.HandleEvent(event)
+			}
+		}
+		if instance.RootWindow.HasDirt() {
+			instance.RootWindow.Render()
+		}
+	}
+}
+
+// WaitLoop is the waiting version of our event handling and rendering loop.
+// In contrast to Loop(), it only redraws when an SDLEvent is received.
+func (instance *Instance) WaitLoop() {
 	instance.Running = true
 	// Render initial view.
 	instance.RootWindow.Render()
