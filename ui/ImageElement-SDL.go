@@ -3,7 +3,9 @@
 package ui
 
 import (
-	"github.com/veandco/go-sdl2/img"
+	"image"
+	"unsafe"
+
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -11,7 +13,7 @@ import (
 type ImageElement struct {
 	BaseElement
 	SDLTexture *sdl.Texture
-	Image      []byte
+	Image      image.Image
 	tw         int32 // Texture width
 	th         int32 // Texture height
 }
@@ -51,23 +53,57 @@ func (i *ImageElement) Render() {
 	i.BaseElement.Render()
 }
 
-// SetImage sets the underlying texture to the passed PNG byte slice.
-func (i *ImageElement) SetImage(png []byte) {
+// SetImage sets the underlying texture to the passed go Image.
+func (i *ImageElement) SetImage(img image.Image) {
 	if i.Context == nil {
 		return
 	}
 
-	rwops, err := sdl.RWFromMem(png)
-	defer rwops.Close()
-	surface, err := img.LoadRW(rwops, false)
-	defer surface.Free()
-	if err != nil {
-		surface, err = sdl.CreateRGBSurface(0, 16, 16, 32, 0, 0, 0, 0)
-		defer surface.Free()
-		if err != nil {
-			panic(err)
-		}
+	var err error
+	var surface *sdl.Surface
+	var bpp int
+	var rmask, gmask, bmask, amask uint32
+	var width, height int32
+
+	width = int32(img.Bounds().Max.X)
+	height = int32(img.Bounds().Max.Y)
+	if bpp, rmask, gmask, bmask, amask, err = sdl.PixelFormatEnumToMasks(uint(sdl.PIXELFORMAT_RGBA32)); err != nil {
+		panic(err)
 	}
+	// NOTE: It might be heavy to do these conversions each time SetImage is called. Perhaps
+	// we should have SetImage only handle image.NRGBA and do any required load conversions
+	// in data.Manager.
+	switch img := img.(type) {
+	case *image.NRGBA:
+		surface, err = sdl.CreateRGBSurfaceFrom(
+			unsafe.Pointer(&img.Pix[0]),
+			width,
+			height,
+			bpp,
+			img.Stride,
+			rmask, gmask, bmask, amask)
+	case *image.Paletted:
+		bounds := img.Bounds()
+		rgbaImage := image.NewNRGBA(bounds)
+		for x := 0; x < bounds.Max.X; x++ {
+			for y := 0; y < bounds.Max.Y; y++ {
+				var pal = img.At(x, y)
+				rgbaImage.Set(x, y, pal)
+			}
+		}
+		surface, err = sdl.CreateRGBSurfaceFrom(
+			unsafe.Pointer(&rgbaImage.Pix[0]),
+			width,
+			height,
+			bpp,
+			rgbaImage.Stride,
+			rmask, gmask, bmask, amask)
+	default:
+		// FIXME: We really shouldn't just panic here.
+		panic(err)
+	}
+	defer surface.Free()
+
 	i.SDLTexture, err = i.Context.Renderer.CreateTextureFromSurface(surface)
 	if err != nil {
 		panic(err)

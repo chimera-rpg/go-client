@@ -3,6 +3,8 @@
 package ui
 
 import (
+	"image"
+
 	"golang.org/x/mobile/gl"
 )
 
@@ -11,7 +13,7 @@ type ImageElement struct {
 	BaseElement
 	GLTexture gl.Texture
 
-	Image []byte
+	Image image.Image
 	tw    int32 // Texture width
 	th    int32 // Texture height
 }

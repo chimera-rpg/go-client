@@ -98,7 +98,7 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		Value: inString,
 	})
 
-	imageData, err := s.Client.DataManager.GetBytes(s.Client.DataManager.GetDataPath("ui/loading.png"))
+	imageData, err := s.Client.DataManager.GetImage(s.Client.DataManager.GetDataPath("ui/loading.png"))
 
 	elImg := ui.NewImageElement(ui.ImageElementConfig{
 		Style: `

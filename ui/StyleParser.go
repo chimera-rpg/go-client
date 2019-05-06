@@ -134,7 +134,7 @@ func parseNumber(s string) (n Number) {
 	return
 }
 
-func parseColor(s string) (c color.RGBA) {
+func parseColor(s string) (c color.NRGBA) {
 	parts := strings.Split(s, " ")
 	for i, n := range parts {
 		v, _ := strconv.ParseUint(n, 10, 8)

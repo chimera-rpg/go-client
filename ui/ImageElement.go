@@ -1,8 +1,10 @@
 package ui
 
+import "image"
+
 // ImageElementConfig is the configuration for construction.
 type ImageElementConfig struct {
-	Image []byte
+	Image image.Image
 	Style string
 }
 

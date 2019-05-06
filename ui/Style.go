@@ -87,9 +87,9 @@ type Style struct {
 	MarginRight     Number
 	MarginTop       Number
 	MarginBottom    Number
-	ForegroundColor color.RGBA
-	BackgroundColor color.RGBA
-	OutlineColor    color.RGBA
+	ForegroundColor color.NRGBA
+	BackgroundColor color.NRGBA
+	OutlineColor    color.NRGBA
 }
 
 // Parse parses the given style string into property changes in the given Style.
