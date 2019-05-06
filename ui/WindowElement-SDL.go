@@ -6,19 +6,6 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// RenderFunc is a type alias used for the custom render function callback.
-type RenderFunc func(*Window)
-
-// WindowConfig is a configuration object that is used by NewWindow(c) or
-// Window.Setup(c) to construct a functioning Window.
-type WindowConfig struct {
-	Parent     *Window
-	Style      string
-	RenderFunc RenderFunc
-	Context    *Context
-	Value      string
-}
-
 // Window is a UI element that can either represent a standalone OS window or a
 // sub-window contained within another Window.
 type Window struct {
@@ -26,20 +13,6 @@ type Window struct {
 	SDLWindow *sdl.Window
 
 	RenderFunc RenderFunc
-}
-
-// WindowElementStyle provides the default Style that is applied to all windows.
-var WindowElementStyle = `
-	ForegroundColor 0 0 0 255
-	BackgroundColor 139 186 139 255
-`
-
-// NewWindow creates a new Window instance according to the passed WindowConfig.
-func NewWindow(c WindowConfig) (w *Window, err error) {
-	window := Window{}
-	err = window.Setup(c)
-	window.OnCreated()
-	return &window, err
 }
 
 // Setup our window object according to the passed WindowConfig.
@@ -118,11 +91,6 @@ func (w *Window) Render() {
 	w.Context.Renderer.Present()
 }
 
-// CalculateStyle recalculates the style and updates the Window texture if it is dirty. See BaseElement.CalculateStyle().
-func (w *Window) CalculateStyle() {
-	w.BaseElement.CalculateStyle()
-}
-
 // Destroy the window, clearing the SDL context and destroying the SDLWindow if it is a top-level window.
 func (w *Window) Destroy() {
 	for _, child := range w.Children {
@@ -131,19 +99,4 @@ func (w *Window) Destroy() {
 
 	w.SDLWindow.Destroy()
 	w.Context.Renderer.Destroy()
-}
-
-// GetX returns the cached x property. In the case of Windows this is 0.
-func (w *Window) GetX() int32 {
-	return 0
-}
-
-// GetY returns the cached y property. In the case of Windows this is 0.
-func (w *Window) GetY() int32 {
-	return 0
-}
-
-// IsContainer Returns whether or not this Element should be considered as a container.
-func (w *Window) IsContainer() bool {
-	return true
 }
