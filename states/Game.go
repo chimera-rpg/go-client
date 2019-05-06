@@ -3,7 +3,6 @@ package states
 import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 // Game is our live Game state, used once the user has connected to the server
@@ -32,18 +31,6 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			Origin CenterX CenterY
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *ui.Window) {
-			w.Context.Renderer.SetDrawColor(0, 128, 0, 128)
-			w.Context.Renderer.Clear()
-			//
-			for x := 0; x < 12; x++ {
-				for y := 0; y < 12; y++ {
-					w.Context.Renderer.FillRect(&sdl.Rect{
-						X: 16 * 3 * int32(x), Y: 16 * 3 * int32(y), W: 16 * 3, H: 16 * 3,
-					})
-				}
-			}
-		},
 	})
 	// Sub-window: chat
 	err = s.ChatWindow.Setup(ui.WindowConfig{
@@ -55,10 +42,6 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			H 20%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *ui.Window) {
-			w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
-			w.Context.Renderer.Clear()
-		},
 	})
 	// Sub-window: inventory
 	err = s.InventoryWindow.Setup(ui.WindowConfig{
@@ -71,10 +54,6 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			Origin CenterX CenterY
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *ui.Window) {
-			w.Context.Renderer.SetDrawColor(0, 255, 0, 255)
-			w.Context.Renderer.Clear()
-		},
 	})
 	s.InventoryWindow.SetHidden(true)
 	// Sub-window: ground
@@ -86,10 +65,6 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			H 30%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *ui.Window) {
-			w.Context.Renderer.SetDrawColor(255, 0, 0, 128)
-			w.Context.Renderer.Clear()
-		},
 	})
 	// Sub-window: stats
 	err = s.StatsWindow.Setup(ui.WindowConfig{
@@ -100,10 +75,6 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			H 20%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *ui.Window) {
-			w.Context.Renderer.SetDrawColor(0, 0, 255, 255)
-			w.Context.Renderer.Clear()
-		},
 	})
 	s.StatsWindow.SetHidden(true)
 	// Sub-window: state
@@ -116,10 +87,6 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			H 20%
 		`,
 		Parent: s.Client.RootWindow,
-		RenderFunc: func(w *ui.Window) {
-			w.Context.Renderer.SetDrawColor(0, 0, 255, 255)
-			w.Context.Renderer.Clear()
-		},
 	})
 	s.StateWindow.SetHidden(true)
 	//
