@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+	"image/color"
 	"regexp"
 
 	"github.com/chimera-rpg/go-client/client"
@@ -62,14 +63,14 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			OnChange: func() bool {
 				str, ok := s.verifyUsername()
 				if !ok {
-					s.textUsername.GetStyle().ForegroundColor = ui.Color{
+					s.textUsername.GetStyle().ForegroundColor = color.RGBA{
 						R: 255,
 						G: 32,
 						B: 32,
 						A: 255,
 					}
 				} else {
-					s.textUsername.GetStyle().ForegroundColor = ui.Color{
+					s.textUsername.GetStyle().ForegroundColor = color.RGBA{
 						R: 32,
 						G: 255,
 						B: 32,
@@ -109,14 +110,14 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			OnChange: func() bool {
 				str, ok := s.verifyPassword()
 				if !ok {
-					s.textPassword.GetStyle().ForegroundColor = ui.Color{
+					s.textPassword.GetStyle().ForegroundColor = color.RGBA{
 						R: 255,
 						G: 32,
 						B: 32,
 						A: 255,
 					}
 				} else {
-					s.textPassword.GetStyle().ForegroundColor = ui.Color{
+					s.textPassword.GetStyle().ForegroundColor = color.RGBA{
 						R: 32,
 						G: 255,
 						B: 32,
@@ -144,14 +145,14 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			OnChange: func() bool {
 				str, ok := s.verifyPassword()
 				if !ok {
-					s.textPassword.GetStyle().ForegroundColor = ui.Color{
+					s.textPassword.GetStyle().ForegroundColor = color.RGBA{
 						R: 255,
 						G: 32,
 						B: 32,
 						A: 255,
 					}
 				} else {
-					s.textPassword.GetStyle().ForegroundColor = ui.Color{
+					s.textPassword.GetStyle().ForegroundColor = color.RGBA{
 						R: 32,
 						G: 255,
 						B: 32,
@@ -190,14 +191,14 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			OnChange: func() bool {
 				str, ok := s.verifyEmail()
 				if !ok {
-					s.textEmail.GetStyle().ForegroundColor = ui.Color{
+					s.textEmail.GetStyle().ForegroundColor = color.RGBA{
 						R: 200,
 						G: 200,
 						B: 32,
 						A: 255,
 					}
 				} else {
-					s.textEmail.GetStyle().ForegroundColor = ui.Color{
+					s.textEmail.GetStyle().ForegroundColor = color.RGBA{
 						R: 32,
 						G: 200,
 						B: 32,

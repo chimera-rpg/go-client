@@ -1,5 +1,7 @@
 package ui
 
+import "image/color"
+
 // Bits is the type used for Flags.
 type Bits uint8
 
@@ -64,23 +66,6 @@ func (f *Flags) Has(flags Bits) bool {
 	return f.Value&flags != 0
 }
 
-// Color is our representation of an RGBA color. TODO: probably replace with
-// go's own Color type.
-type Color struct {
-	R uint8
-	G uint8
-	B uint8
-	A uint8
-}
-
-// Set sets the color to the given rgba values.
-func (c *Color) Set(r uint8, g uint8, b uint8, a uint8) {
-	c.R = r
-	c.G = g
-	c.B = b
-	c.A = a
-}
-
 // Style the type used by Elements to control desired positioning and styling.
 type Style struct {
 	Origin          Flags
@@ -102,9 +87,9 @@ type Style struct {
 	MarginRight     Number
 	MarginTop       Number
 	MarginBottom    Number
-	ForegroundColor Color
-	BackgroundColor Color
-	OutlineColor    Color
+	ForegroundColor color.RGBA
+	BackgroundColor color.RGBA
+	OutlineColor    color.RGBA
 }
 
 // Parse parses the given style string into property changes in the given Style.

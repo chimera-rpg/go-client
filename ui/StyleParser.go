@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"strings"
 
+	"image/color"
+
 	"github.com/eczarny/lexer"
 )
 
@@ -132,7 +134,7 @@ func parseNumber(s string) (n Number) {
 	return
 }
 
-func parseColor(s string) (c Color) {
+func parseColor(s string) (c color.RGBA) {
 	parts := strings.Split(s, " ")
 	for i, n := range parts {
 		v, _ := strconv.ParseUint(n, 10, 8)
