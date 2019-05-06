@@ -35,9 +35,6 @@ func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance) (err error)
 	c.RenderChannel = make(chan struct{})
 	c.StateChannel = make(chan StateMessage)
 
-	// Render the initial window
-	c.RootWindow.Render()
-
 	c.isRunning = true
 	return
 }
