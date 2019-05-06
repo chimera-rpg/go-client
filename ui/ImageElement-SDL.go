@@ -1,4 +1,4 @@
-// +build !MOBILE
+// +build !mobile
 
 package ui
 

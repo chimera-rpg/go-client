@@ -1,5 +1,3 @@
-// +build !MOBILE
-
 package ui
 
 // TextElementConfig is the configuration object passed to NewTextElement.

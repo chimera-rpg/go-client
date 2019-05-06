@@ -1,5 +1,3 @@
-// +build !MOBILE
-
 package ui
 
 // RenderFunc is a type alias used for the custom render function callback.
