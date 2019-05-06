@@ -1,9 +1,16 @@
 package data
 
 import (
+	"image"
+	// Package image/png is not used explicitly in the code below,
+	// but is imported for its initialization side-effect, which allows
+	// image.Decode to understand PNG formatted images.
+	_ "image/png"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/kettek/apng"
 )
 
 // Manager handles access to files on the system.
@@ -91,4 +98,27 @@ func (m *Manager) GetBytes(file string) (data []byte, err error) {
 	data = make([]byte, info.Size())
 	_, err = reader.Read(data)
 	return
+}
+
+// GetAPNG returns the given file as an APNG type.
+func (m *Manager) GetAPNG(file string) (img apng.APNG, err error) {
+	var reader *os.File
+	reader, err = os.Open(file)
+	if err != nil {
+		return
+	}
+	img, err = apng.DecodeAll(reader)
+	return
+}
+
+// GetImage returns the given file as an Image (if it is supported).
+func (m *Manager) GetImage(file string) (img image.Image, err error) {
+	var reader *os.File
+	reader, err = os.Open(file)
+	if err != nil {
+		return
+	}
+	img, _, err = image.Decode(reader)
+	return
+
 }
