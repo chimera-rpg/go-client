@@ -239,7 +239,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 				} else {
 					s.OutputText.SetValue("Registering...")
 					s.Client.Send(network.Command(network.CommandLogin{
-						Type:  network.REGISTER,
+						Type:  network.Register,
 						User:  s.elUsername.GetValue(),
 						Pass:  s.elPassword.GetValue(),
 						Email: s.elEmail.GetValue(),
@@ -372,9 +372,9 @@ func (s *Register) Loop() {
 func (s *Register) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
 	case network.CommandBasic:
-		if t.Type == network.REJECT {
+		if t.Type == network.Reject {
 			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: t.String}
-		} else if t.Type == network.OK {
+		} else if t.Type == network.Okay {
 			s.Client.StateChannel <- client.StateMessage{State: &Login{}, Args: LoginState{defaultState, s.elUsername.GetValue(), s.elPassword.GetValue(), t.String}}
 			return true
 		}

@@ -113,9 +113,9 @@ func (s *CharacterCreation) Loop() {
 func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
 	case network.CommandBasic:
-		if t.Type == network.REJECT {
+		if t.Type == network.Reject {
 			s.Client.Log.Printf("Server rejected us: %s\n", t.String)
-		} else if t.Type == network.OK {
+		} else if t.Type == network.Okay {
 			s.Client.Log.Printf("Server accepted us: %s\n", t.String)
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
 			return true

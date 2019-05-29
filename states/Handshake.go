@@ -63,14 +63,14 @@ func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface
 	}
 
 	s.Client.Send(network.Command(network.CommandHandshake{
-		Version: network.VERSION,
+		Version: network.Version,
 		Program: "Golang Client",
 	}))
 
 	cmd := <-s.Client.CmdChan
 	switch t := cmd.(type) {
 	case network.CommandBasic:
-		if t.Type == network.NOK {
+		if t.Type == network.Nokay {
 			msg := fmt.Sprintf("Server \"%s\" rejected us: %s", server, t.String)
 			s.Client.Log.Printf(msg)
 			state = client.StateI(&List{})

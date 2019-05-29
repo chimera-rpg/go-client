@@ -153,7 +153,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Log.Printf("Sending %s and %s\n", elUsername.GetValue(), elPassword.GetValue())
 				s.Client.Send(network.Command(network.CommandLogin{
-					Type: network.LOGIN,
+					Type: network.Login,
 					User: elUsername.GetValue(),
 					Pass: elPassword.GetValue(),
 				}))
@@ -219,11 +219,11 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
 	case network.CommandBasic:
 		s.Client.Log.Print("Got basic")
-		if t.Type == network.REJECT {
+		if t.Type == network.Reject {
 			msg := fmt.Sprintf("Server rejected us: %s", t.String)
 			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
-		} else if t.Type == network.OK {
+		} else if t.Type == network.Okay {
 			msg := fmt.Sprintf("Server accepted us: %s", t.String)
 			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
