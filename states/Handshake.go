@@ -1,6 +1,7 @@
 package states
 
 import (
+	"crypto/tls"
 	"fmt"
 	"time"
 
@@ -35,12 +36,21 @@ func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface
 		return
 	}
 
-	err = s.Client.ConnectTo(server)
+	// There should be some sort of way to detect secure vs. insecure hosts. Perhaps this would just be through the server list service? Otherwise, we could have an "info" port where server information is queried.
+	err = s.Client.SecureConnectTo(server, &tls.Config{
+		InsecureSkipVerify: true, // Skip verification for now. In the future this will be configurable.
+	})
 	if err != nil {
 		s.Client.Log.Print(err)
-		state = client.StateI(&List{})
-		nextArgs = err
-		return
+		// For now, just fall back to attempting an insecure connection.
+		s.Client.Log.Print("Falling back to insecure connection.")
+		err = s.Client.ConnectTo(server)
+		if err != nil {
+			s.Client.Log.Print(err)
+			state = client.StateI(&List{})
+			nextArgs = err
+			return
+		}
 	}
 
 	select {
