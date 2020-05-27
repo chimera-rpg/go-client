@@ -21,11 +21,8 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	err = s.SelectionContainer.Setup(ui.ContainerConfig{
 		Value: "Selection",
 		Style: `
-			X 5%
-			Y 5%
-			W 90%%
-			H 20%
-			Origin CenterX CenterY
+			W 100%
+			H 100%
 		`,
 	})
 
@@ -62,26 +59,32 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		},
 	})
 
+	elCreate := ui.NewButtonElement(ui.ButtonElementConfig{
+		Style: `
+			Origin CenterX CenterY
+			X 50%
+			Y 30%
+			W 100%
+			MaxW 200
+		`,
+		Value: "Dummy Character",
+		Events: ui.Events{
+			OnMouseButtonDown: func(button uint8, x int32, y int32) bool {
+				s.Client.Log.Printf("Logging in with dummy character")
+				s.Client.Send(network.Command(network.CommandCharacter{
+					Type:       network.ChooseCharacter,
+					Characters: []string{"dummy"},
+				}))
+				return false
+			},
+		},
+	})
+
 	s.SelectionContainer.AdoptChannel <- elSelection
+	s.SelectionContainer.AdoptChannel <- elCreate
 	s.Client.RootWindow.AdoptChannel <- s.SelectionContainer.This
 
 	go s.Loop()
-	/*for {
-		cmd := <-s.Client.CmdChan
-		switch t := cmd.(type) {
-		case network.CommandBasic:
-			if t.Type == network.REJECT {
-				s.Client.Log.Printf("Server rejected us: %s\n", t.String)
-			} else if t.Type == network.OK {
-				s.Client.Log.Printf("Server accepted us: %s\n", t.String)
-				break
-			}
-		default:
-			s.Client.Log.Print("Server sent non CommandBasic")
-			next = Client.StateI(&List{})
-			return
-		}
-	}*/
 
 	//next = Client.StateI(&Game{})
 	return
@@ -120,8 +123,15 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
 			return true
 		}
+	case network.CommandCharacter:
+		if t.Type == network.ChooseCharacter {
+			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
+			return true
+		} else {
+			s.Client.Log.Printf("Unhandled CommandCharacter type %d\n", t.Type)
+		}
 	default:
-		s.Client.Log.Print("Server sent non CommandBasic")
+		s.Client.Log.Printf("Server sent non CommandBasic\n")
 		s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 		return true
 	}
