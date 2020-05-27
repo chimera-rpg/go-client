@@ -381,6 +381,10 @@ func (b *BaseElement) DisownChild(c ElementI) {
 func (b *BaseElement) AdoptChild(c ElementI) {
 	b.Children = append(b.Children, c)
 	c.OnAdopted(b)
+
+	// Recalculate our style after adopting.
+	b.CalculateStyle()
+	b.SetDirty(true)
 }
 
 // SetHidden sets the Hidden flag to a particular value, signifying if
