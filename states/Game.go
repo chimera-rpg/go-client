@@ -9,42 +9,48 @@ import (
 // and joined as a player character.
 type Game struct {
 	client.State
-	ChatWindow      ui.Window
-	MapWindow       ui.Window
-	InventoryWindow ui.Window
-	GroundWindow    ui.Window
-	StatsWindow     ui.Window
-	StateWindow     ui.Window
+	ChatWindow      ui.Container
+	MapWindow       ui.Container
+	InventoryWindow ui.Container
+	GroundWindow    ui.Container
+	StatsWindow     ui.Container
+	StateWindow     ui.Container
 }
 
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	s.Client.Log.Print("Game State")
 	// Sub-window: map
-	err = s.MapWindow.Setup(ui.WindowConfig{
+	err = s.MapWindow.Setup(ui.ContainerConfig{
 		Value: "Map",
 		Style: `
 			X 50%
 			Y 50%
 			W 100%
 			H 100%
+			BackgroundColor 0 0 0 255
 			Origin CenterX CenterY
 		`,
-		Parent: s.Client.RootWindow,
 	})
+	mapText := ui.NewTextElement(ui.TextElementConfig{
+		Value: "Map",
+	})
+	s.MapWindow.AdoptChannel <- mapText
+	s.Client.RootWindow.AdoptChannel <- s.MapWindow.This
 	// Sub-window: chat
-	err = s.ChatWindow.Setup(ui.WindowConfig{
+	err = s.ChatWindow.Setup(ui.ContainerConfig{
 		Value: "Chat",
 		Style: `
 			X 8
 			Y 8
 			W 70%
 			H 20%
+			BackgroundColor 0 0 128 128
 		`,
-		Parent: s.Client.RootWindow,
 	})
+	s.Client.RootWindow.AdoptChannel <- s.ChatWindow.This
 	// Sub-window: inventory
-	err = s.InventoryWindow.Setup(ui.WindowConfig{
+	err = s.InventoryWindow.Setup(ui.ContainerConfig{
 		Value: "Inventory",
 		Style: `
 			X 50%
@@ -52,42 +58,46 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			W 50%
 			H 80%
 			Origin CenterX CenterY
+			BackgroundColor 0 128 0 128
 		`,
-		Parent: s.Client.RootWindow,
 	})
+	s.Client.RootWindow.AdoptChannel <- s.InventoryWindow.This
 	s.InventoryWindow.SetHidden(true)
 	// Sub-window: ground
-	err = s.GroundWindow.Setup(ui.WindowConfig{
+	err = s.GroundWindow.Setup(ui.ContainerConfig{
 		Value: "Ground",
 		Style: `
 			Y 70%
 			W 30%
 			H 30%
+			BackgroundColor 128 128 128 128
 		`,
-		Parent: s.Client.RootWindow,
 	})
+	s.Client.RootWindow.AdoptChannel <- s.GroundWindow.This
 	// Sub-window: stats
-	err = s.StatsWindow.Setup(ui.WindowConfig{
+	err = s.StatsWindow.Setup(ui.ContainerConfig{
 		Value: "Stats",
 		Style: `
 			X 30%
 			W 40%
 			H 20%
+			BackgroundColor 128 0 0 128
 		`,
-		Parent: s.Client.RootWindow,
 	})
+	s.Client.RootWindow.AdoptChannel <- s.StatsWindow.This
 	s.StatsWindow.SetHidden(true)
 	// Sub-window: state
-	err = s.StateWindow.Setup(ui.WindowConfig{
+	err = s.StateWindow.Setup(ui.ContainerConfig{
 		Value: "State",
 		Style: `
 			X 30%
 			Y 80%
 			W 40%
 			H 20%
+			BackgroundColor 128 128 0 128
 		`,
-		Parent: s.Client.RootWindow,
 	})
+	s.Client.RootWindow.AdoptChannel <- s.StateWindow.This
 	s.StateWindow.SetHidden(true)
 	//
 	//go s.Client.LoopCmd()
