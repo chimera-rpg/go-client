@@ -83,7 +83,6 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 			MinH 25
 			ForegroundColor 255 0 0 255
 		`,
-		Password:    true,
 		Placeholder: "character name",
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16) bool {
