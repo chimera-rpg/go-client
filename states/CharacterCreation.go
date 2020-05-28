@@ -12,7 +12,8 @@ import (
 // character.
 type CharacterCreation struct {
 	client.State
-	SelectionContainer ui.Container
+	SelectionContainer  ui.Container
+	CharactersContainer ui.Container
 }
 
 // Init is our CharacterCreation init state.
@@ -24,6 +25,14 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		Style: `
 			W 100%
 			H 100%
+		`,
+	})
+
+	s.CharactersContainer.Setup(ui.ContainerConfig{
+		Style: `
+			W 30%
+			H 100%
+			BackgroundColor 128 128 128 128
 		`,
 	})
 
@@ -119,6 +128,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	s.SelectionContainer.AdoptChannel <- elSelection
 	s.SelectionContainer.AdoptChannel <- elName
 	s.SelectionContainer.AdoptChannel <- elCreate
+	s.SelectionContainer.AdoptChannel <- s.CharactersContainer.This
 	s.Client.RootWindow.AdoptChannel <- s.SelectionContainer.This
 
 	// Let the server know we're ready!
@@ -132,12 +142,45 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	return
 }
 
+// addCharacter adds a button for the provided character name.
+func (s *CharacterCreation) addCharacter(offset int, name string) {
+	children := s.CharactersContainer.GetChildren()
+
+	for _, child := range children {
+		if _, ok := child.(*ui.ButtonElement); ok {
+			offset++
+		}
+	}
+
+	elChar := ui.NewButtonElement(ui.ButtonElementConfig{
+		Style: fmt.Sprintf(`
+			Origin CenterX CenterY
+			X 50%%
+			Y %d%%
+			W 100%%
+			MaxW 75%%
+		`, 10+offset*10),
+		Value: name,
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+				s.Client.Log.Printf("Logging in with character %s", name)
+				s.Client.Send(network.Command(network.CommandCharacter{
+					Type:       network.ChooseCharacter,
+					Characters: []string{name},
+				}))
+				return false
+			},
+		},
+	})
+	s.CharactersContainer.AdoptChannel <- elChar
+}
+
 // Close our CharacterCreation State.
 func (s *CharacterCreation) Close() {
 	s.SelectionContainer.DestroyChannel <- true
 }
 
-// Loop is our loop for managing network activitiy and beyond.
+// Loop is our loop for managing network activity and beyond.
 func (s *CharacterCreation) Loop() {
 	for {
 		select {
@@ -168,32 +211,9 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 	case network.CommandCharacter:
 		// CreateCharacter is how the server notifies us of new characters
 		if t.Type == network.CreateCharacter {
-			// FIXME: This is temporary so we can actually login with characters.
+			// Add character buttons.
 			for i, name := range t.Characters {
-				go func(i int, name string) {
-					elChar := ui.NewButtonElement(ui.ButtonElementConfig{
-						Style: fmt.Sprintf(`
-							Origin CenterX CenterY
-							X 25%%
-							Y %d%%
-							W 100%%
-							MaxW 25%%
-						`, 10+i*10),
-						Value: name,
-						Events: ui.Events{
-							OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-								s.Client.Log.Printf("Logging in with character %s", name)
-								s.Client.Send(network.Command(network.CommandCharacter{
-									Type:       network.ChooseCharacter,
-									Characters: []string{name},
-								}))
-								return false
-							},
-						},
-					})
-
-					s.SelectionContainer.AdoptChannel <- elChar
-				}(i, name)
+				s.addCharacter(i, name)
 			}
 		} else if t.Type == network.ChooseCharacter {
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
