@@ -1,6 +1,7 @@
 package states
 
 import (
+	"fmt"
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
@@ -11,7 +12,6 @@ import (
 type CharacterCreation struct {
 	client.State
 	SelectionContainer ui.Container
-	CharacterContainer ui.Container
 }
 
 // Init is our CharacterCreation init state.
@@ -26,7 +26,9 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		`,
 	})
 
-	elSelection := ui.NewTextElement(ui.TextElementConfig{
+	var elName, elSelection, elCreate ui.ElementI
+
+	elSelection = ui.NewTextElement(ui.TextElementConfig{
 		Style: `
 			PaddingLeft 5%
 			PaddingRight 5%
@@ -59,7 +61,31 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		},
 	})
 
-	elCreate := ui.NewButtonElement(ui.ButtonElementConfig{
+	elName = ui.NewInputElement(ui.InputElementConfig{
+		Style: `
+			Origin CenterX CenterY
+			X 50%
+			Y 10%
+			H 20%
+			W 100%
+			MaxW 200
+			MaxH 30
+			MinH 25
+			ForegroundColor 255 0 0 255
+		`,
+		Password:    true,
+		Placeholder: "character name",
+		Events: ui.Events{
+			OnKeyDown: func(char uint8, modifiers uint16) bool {
+				if char == 13 { // Enter
+					elCreate.OnMouseButtonUp(1, 0, 0)
+				}
+				return true
+			},
+		},
+	})
+
+	elCreate = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -67,20 +93,30 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 			W 100%
 			MaxW 200
 		`,
-		Value: "Dummy Character",
+		Value: "Create Character",
 		Events: ui.Events{
-			OnMouseButtonDown: func(button uint8, x int32, y int32) bool {
-				s.Client.Log.Printf("Logging in with dummy character")
+			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Send(network.Command(network.CommandCharacter{
-					Type:       network.ChooseCharacter,
-					Characters: []string{"dummy"},
+					Type:       network.CreateCharacter,
+					Characters: []string{elName.GetValue()},
 				}))
 				return false
 			},
 		},
 	})
 
+	// TODO:
+	/*
+		s.Client.Log.Printf("Logging in with dummy character")
+		s.Client.Send(network.Command(network.CommandCharacter{
+			Type:       network.ChooseCharacter,
+			Characters: []string{"dummy"},
+		}))
+
+	*/
+
 	s.SelectionContainer.AdoptChannel <- elSelection
+	s.SelectionContainer.AdoptChannel <- elName
 	s.SelectionContainer.AdoptChannel <- elCreate
 	s.Client.RootWindow.AdoptChannel <- s.SelectionContainer.This
 
@@ -124,7 +160,36 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 			return true
 		}
 	case network.CommandCharacter:
-		if t.Type == network.ChooseCharacter {
+		// CreateCharacter is how the server notifies us of new characters
+		if t.Type == network.CreateCharacter {
+			// FIXME: This is temporary so we can actually login with characters.
+			for i, name := range t.Characters {
+				go func(i int, name string) {
+					elChar := ui.NewButtonElement(ui.ButtonElementConfig{
+						Style: fmt.Sprintf(`
+							Origin CenterX CenterY
+							X 25%%
+							Y %d%%
+							W 100%%
+							MaxW 25%%
+						`, 10+i*10),
+						Value: name,
+						Events: ui.Events{
+							OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+								s.Client.Log.Printf("Logging in with character %s", name)
+								s.Client.Send(network.Command(network.CommandCharacter{
+									Type:       network.ChooseCharacter,
+									Characters: []string{name},
+								}))
+								return false
+							},
+						},
+					})
+
+					s.SelectionContainer.AdoptChannel <- elChar
+				}(i, name)
+			}
+		} else if t.Type == network.ChooseCharacter {
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
 			return true
 		} else {
