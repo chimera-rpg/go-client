@@ -36,40 +36,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		`,
 	})
 
-	var elName, elSelection, elCreate ui.ElementI
-
-	elSelection = ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			PaddingLeft 5%
-			PaddingRight 5%
-			PaddingTop 5%
-			PaddingBottom 5%
-			Origin CenterX CenterY
-			ForegroundColor 255 255 255 255
-			BackgroundColor 0 0 0 255
-			X 50%
-			Y 10%
-		`,
-		Value: "Select your Character",
-		Events: ui.Events{
-			OnMouseMove: func(x int32, y int32) bool {
-				s.Client.Log.Printf("Movement: %dx%d! :)\n", x, y)
-				return false
-			},
-			OnMouseButtonDown: func(button uint8, x int32, y int32) bool {
-				s.Client.Log.Printf("Clicky: %d @ %dx%d! :D\n", button, x, y)
-				return false
-			},
-			OnMouseIn: func(x int32, y int32) bool {
-				s.Client.Log.Printf("MouseIn\n")
-				return false
-			},
-			OnMouseOut: func(x int32, y int32) bool {
-				s.Client.Log.Printf("MouseOut\n")
-				return false
-			},
-		},
-	})
+	var elName, elCreate ui.ElementI
 
 	elName = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
@@ -124,7 +91,6 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 
 	*/
 
-	s.SelectionContainer.AdoptChannel <- elSelection
 	s.SelectionContainer.AdoptChannel <- elName
 	s.SelectionContainer.AdoptChannel <- elCreate
 	s.SelectionContainer.AdoptChannel <- s.CharactersContainer.This
