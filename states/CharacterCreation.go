@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
@@ -119,6 +120,11 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	s.SelectionContainer.AdoptChannel <- elName
 	s.SelectionContainer.AdoptChannel <- elCreate
 	s.Client.RootWindow.AdoptChannel <- s.SelectionContainer.This
+
+	// Let the server know we're ready!
+	s.Client.Send(network.Command(network.CommandBasic{
+		Type: network.Okay,
+	}))
 
 	go s.Loop()
 
