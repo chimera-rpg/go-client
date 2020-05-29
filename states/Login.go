@@ -151,7 +151,6 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: "LOGIN",
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.Log.Printf("Sending %s and %s\n", elUsername.GetValue(), elPassword.GetValue())
 				s.Client.Send(network.Command(network.CommandLogin{
 					Type: network.Login,
 					User: elUsername.GetValue(),

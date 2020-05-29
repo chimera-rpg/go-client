@@ -126,15 +126,4 @@ func (s *Game) HandleNet() {
 			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 		}
 	}
-	/*defer func() {
-	    if r := recover(); r != nil {
-	      s.Client.Log.Print("Guess we done.")
-	    }
-	  }()
-	  for s.NetListening {
-	    var cmd network.Command
-	    s.Client.Log.Print("Pre cmd")
-	    s.Client.Receive(&cmd)
-	    s.Client.Log.Print("Post cmd")
-	  }*/
 }

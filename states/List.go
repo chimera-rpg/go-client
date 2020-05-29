@@ -56,8 +56,8 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	//elHost.Focus()
-	// elHost.UpdateChannel <- ui.Update{ run: &elHost.Focus }
+	elHost.Focus()
+
 	elConnect = ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: `
 			Origin Bottom

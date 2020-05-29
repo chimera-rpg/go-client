@@ -81,16 +81,6 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		},
 	})
 
-	// TODO:
-	/*
-		s.Client.Log.Printf("Logging in with dummy character")
-		s.Client.Send(network.Command(network.CommandCharacter{
-			Type:       network.ChooseCharacter,
-			Characters: []string{"dummy"},
-		}))
-
-	*/
-
 	s.SelectionContainer.AdoptChannel <- elName
 	s.SelectionContainer.AdoptChannel <- elCreate
 	s.SelectionContainer.AdoptChannel <- s.CharactersContainer.This
@@ -103,7 +93,6 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 
 	go s.Loop()
 
-	//next = Client.StateI(&Game{})
 	return
 }
 
@@ -181,6 +170,7 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 				s.addCharacter(i, name)
 			}
 		} else if t.Type == network.ChooseCharacter {
+			// ChooseCharacter is how the server lets us know we're logging in as a character.
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
 			return true
 		} else {
