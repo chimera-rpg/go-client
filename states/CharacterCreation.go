@@ -87,8 +87,8 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	s.Client.RootWindow.AdoptChannel <- s.SelectionContainer.This
 
 	// Let the server know we're ready!
-	s.Client.Send(network.Command(network.CommandBasic{
-		Type: network.Okay,
+	s.Client.Send(network.Command(network.CommandCharacter{
+		Type: network.QueryCharacters,
 	}))
 
 	go s.Loop()
