@@ -3,6 +3,8 @@ package states
 import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
+	"github.com/chimera-rpg/go-client/world"
+	"github.com/chimera-rpg/go-common/network"
 )
 
 // Game is our live Game state, used once the user has connected to the server
@@ -15,10 +17,14 @@ type Game struct {
 	GroundWindow    ui.Container
 	StatsWindow     ui.Container
 	StateWindow     ui.Container
+	world           world.World
 }
 
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
+	// Initialize our world.
+	s.world.Init(s.Client)
+
 	s.Client.Log.Print("Game State")
 	// Sub-window: map
 	err = s.MapWindow.Setup(ui.ContainerConfig{
@@ -101,7 +107,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.StateWindow.SetHidden(true)
 	//
 	//go s.Client.LoopCmd()
-	go s.HandleNet()
+	go s.Loop()
 	return
 }
 
@@ -115,15 +121,32 @@ func (s *Game) Close() {
 	s.ChatWindow.Destroy()
 }
 
-// HandleNet handles the network code for our Game state.
-func (s *Game) HandleNet() {
-	for s.Client.IsRunning() {
+// Loop is our loop for managing network activity and beyond.
+func (s *Game) Loop() {
+	for {
 		select {
 		case cmd := <-s.Client.CmdChan:
-			s.Client.Log.Printf("cmd! %d", cmd.GetType())
+			ret := s.HandleNet(cmd)
+			if ret {
+				return
+			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
 			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+			return
 		}
 	}
+}
+
+// HandleNet handles the network code for our Game state.
+func (s *Game) HandleNet(cmd network.Command) bool {
+	switch cmd.(type) {
+	case network.CommandMap:
+		s.world.HandleNet(cmd)
+	case network.CommandObject:
+		s.world.HandleNet(cmd)
+	default:
+		s.Client.Log.Printf("Server sent a Command\n")
+	}
+	return false
 }
