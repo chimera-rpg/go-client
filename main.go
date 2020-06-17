@@ -5,8 +5,8 @@ import (
 	"log"
 	"runtime/debug"
 
-	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/states"
 	"github.com/chimera-rpg/go-client/ui"
 )
@@ -47,6 +47,9 @@ func main() {
 	// Start the clientInstance's channel listening loop as a coroutine
 	go clientInstance.ChannelLoop()
 
+	flag.String("username", "", "username")
+	flag.String("password", "", "password")
+	flag.String("character", "", "name of character")
 	netPtr := flag.String("connect", "", "SERVER:PORT")
 	flag.Parse()
 	// Automatically attempt to connect if the server flag was passed

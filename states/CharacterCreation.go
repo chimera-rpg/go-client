@@ -1,6 +1,7 @@
 package states
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/chimera-rpg/go-client/client"
@@ -136,6 +137,15 @@ func (s *CharacterCreation) Close() {
 
 // Loop is our loop for managing network activity and beyond.
 func (s *CharacterCreation) Loop() {
+	// Attempt to use provided character.
+	character := flag.Lookup("character")
+	if character.Value.String() != character.DefValue {
+		s.Client.Send(network.Command(network.CommandCharacter{
+			Type:       network.ChooseCharacter,
+			Characters: []string{character.Value.String()},
+		}))
+	}
+
 	for {
 		select {
 		case cmd := <-s.Client.CmdChan:

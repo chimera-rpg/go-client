@@ -1,6 +1,7 @@
 package states
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/chimera-rpg/go-client/client"
@@ -196,6 +197,16 @@ func (s *Login) Close() {
 
 // Loop handles our various state channels.
 func (s *Login) Loop() {
+	// Attempt to automatically log in if username and password have been provided.
+	username := flag.Lookup("username")
+	password := flag.Lookup("password")
+	if username.Value.String() != username.DefValue && password.Value.String() != username.DefValue {
+		s.Client.Send(network.Command(network.CommandLogin{
+			Type: network.Login,
+			User: username.Value.String(),
+			Pass: password.Value.String(),
+		}))
+	}
 	for {
 		select {
 		case cmd := <-s.Client.CmdChan:
