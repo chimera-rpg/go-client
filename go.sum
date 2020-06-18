@@ -6,6 +6,8 @@ github.com/chimera-rpg/go-common v0.0.0-20190530001634-926e695329d6 h1:XOmUhJyN1
 github.com/chimera-rpg/go-common v0.0.0-20190530001634-926e695329d6/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
 github.com/chimera-rpg/go-common v0.0.0-20200513224815-6ea48b392320 h1:xR9pJPS33DOo5rh7Yjnw7yz1mlI0gUfs4wVmo4uKYOY=
 github.com/chimera-rpg/go-common v0.0.0-20200513224815-6ea48b392320/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
+github.com/chimera-rpg/go-common v0.0.0-20200618035033-8e75647c6b9c h1:IfT/GX0r3oaUHsa1tJLxqoHpp35XH5eqn/4S2NEriCc=
+github.com/chimera-rpg/go-common v0.0.0-20200618035033-8e75647c6b9c/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
 github.com/eczarny/lexer v0.0.0-20141213044152-5fcb9a5b73e7 h1:IapuIIztRMDE1P89/1LEWH3dxS6V6VOTUyQ3uGzgFsw=
 github.com/eczarny/lexer v0.0.0-20141213044152-5fcb9a5b73e7/go.mod h1:oAvLpuAW27eYdm/pSDkQaWpcGTd+s8poB/hCRj76rPg=
 github.com/kettek/apng v0.0.0-20190523045756-e5135b1219f5 h1:xP9mZUJA2zL0prZ0YpL0rEW+SIqCXCvQmyPpnR/9H1o=
