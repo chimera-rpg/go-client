@@ -4,6 +4,8 @@ import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-common/network"
+
+	"fmt"
 )
 
 // World is a collection of all the current known client representations of the game world.
@@ -22,5 +24,6 @@ func (w *World) Init(c *client.Client) {
 
 // HandleNet is the handler for all network updates.
 func (w *World) HandleNet(command network.Command) {
+	fmt.Printf("Got %+v\n", command)
 	// TODO: process command...?
 }
