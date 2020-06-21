@@ -145,6 +145,8 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.world.HandleNet(cmd)
 	case network.CommandObject:
 		s.world.HandleNet(cmd)
+	case network.CommandTile:
+		s.world.HandleNet(cmd)
 	default:
 		s.Client.Log.Printf("Server sent a Command\n")
 	}

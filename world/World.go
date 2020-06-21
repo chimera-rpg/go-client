@@ -23,7 +23,14 @@ func (w *World) Init(c *client.Client) {
 }
 
 // HandleNet is the handler for all network updates.
-func (w *World) HandleNet(command network.Command) {
-	fmt.Printf("Got %+v\n", command)
-	// TODO: process command...?
+func (w *World) HandleNet(cmd network.Command) {
+	// TODO: process commands
+	switch cmd.(type) {
+	case network.CommandMap:
+		fmt.Printf("Got map command: %+v\n", cmd)
+	case network.CommandObject:
+		fmt.Printf("Got object command: %+v\n", cmd)
+	case network.CommandTile:
+		fmt.Printf("Got tile command: %+v\n", cmd)
+	}
 }
