@@ -8,6 +8,7 @@ type ContainerRenderFunc func(*Container)
 type ContainerConfig struct {
 	Parent              *Container
 	Style               string
+	Events              Events
 	ContainerRenderFunc ContainerRenderFunc
 	Context             *Context
 	Value               string
@@ -34,6 +35,7 @@ func (w *Container) Setup(c ContainerConfig) (err error) {
 	w.ContainerRenderFunc = c.ContainerRenderFunc
 	w.Style.Parse(ContainerElementStyle)
 	w.Style.Parse(c.Style)
+	w.Events = c.Events
 	w.Context = c.Context
 	w.Value = c.Value
 	w.SetDirty(true)
