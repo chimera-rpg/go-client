@@ -24,7 +24,7 @@ type Game struct {
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	// Initialize our world.
-	s.world.Init(s.Client.DataManager)
+	s.world.Init(s.Client.DataManager, s.Client.Log)
 
 	s.Client.Log.Print("Game State")
 

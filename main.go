@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"log"
+	"github.com/sirupsen/logrus"
 	"runtime/debug"
 
 	"github.com/chimera-rpg/go-client/client"
@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	var log = logrus.New()
 	var err error
 	var dataManager data.Manager
 	var clientInstance client.Client
@@ -23,9 +24,10 @@ func main() {
 			debug.PrintStack()
 		}
 	}()
+	log.SetLevel(logrus.DebugLevel)
 	log.Print("Starting Chimera client (golang)")
 
-	if err = dataManager.Setup(); err != nil {
+	if err = dataManager.Setup(log); err != nil {
 		ui.ShowError("%s", err)
 	}
 
@@ -39,7 +41,7 @@ func main() {
 	ui.GlobalInstance = &uiInstance
 
 	// Setup our Client
-	if err = clientInstance.Setup(&dataManager, &uiInstance); err != nil {
+	if err = clientInstance.Setup(&dataManager, &uiInstance, log); err != nil {
 		ui.ShowError("%s", err)
 		return
 	}

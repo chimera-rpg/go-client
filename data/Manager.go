@@ -5,8 +5,8 @@ import (
 	// Package image/png is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
 	// image.Decode to understand PNG formatted images.
+	"github.com/sirupsen/logrus"
 	_ "image/png"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -18,7 +18,7 @@ import (
 // Manager handles access to files on the system.
 type Manager struct {
 	Conn       *network.Connection
-	Log        *log.Logger
+	Log        *logrus.Logger
 	DataPath   string // Path for client data (fonts, etc.)
 	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
 	CachePath  string // Path for local cache (downloaded PNGs, etc.)
@@ -26,8 +26,8 @@ type Manager struct {
 }
 
 // Setup gets the required data/config/cache paths and creates them if needed.
-func (m *Manager) Setup() (err error) {
-	m.Log = log.New(os.Stdout, "Manager: ", log.Ltime)
+func (m *Manager) Setup(l *logrus.Logger) (err error) {
+	m.Log = l
 	// Acquire our various paths.
 	if err = m.acquireDataPath(); err != nil {
 		return
@@ -137,7 +137,9 @@ func (m *Manager) EnsureAnimation(aID uint32) {
 		m.animations[aID] = Animation{
 			Faces: make(map[uint32][]AnimationFrame),
 		}
-		m.Log.Printf("Sending animrequest for %d\n", aID)
+		m.Log.WithFields(logrus.Fields{
+			"ID": aID,
+		}).Info("[Manager] Sending Animation Request")
 		m.Conn.Send(network.CommandAnimation{
 			Type:        network.Get,
 			AnimationID: aID,
@@ -154,7 +156,10 @@ func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
 			Faces:       make(map[uint32][]AnimationFrame),
 		}
 	}
-	m.Log.Printf("Received animrequest %d: %+v\n", cmd.AnimationID, cmd)
+	m.Log.WithFields(logrus.Fields{
+		"ID":        cmd.AnimationID,
+		"FaceCount": len(cmd.Faces),
+	}).Info("[Manager] Received Animation")
 	for faceID, frames := range cmd.Faces {
 		m.animations[cmd.AnimationID].Faces[faceID] = make([]AnimationFrame, len(frames))
 		for frameIndex, frame := range frames {

@@ -2,12 +2,11 @@ package client
 
 import (
 	"fmt"
-	"log"
-	"os"
 
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
+	"github.com/sirupsen/logrus"
 )
 
 // Client is the main handler of state, network transmission, and otherwise.
@@ -17,15 +16,15 @@ type Client struct {
 	RootWindow    *ui.Window
 	LogHistory    []string
 	State         StateI
-	Log           *log.Logger
+	Log           *logrus.Logger
 	isRunning     bool
 	RenderChannel chan struct{}
 	StateChannel  chan StateMessage
 }
 
 // Setup sets up a Client's base data structures for use.
-func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance) (err error) {
-	c.Log = log.New(os.Stdout, "Client: ", log.Ltime)
+func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, l *logrus.Logger) (err error) {
+	c.Log = l
 
 	c.RootWindow = &inst.RootWindow
 	c.DataManager = dataManager
@@ -68,7 +67,7 @@ func (c *Client) SetState(state StateI, v interface{}) {
 	c.State = state
 	next, nextArgs, err := c.State.Init(v)
 	if err != nil {
-		c.Log.Print(err)
+		c.Log.Error(err)
 	}
 	if next != nil {
 		c.SetState(next, nextArgs)

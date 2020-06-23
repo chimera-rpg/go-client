@@ -4,8 +4,7 @@ import (
 	"errors"
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-common/network"
-	"log"
-	"os"
+	"github.com/sirupsen/logrus"
 )
 
 // World is a collection of all the current known client representations of the game world.
@@ -14,13 +13,14 @@ type World struct {
 	maps        map[data.StringID]*DynamicMap
 	currentMap  data.StringID
 	objects     map[uint32]*Object
-	Log         *log.Logger
+	Log         *logrus.Logger
 }
 
 // Init initializes the given world object with the passed client.
-func (w *World) Init(manager *data.Manager) {
+func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.dataManager = manager
-	w.Log = log.New(os.Stdout, "World: ", log.Ltime)
+	w.Log = l
+
 	w.maps = make(map[data.StringID]*DynamicMap)
 	w.objects = make(map[uint32]*Object)
 	w.currentMap = 0
@@ -30,7 +30,10 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 	if _, ok := w.maps[cmd.MapID]; ok {
 		// TODO: ?
 	} else {
-		w.Log.Printf("Made map %d(%s)\n", cmd.MapID, cmd.Name)
+		w.Log.WithFields(logrus.Fields{
+			"ID":   cmd.MapID,
+			"Name": cmd.Name,
+		}).Info("[World] Created map")
 		w.maps[cmd.MapID] = &DynamicMap{}
 		w.maps[cmd.MapID].Init()
 	}
@@ -54,7 +57,9 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	case network.CommandObjectPayloadDelete:
 		w.DeleteObject(cmd.ObjectID)
 	default:
-		w.Log.Printf("Unhandled CommandObject Payload: %+v\n", p)
+		w.Log.WithFields(logrus.Fields{
+			"payload": p,
+		}).Info("[World] Unhandled CommandObject Payload")
 	}
 	return nil
 }
