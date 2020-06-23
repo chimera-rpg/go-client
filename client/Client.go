@@ -12,9 +12,9 @@ import (
 
 // Client is the main handler of state, network transmission, and otherwise.
 type Client struct {
-	DataManager *data.Manager
-	RootWindow  *ui.Window
 	network.Connection
+	DataManager   *data.Manager
+	RootWindow    *ui.Window
 	LogHistory    []string
 	State         StateI
 	Log           *log.Logger
@@ -25,10 +25,11 @@ type Client struct {
 
 // Setup sets up a Client's base data structures for use.
 func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance) (err error) {
-	c.Log = log.New(os.Stdout, "Client: ", log.Lshortfile)
+	c.Log = log.New(os.Stdout, "Client: ", log.Ltime)
 
 	c.RootWindow = &inst.RootWindow
 	c.DataManager = dataManager
+	c.DataManager.Conn = &c.Connection
 
 	network.RegisterCommands()
 

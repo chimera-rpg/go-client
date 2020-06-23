@@ -24,7 +24,7 @@ type Game struct {
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	// Initialize our world.
-	s.world.Init(s.Client)
+	s.world.Init(s.Client.DataManager)
 
 	s.Client.Log.Print("Game State")
 
@@ -182,7 +182,7 @@ func (s *Game) Loop() {
 func (s *Game) HandleNet(cmd network.Command) bool {
 	switch c := cmd.(type) {
 	case network.CommandAnimation:
-		s.world.HandleAnimationCommand(c)
+		s.Client.DataManager.HandleAnimationCommand(c)
 	case network.CommandMap:
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:

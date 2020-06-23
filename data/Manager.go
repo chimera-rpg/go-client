@@ -6,22 +6,28 @@ import (
 	// but is imported for its initialization side-effect, which allows
 	// image.Decode to understand PNG formatted images.
 	_ "image/png"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/chimera-rpg/go-common/network"
 	"github.com/kettek/apng"
 )
 
 // Manager handles access to files on the system.
 type Manager struct {
+	Conn       *network.Connection
+	Log        *log.Logger
 	DataPath   string // Path for client data (fonts, etc.)
 	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
 	CachePath  string // Path for local cache (downloaded PNGs, etc.)
+	animations map[uint32]Animation
 }
 
 // Setup gets the required data/config/cache paths and creates them if needed.
 func (m *Manager) Setup() (err error) {
+	m.Log = log.New(os.Stdout, "Manager: ", log.Ltime)
 	// Acquire our various paths.
 	if err = m.acquireDataPath(); err != nil {
 		return
@@ -53,6 +59,7 @@ func (m *Manager) Setup() (err error) {
 			return
 		}
 	}
+	m.animations = make(map[uint32]Animation)
 	return
 }
 
@@ -121,4 +128,41 @@ func (m *Manager) GetImage(file string) (img image.Image, err error) {
 	img, _, err = image.Decode(reader)
 	return
 
+}
+
+// EnsureAnimation checks if an animation associated with a given ID exists, and if not, sends a network request for the animation.
+func (m *Manager) EnsureAnimation(aID uint32) {
+	// If animation id is not known, add the animation, then send an animation request.
+	if _, animExists := m.animations[aID]; !animExists {
+		m.animations[aID] = Animation{
+			Faces: make(map[uint32][]AnimationFrame),
+		}
+		m.Log.Printf("Sending animrequest for %d\n", aID)
+		m.Conn.Send(network.CommandAnimation{
+			Type:        network.Get,
+			AnimationID: aID,
+		})
+	}
+
+}
+
+// HandleAnimationCommand handles received animation commands and incorporates them into the animations map.
+func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
+	if _, exists := m.animations[cmd.AnimationID]; !exists {
+		m.animations[cmd.AnimationID] = Animation{
+			AnimationID: cmd.AnimationID,
+			Faces:       make(map[uint32][]AnimationFrame),
+		}
+	}
+	m.Log.Printf("Received animrequest %d: %+v\n", cmd.AnimationID, cmd)
+	for faceID, frames := range cmd.Faces {
+		m.animations[cmd.AnimationID].Faces[faceID] = make([]AnimationFrame, len(frames))
+		for frameIndex, frame := range frames {
+			m.animations[cmd.AnimationID].Faces[faceID][frameIndex] = AnimationFrame{
+				ImageID: frame.ImageID,
+				Time:    frame.Time,
+			}
+		}
+	}
+	return nil
 }
