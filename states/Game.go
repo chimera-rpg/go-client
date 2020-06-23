@@ -181,16 +181,16 @@ func (s *Game) Loop() {
 // HandleNet handles the network code for our Game state.
 func (s *Game) HandleNet(cmd network.Command) bool {
 	switch c := cmd.(type) {
+	case network.CommandAnimation:
+		s.world.HandleAnimationCommand(c)
 	case network.CommandMap:
-		s.Client.Log.Printf("Got CommandMap: %+v\n", c)
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:
 		s.world.HandleObjectCommand(c)
 	case network.CommandTile:
-		s.Client.Log.Printf("Got CommandTile: %+v\n", c)
 		s.world.HandleTileCommand(c)
 	default:
-		s.Client.Log.Printf("Server sent a Command\n")
+		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
 	return false
 }
