@@ -25,11 +25,18 @@ func (w *World) Init(c *client.Client) {
 // HandleNet is the handler for all network updates.
 func (w *World) HandleNet(cmd network.Command) {
 	// TODO: process commands
-	switch cmd.(type) {
+	switch t := cmd.(type) {
 	case network.CommandMap:
 		fmt.Printf("Got map command: %+v\n", cmd)
 	case network.CommandObject:
-		fmt.Printf("Got object command: %+v\n", cmd)
+		switch payload := t.Payload.(type) {
+		case network.CommandObjectPayloadCreate:
+			fmt.Printf("Got CommandObjectPayloadCreate: %+v\n", payload)
+			// TODO: Check if AnimationID is known.
+			// TODO: Add object representation to map.
+		default:
+			fmt.Printf("Unhandled CommandObject Payload: %+v\n", payload)
+		}
 	case network.CommandTile:
 		fmt.Printf("Got tile command: %+v\n", cmd)
 	}
