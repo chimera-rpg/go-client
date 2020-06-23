@@ -29,6 +29,18 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 	return nil
 }
 
+func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
+	switch p := cmd.Payload.(type) {
+	case network.CommandObjectPayloadCreate:
+		w.client.Log.Printf("Got CommandObjectPayloadCreate: %+v\n", p)
+		// TODO: Check if AnimationID is known.
+		// TODO: Add object representation to map.
+	default:
+		w.client.Log.Printf("Unhandled CommandObject Payload: %+v\n", p)
+	}
+	return nil
+}
+
 func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	return nil
 }

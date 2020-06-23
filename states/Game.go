@@ -185,14 +185,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.Client.Log.Printf("Got CommandMap: %+v\n", c)
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:
-		switch p := c.Payload.(type) {
-		case network.CommandObjectPayloadCreate:
-			s.Client.Log.Printf("Got CommandObjectPayloadCreate: %+v\n", p)
-			// TODO: Check if AnimationID is known.
-			// TODO: Add object representation to map.
-		default:
-			s.Client.Log.Printf("Unhandled CommandObject Payload: %+v\n", p)
-		}
+		s.world.HandleObjectCommand(c)
 	case network.CommandTile:
 		s.Client.Log.Printf("Got CommandTile: %+v\n", c)
 		s.world.HandleTileCommand(c)
