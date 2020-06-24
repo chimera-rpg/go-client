@@ -130,7 +130,8 @@ func (instance *Instance) HandleEvent(event interface{}) {
 				return
 			}
 			if t.Direction == key.DirRelease {
-				instance.FocusedElement.OnKeyDown(uint8(t.Code), uint16(t.Modifiers))
+				// TODO: Handle repeat event if that is a thing.
+				instance.FocusedElement.OnKeyDown(uint8(t.Code), uint16(t.Modifiers), false)
 			} else {
 				instance.FocusedElement.OnKeyUp(uint8(t.Code), uint16(t.Modifiers))
 			}

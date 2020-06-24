@@ -53,7 +53,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		`,
 		Placeholder: "character name",
 		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16) bool {
+			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
 					elCreate.OnMouseButtonUp(1, 0, 0)
 				}

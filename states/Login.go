@@ -73,7 +73,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			OnAdopted: func(parent ui.ElementI) {
 				elUsername.Focus()
 			},
-			OnKeyDown: func(char uint8, modifiers uint16) bool {
+			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
 					elLogin.OnMouseButtonUp(1, 0, 0)
 				}
@@ -98,7 +98,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Placeholder: "password",
 		Value:       lstate.password,
 		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16) bool {
+			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
 					elLogin.OnMouseButtonUp(1, 0, 0)
 				}

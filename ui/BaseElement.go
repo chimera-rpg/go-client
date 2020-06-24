@@ -475,9 +475,9 @@ func (b *BaseElement) OnMouseButtonUp(buttonID uint8, x int32, y int32) bool {
 }
 
 // OnKeyDown handles when a key is depresed.
-func (b *BaseElement) OnKeyDown(key uint8, modifiers uint16) bool {
+func (b *BaseElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool {
 	if b.Events.OnKeyDown != nil {
-		return b.Events.OnKeyDown(key, modifiers)
+		return b.Events.OnKeyDown(key, modifiers, repeat)
 	}
 	return true
 }

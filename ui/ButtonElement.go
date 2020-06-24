@@ -34,7 +34,7 @@ func NewButtonElement(c ButtonElementConfig) ElementI {
 }
 
 // OnKeyDown sets the button's held state when the enter key is pressed.
-func (b *ButtonElement) OnKeyDown(key uint8, modifiers uint16) bool {
+func (b *ButtonElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool {
 	switch key {
 	case 13: // Activate button when enter is hit
 		b.SetHeld(true)

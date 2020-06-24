@@ -56,7 +56,7 @@ type ElementI interface {
 	OnMouseIn(x int32, y int32) bool
 	OnMouseOut(x int32, y int32) bool
 	OnMouseButtonUp(buttonID uint8, x int32, y int32) bool
-	OnKeyDown(key uint8, modifiers uint16) bool
+	OnKeyDown(key uint8, modifiers uint16, repeat bool) bool
 	OnKeyUp(key uint8, modifiers uint16) bool
 	OnTextInput(str string) bool
 	OnTextEdit(str string, start int32, length int32) bool

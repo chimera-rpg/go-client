@@ -152,7 +152,7 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 				return
 			}
 			if t.State == sdl.PRESSED {
-				instance.FocusedElement.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod)
+				instance.FocusedElement.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod, t.Repeat > 0)
 			} else {
 				instance.FocusedElement.OnKeyUp(uint8(t.Keysym.Sym), t.Keysym.Mod)
 			}
@@ -232,7 +232,7 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 		}
 	case *sdl.KeyboardEvent:
 		if t.State == sdl.PRESSED {
-			if !e.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod) {
+			if !e.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod, t.Repeat > 0) {
 				return
 			}
 		} else {

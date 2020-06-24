@@ -48,7 +48,7 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		`,
 		Placeholder: "host:port",
 		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16) bool {
+			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
 					elConnect.OnMouseButtonUp(1, 0, 0)
 				}

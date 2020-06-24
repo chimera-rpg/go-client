@@ -48,7 +48,7 @@ func (i *InputElement) SyncComposition() {
 
 // OnKeyDown handles base key presses for moving the cursor, deleting runes, and
 // otherwise.
-func (i *InputElement) OnKeyDown(key uint8, modifiers uint16) bool {
+func (i *InputElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool {
 	switch key {
 	case 27: // esc
 		//BlurFocusedElement()
@@ -79,7 +79,7 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16) bool {
 	}
 	i.SyncComposition()
 	if i.Events.OnKeyDown != nil {
-		return i.Events.OnKeyDown(key, modifiers)
+		return i.Events.OnKeyDown(key, modifiers, repeat)
 	}
 	return true
 }

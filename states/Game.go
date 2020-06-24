@@ -13,16 +13,38 @@ type Game struct {
 	client.State
 	GameContainer   ui.Container
 	ChatWindow      ui.Container
-	MapWindow       ui.Container
+	MapElement      ui.MapElement
 	InventoryWindow ui.Container
 	GroundWindow    ui.Container
 	StatsWindow     ui.Container
 	StateWindow     ui.Container
 	world           world.World
+	keyBinds        []uint8
+	inputChan       chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
+}
+
+// UserInput is an interface used in a channel in Game for handling UI input.
+type UserInput interface {
+}
+
+// KeyInput is the Userinput for key events.
+type KeyInput struct {
+	code      uint8
+	modifiers uint16
+	pressed   bool
+	repeat    bool
+}
+
+// MouseInput is the UserInput for mouse events.
+type MouseInput struct {
+	x, y    int32
+	button  uint8
+	pressed bool
 }
 
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
+	s.inputChan = make(chan UserInput)
 	// Initialize our world.
 	s.world.Init(s.Client.DataManager, s.Client.Log)
 
@@ -37,28 +59,38 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			BackgroundColor 139 186 139 255
 		`,
 		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16) bool {
-				// TODO: Forward this to a full bind/keypress handler system.
-				if char == 107 || char == 82 { // up
-					s.Client.Log.Println("send north")
-					s.Client.Send(network.CommandCmd{
-						Cmd: network.North,
-					})
-				} else if char == 106 || char == 81 { // down
-					s.Client.Log.Println("send south")
-					s.Client.Send(network.CommandCmd{
-						Cmd: network.South,
-					})
-				} else if char == 104 || char == 80 { // left
-					s.Client.Log.Println("send west")
-					s.Client.Send(network.CommandCmd{
-						Cmd: network.West,
-					})
-				} else if char == 108 || char == 79 { // right
-					s.Client.Log.Println("send east")
-					s.Client.Send(network.CommandCmd{
-						Cmd: network.East,
-					})
+			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
+				s.inputChan <- KeyInput{
+					code:      char,
+					modifiers: modifiers,
+					pressed:   true,
+					repeat:    repeat,
+				}
+				return true
+			},
+			OnKeyUp: func(char uint8, modifiers uint16) bool {
+				s.inputChan <- KeyInput{
+					code:      char,
+					modifiers: modifiers,
+					pressed:   false,
+				}
+				return true
+			},
+			OnMouseButtonDown: func(buttonID uint8, x int32, y int32) bool {
+				s.inputChan <- MouseInput{
+					button:  buttonID,
+					pressed: false,
+					x:       x,
+					y:       y,
+				}
+				return true
+			},
+			OnMouseButtonUp: func(buttonID uint8, x int32, y int32) bool {
+				s.inputChan <- MouseInput{
+					button:  buttonID,
+					pressed: true,
+					x:       x,
+					y:       y,
 				}
 				return true
 			},
@@ -67,8 +99,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.Client.RootWindow.AdoptChannel <- s.GameContainer.This
 
 	// Sub-window: map
-	err = s.MapWindow.Setup(ui.ContainerConfig{
-		Value: "Map",
+	err = s.MapElement.Setup(ui.MapElementConfig{
 		Style: `
 			X 50%
 			Y 50%
@@ -81,8 +112,8 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	mapText := ui.NewTextElement(ui.TextElementConfig{
 		Value: "Map",
 	})
-	s.MapWindow.AdoptChannel <- mapText
-	s.GameContainer.AdoptChannel <- s.MapWindow.This
+	s.MapElement.AdoptChannel <- mapText
+	s.GameContainer.AdoptChannel <- s.MapElement.This
 	// Sub-window: chat
 	err = s.ChatWindow.Setup(ui.ContainerConfig{
 		Value: "Chat",
@@ -153,7 +184,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 
 // Close our Game state.
 func (s *Game) Close() {
-	s.MapWindow.Destroy()
+	s.MapElement.Destroy()
 	s.StateWindow.Destroy()
 	s.StatsWindow.Destroy()
 	s.GroundWindow.Destroy()
@@ -174,6 +205,36 @@ func (s *Game) Loop() {
 			s.Client.Log.Print("Lost connection to server.")
 			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 			return
+		case inp := <-s.inputChan:
+			switch e := inp.(type) {
+			case KeyInput:
+				// TODO: Move to key bind system.
+				if e.pressed && !e.repeat {
+					if e.code == 107 || e.code == 82 { // up
+						s.Client.Log.Println("send north")
+						s.Client.Send(network.CommandCmd{
+							Cmd: network.North,
+						})
+					} else if e.code == 106 || e.code == 81 { // down
+						s.Client.Log.Println("send south")
+						s.Client.Send(network.CommandCmd{
+							Cmd: network.South,
+						})
+					} else if e.code == 104 || e.code == 80 { // left
+						s.Client.Log.Println("send west")
+						s.Client.Send(network.CommandCmd{
+							Cmd: network.West,
+						})
+					} else if e.code == 108 || e.code == 79 { // right
+						s.Client.Log.Println("send east")
+						s.Client.Send(network.CommandCmd{
+							Cmd: network.East,
+						})
+					}
+				}
+			case MouseInput:
+				s.Client.Log.Printf("mouse: %+v\n", e)
+			}
 		}
 	}
 }
