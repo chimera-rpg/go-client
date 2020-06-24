@@ -9,10 +9,10 @@ type MapElement struct {
 }
 
 // Destroy cleans up the MapElement's resources.
-func (i *MapElement) Destroy() {
+func (m *MapElement) Destroy() {
 }
 
 // Render renders the MapElement to the rendering context, with various
 // conditionally rendered aspects to represent state.
-func (i *MapElement) Render() {
+func (m *MapElement) Render() {
 }
