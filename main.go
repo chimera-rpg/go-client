@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/sirupsen/logrus"
 	"runtime/debug"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/data"
@@ -13,6 +14,7 @@ import (
 
 func main() {
 	var log = logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{ForceColors: true}) // It would be ideal to only force colors on Windows 10+ -- checking this is possible with x/sys/windows/registry, though we'd need OS-specific source files for log initialization.
 	var err error
 	var dataManager data.Manager
 	var clientInstance client.Client
