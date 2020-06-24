@@ -23,6 +23,7 @@ type Manager struct {
 	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
 	CachePath  string // Path for local cache (downloaded PNGs, etc.)
 	animations map[uint32]Animation
+	images     map[uint32]image.Image
 }
 
 // Setup gets the required data/config/cache paths and creates them if needed.
@@ -60,6 +61,7 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 		}
 	}
 	m.animations = make(map[uint32]Animation)
+	m.images = make(map[uint32]image.Image)
 	return
 }
 
@@ -167,7 +169,26 @@ func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
 				ImageID: frame.ImageID,
 				Time:    frame.Time,
 			}
+			// Request any unknown graphics.
+			m.EnsureImage(frame.ImageID)
 		}
 	}
 	return nil
+}
+
+// EnsureImage ensures that the given image is available. If it is not, then send a graphics request.
+func (m *Manager) EnsureImage(iID uint32) {
+	if _, imageExists := m.images[iID]; !imageExists {
+		m.images[iID] = image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+		// Send request.
+		m.Log.WithFields(logrus.Fields{
+			"ID":       iID,
+			"DataType": network.GraphicsPng,
+		}).Info("[Manager] Sending Graphics Request")
+		m.Conn.Send(network.CommandGraphics{
+			Type:       network.Get,
+			GraphicsID: iID,
+			DataType:   network.GraphicsPng,
+		})
+	}
 }
