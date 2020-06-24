@@ -3,6 +3,7 @@ package data
 import (
 	"bytes"
 	"image"
+	"strconv"
 	// Package image/png is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
 	// image.Decode to understand PNG formatted images.
@@ -47,7 +48,7 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	}
 	if _, err = os.Stat(m.ConfigPath); err != nil {
 		if os.IsNotExist(err) {
-			err = os.MkdirAll(m.ConfigPath, os.ModeDir)
+			err = os.MkdirAll(m.ConfigPath, 0640)
 		}
 		if err != nil {
 			return
@@ -55,12 +56,23 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	}
 	if _, err = os.Stat(m.CachePath); err != nil {
 		if os.IsNotExist(err) {
-			err = os.MkdirAll(m.CachePath, os.ModeDir)
+			err = os.MkdirAll(m.CachePath, 0755)
 		}
 		if err != nil {
 			return
 		}
 	}
+	// Also ensure images directory exists.
+	imagesPath := path.Join(m.CachePath, "images")
+	if _, err = os.Stat(imagesPath); err != nil {
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(imagesPath, 0755)
+		}
+		if err != nil {
+			return
+		}
+	}
+
 	m.animations = make(map[uint32]Animation)
 	m.images = make(map[uint32]image.Image)
 	return
@@ -90,6 +102,28 @@ func (m *Manager) acquireDataPath() (err error) {
 	dir = path.Join(filepath.Dir(filepath.Dir(dir)), "share", "chimera", "client")
 
 	m.DataPath = dir
+	return
+}
+
+// WriteImage writes image data to the images subdirectory in the cachePath.
+func (m *Manager) WriteImage(imageID uint32, imageType uint8, data []byte) error {
+	targetPath := path.Join(m.CachePath, "images", strconv.FormatUint(uint64(imageID), 10))
+	if imageType == network.GraphicsPng {
+		targetPath = targetPath + ".png"
+	}
+	return m.WriteBytes(targetPath, data)
+}
+
+// WriteBytes writes bytes to a file path.
+func (m *Manager) WriteBytes(file string, data []byte) (err error) {
+	var writer *os.File
+
+	writer, err = os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return
+	}
+	defer writer.Close()
+	writer.Write(data)
 	return
 }
 
@@ -212,6 +246,10 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 				m.Log.Warn("[Manager] Could not Decode Image")
 			} else {
 				m.images[cmd.GraphicsID] = img
+			}
+			// Also write the image to disk for future use.
+			if err := m.WriteImage(cmd.GraphicsID, cmd.DataType, cmd.Data); err != nil {
+				m.Log.Warn("[Manager] ", err)
 			}
 		} else {
 			m.Log.Warn("[Manager] Unhandled Graphics Type")
