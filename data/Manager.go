@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"image"
 	// Package image/png is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
@@ -191,4 +192,32 @@ func (m *Manager) EnsureImage(iID uint32) {
 			DataType:   network.GraphicsPng,
 		})
 	}
+}
+
+// HandleGraphicsCommand
+func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
+	m.Log.WithFields(logrus.Fields{
+		"ID":       cmd.GraphicsID,
+		"Type":     cmd.Type,
+		"DataType": cmd.DataType,
+		"Length":   len(cmd.Data),
+	}).Info("[Manager] Received Graphics")
+	if cmd.Type == network.Nokay {
+		// FIXME: We should have some sort of "missing image" reference here.
+		m.images[cmd.GraphicsID] = image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+	} else if cmd.Type == network.Set {
+		if cmd.DataType == network.GraphicsPng {
+			// Decode PNG
+			if img, _, err := image.Decode(bytes.NewReader(cmd.Data)); err != nil {
+				m.Log.Warn("[Manager] Could not Decode Image")
+			} else {
+				m.images[cmd.GraphicsID] = img
+			}
+		} else {
+			m.Log.Warn("[Manager] Unhandled Graphics Type")
+		}
+	} else {
+		m.Log.Warn("[Manager] Bogus Graphics Message")
+	}
+	return nil
 }
