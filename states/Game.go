@@ -96,6 +96,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
+	s.GameContainer.Focus()
 	s.Client.RootWindow.AdoptChannel <- s.GameContainer.This
 
 	// Sub-window: map
