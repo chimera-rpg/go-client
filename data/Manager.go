@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image"
 	"strconv"
+	"strings"
 	// Package image/png is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
 	// image.Decode to understand PNG formatted images.
@@ -75,6 +76,15 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 
 	m.animations = make(map[uint32]Animation)
 	m.images = make(map[uint32]image.Image)
+
+	// Collect cached images.
+	if err = m.collectCachedImages(); err != nil {
+		m.Log.Error("[Manager] ", err)
+	}
+	m.Log.WithFields(logrus.Fields{
+		"Count": len(m.images),
+	}).Print("Loaded cached images")
+
 	return
 }
 
@@ -102,6 +112,36 @@ func (m *Manager) acquireDataPath() (err error) {
 	dir = path.Join(filepath.Dir(filepath.Dir(dir)), "share", "chimera", "client")
 
 	m.DataPath = dir
+	return
+}
+
+// collectCachedImages reads the cache directory for images to load.
+func (m *Manager) collectCachedImages() (err error) {
+	imagesPath := path.Join(m.CachePath, "images")
+	err = filepath.Walk(imagesPath, func(filepath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			if strings.HasSuffix(filepath, ".png") {
+				shortpath := filepath[len(imagesPath)+1:]
+				shortpath = shortpath[:len(shortpath)-len(".png")]
+				ui64, err := strconv.ParseUint(shortpath, 10, 32)
+				if err != nil {
+					m.Log.Warn("[Manager] ", err)
+					return nil
+				}
+				i := uint32(ui64)
+				img, err := m.GetImage(filepath)
+				if err != nil {
+					m.Log.Warn("[Manager] ", err)
+					return nil
+				}
+				m.images[i] = img
+			}
+		}
+		return nil
+	})
 	return
 }
 
