@@ -26,10 +26,10 @@ func (d *DynamicMap) SetTile(y, x, z uint32, objectIDs []uint32) {
 	d.tiles[TileKey{y, x, z}] = DynamicMapTile{objectIDs}
 }
 
-// SetCamera sets the current camera position to x, y, z
-func (d *DynamicMap) SetCamera(x, y, z uint32) {
-	d.cameraX = x
+// SetCamera sets the current camera position to y, x, z
+func (d *DynamicMap) SetCamera(y, x, z uint32) {
 	d.cameraY = y
+	d.cameraX = x
 	d.cameraZ = z
 }
 
@@ -41,15 +41,15 @@ func (d *DynamicMap) GetCameraView() [][][]DynamicMapTile {
 		for y := -d.cameraD / 2; y < d.cameraD/2; y++ {
 			tile[d.cameraX+x][d.cameraY+y] = make([]DynamicMapTile, d.cameraH)
 			for z := -d.cameraH / 2; z < d.cameraH/2; z++ {
-				tile[d.cameraX+x][d.cameraY+y][d.cameraZ+z] = d.GetTile(x, y, z)
+				tile[d.cameraX+x][d.cameraY+y][d.cameraZ+z] = d.GetTile(y, x, z)
 			}
 		}
 	}
 	return tile
 }
 
-// GetTile gets the tile stack at X, Y, Z.
-func (d *DynamicMap) GetTile(x, y, z uint32) (tiles DynamicMapTile) {
+// GetTile gets the tile stack at Y, X, Z.
+func (d *DynamicMap) GetTile(y, x, z uint32) (tiles DynamicMapTile) {
 	if darray, ok := d.tiles[TileKey{y, x, z}]; ok {
 		return darray
 	}
