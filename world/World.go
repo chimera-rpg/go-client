@@ -45,6 +45,33 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	if _, ok := w.maps[w.currentMap]; !ok {
 		return errors.New("cannot set tile, as no map exists")
 	}
+	// Create object if it does not exist and update its properties to match the tile coordinates.
+	for _, oID := range cmd.ObjectIDs {
+		if _, ok := w.objects[oID]; !ok {
+			w.objects[oID] = &Object{}
+		}
+		w.objects[oID].Y = cmd.Y
+		w.objects[oID].X = cmd.X
+		w.objects[oID].Z = cmd.Z
+		w.objects[oID].Gone = false
+	}
+	// See if we need to invalidate any objects that no longer are contained in the given tile.
+	for _, oID := range w.maps[w.currentMap].GetTile(cmd.Y, cmd.X, cmd.Z).objectIDs {
+		if _, ok := w.objects[oID]; !ok {
+			continue
+		}
+		stillExists := false
+		for _, newID := range cmd.ObjectIDs {
+			if newID == oID {
+				stillExists = true
+				break
+			}
+		}
+		if !stillExists {
+			w.objects[oID].Gone = true
+		}
+	}
+	// Set the map tile.
 	w.maps[w.currentMap].SetTile(cmd.Y, cmd.X, cmd.Z, cmd.ObjectIDs)
 	return nil
 }
@@ -66,13 +93,19 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 
 func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPayloadCreate) error {
 	if _, ok := w.objects[oID]; ok {
-		return errors.New("Object already exists...")
-	}
-	w.objects[oID] = &Object{
-		ID:          oID,
-		Type:        p.TypeID,
-		AnimationID: p.AnimationID,
-		FaceID:      p.FaceID,
+		// Update existing object.
+		w.objects[oID].Type = p.TypeID
+		w.objects[oID].AnimationID = p.AnimationID
+		w.objects[oID].FaceID = p.FaceID
+	} else {
+		// Create a new object.
+		w.objects[oID] = &Object{
+			ID:          oID,
+			Type:        p.TypeID,
+			AnimationID: p.AnimationID,
+			FaceID:      p.FaceID,
+			Gone:        true,
+		}
 	}
 	return nil
 }
@@ -80,6 +113,17 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 func (w *World) DeleteObject(oID uint32) error {
 	delete(w.objects, oID)
 	return nil
+}
+
+// GetObjects returns an array of all objects the client knows about.
+func (w *World) GetObjects() []*Object {
+	objects := make([]*Object, len(w.objects))
+	oI := 0
+	for _, o := range w.objects {
+		objects[oI] = o
+		oI++
+	}
+	return objects
 }
 
 // GetObject returns a pointer to an object based upon its ID.
