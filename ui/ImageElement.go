@@ -26,3 +26,12 @@ func NewImageElement(c ImageElementConfig) ElementI {
 
 	return ElementI(&i)
 }
+
+// HandleUpdate is the method for handling update messages.
+func (i *ImageElement) HandleUpdate(update UpdateI) {
+	i.BaseElement.HandleUpdate(update)
+	switch u := update.(type) {
+	case image.Image:
+		i.SetImage(u)
+	}
+}
