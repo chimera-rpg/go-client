@@ -48,7 +48,7 @@ func (d *DynamicMap) GetCameraView() [][][]DynamicMapTile {
 	return tile
 }
 
-// GetTileStack gets the tile stack at X, Y, Z.
+// GetTile gets the tile stack at X, Y, Z.
 func (d *DynamicMap) GetTile(x, y, z uint32) (tiles DynamicMapTile) {
 	if darray, ok := d.tiles[TileKey{y, x, z}]; ok {
 		return darray
