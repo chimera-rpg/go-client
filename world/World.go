@@ -81,3 +81,13 @@ func (w *World) DeleteObject(oID uint32) error {
 	delete(w.objects, oID)
 	return nil
 }
+
+// GetObject returns a pointer to an object based upon its ID.
+func (w *World) GetObject(oID uint32) *Object {
+	return w.objects[oID]
+}
+
+// GetCurrentMap returns a pointer to the current map.
+func (w *World) GetCurrentMap() *DynamicMap {
+	return w.maps[w.currentMap]
+}
