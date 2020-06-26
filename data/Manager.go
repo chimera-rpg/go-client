@@ -207,6 +207,27 @@ func (m *Manager) GetImage(file string) (img image.Image, err error) {
 
 }
 
+// GetFace returns the frames for a given animation and face.
+func (m *Manager) GetFace(aID uint32, fID uint32) (f []AnimationFrame) {
+	anim, animExists := m.animations[aID]
+	if !animExists {
+		return
+	}
+	face, faceExists := anim.Faces[fID]
+	if !faceExists {
+		return
+	}
+	return face
+}
+
+// GetCachedImage returns the cached image associated with the given ID.
+func (m *Manager) GetCachedImage(iID uint32) (img image.Image) {
+	if img, ok := m.images[iID]; ok {
+		return img
+	}
+	return
+}
+
 // EnsureAnimation checks if an animation associated with a given ID exists, and if not, sends a network request for the animation.
 func (m *Manager) EnsureAnimation(aID uint32) {
 	// If animation id is not known, add the animation, then send an animation request.
