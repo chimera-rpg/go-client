@@ -21,6 +21,7 @@ type Game struct {
 	world           world.World
 	keyBinds        []uint8
 	inputChan       chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
+	objectImages    map[uint32]ui.ImageElement
 }
 
 // UserInput is an interface used in a channel in Game for handling UI input.
@@ -236,6 +237,11 @@ func (s *Game) Loop() {
 			case MouseInput:
 				s.Client.Log.Printf("mouse: %+v\n", e)
 			}
+		}
+		// TODO: For each object, create a corresponding ImageElement. These should then have their X,Y,Z set to their position based upon which Tile they exist in. Additionally, their Image would be synchronized to the object's current animation and face (as well as frame). It may be necessary to introduce Z-ordering, for both objects within the same tile, as well as for objects which exist at a higher Y.
+		m := s.world.GetCurrentMap()
+		if m == nil {
+			continue
 		}
 	}
 }
