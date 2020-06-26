@@ -1,6 +1,7 @@
 package states
 
 import (
+	"fmt"
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
@@ -13,7 +14,7 @@ type Game struct {
 	client.State
 	GameContainer   ui.Container
 	ChatWindow      ui.Container
-	MapElement      ui.MapElement
+	MapContainer    ui.Container
 	InventoryWindow ui.Container
 	GroundWindow    ui.Container
 	StatsWindow     ui.Container
@@ -21,7 +22,7 @@ type Game struct {
 	world           world.World
 	keyBinds        []uint8
 	inputChan       chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
-	objectImages    map[uint32]ui.ImageElement
+	objectImages    map[uint32]ui.ElementI
 }
 
 // UserInput is an interface used in a channel in Game for handling UI input.
@@ -46,6 +47,7 @@ type MouseInput struct {
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	s.inputChan = make(chan UserInput)
+	s.objectImages = make(map[uint32]ui.ElementI)
 	// Initialize our world.
 	s.world.Init(s.Client.DataManager, s.Client.Log)
 
@@ -101,12 +103,12 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.Client.RootWindow.AdoptChannel <- s.GameContainer.This
 
 	// Sub-window: map
-	err = s.MapElement.Setup(ui.MapElementConfig{
+	err = s.MapContainer.Setup(ui.ContainerConfig{
 		Style: `
 			X 50%
 			Y 50%
-			W 100%
-			H 100%
+			W 80%
+			H 80%
 			BackgroundColor 0 0 0 255
 			Origin CenterX CenterY
 		`,
@@ -114,8 +116,8 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	mapText := ui.NewTextElement(ui.TextElementConfig{
 		Value: "Map",
 	})
-	s.MapElement.AdoptChannel <- mapText
-	s.GameContainer.AdoptChannel <- s.MapElement.This
+	s.MapContainer.AdoptChannel <- mapText
+	s.GameContainer.AdoptChannel <- s.MapContainer.This
 	// Sub-window: chat
 	err = s.ChatWindow.Setup(ui.ContainerConfig{
 		Value: "Chat",
@@ -186,7 +188,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 
 // Close our Game state.
 func (s *Game) Close() {
-	s.MapElement.Destroy()
+	s.MapContainer.Destroy()
 	s.StateWindow.Destroy()
 	s.StatsWindow.Destroy()
 	s.GroundWindow.Destroy()
@@ -239,9 +241,31 @@ func (s *Game) Loop() {
 			}
 		}
 		// TODO: For each object, create a corresponding ImageElement. These should then have their X,Y,Z set to their position based upon which Tile they exist in. Additionally, their Image would be synchronized to the object's current animation and face (as well as frame). It may be necessary to introduce Z-ordering, for both objects within the same tile, as well as for objects which exist at a higher Y.
-		m := s.world.GetCurrentMap()
-		if m == nil {
-			continue
+		// FIXME: This is _very_ rough and is just for testing!
+		objects := s.world.GetObjects()
+		for _, o := range objects {
+			if o.Gone {
+				continue
+			}
+			frames := s.Client.DataManager.GetFace(o.AnimationID, o.FaceID)
+			if len(frames) == 0 {
+				continue
+			}
+			img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
+			if _, ok := s.objectImages[o.ID]; !ok {
+				s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
+					Style: fmt.Sprintf(`
+						X %d
+						Y %d
+						W 48
+						H 48
+						Origin CenterX CenterY
+					`, o.X*48, o.Z*48),
+				})
+				s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
+			}
+			s.objectImages[o.ID].GetUpdateChannel() <- img
+			//s.objectImages[o.ID].GetUpdateChannel() <-
 		}
 	}
 }
