@@ -16,6 +16,7 @@ type BaseElement struct {
 	Events    Events
 	//
 	AdoptChannel   chan ElementI
+	DisownChannel  chan ElementI
 	DestroyChannel chan bool
 	UpdateChannel  chan UpdateI
 	// Dirty should be set whenever the Element should be re-rendered
@@ -46,6 +47,13 @@ type BaseElement struct {
 
 // Destroy is our stub for destroying an element.
 func (b *BaseElement) Destroy() {
+	if b.Parent != nil {
+		b.Parent.DisownChild(b.This)
+	}
+
+	for _, child := range b.Children {
+		child.Destroy()
+	}
 }
 
 // Render handled the rendering of all children and the clearing of the Dirty flag.
@@ -589,6 +597,7 @@ func (b *BaseElement) GetChildren() []ElementI {
 // SetupChannels sets up the various communication channels.
 func (b *BaseElement) SetupChannels() {
 	b.AdoptChannel = make(chan ElementI, 1000)
+	b.DisownChannel = make(chan ElementI, 1000)
 	b.DestroyChannel = make(chan bool, 1)
 	b.UpdateChannel = make(chan UpdateI, 1000)
 }
@@ -596,6 +605,11 @@ func (b *BaseElement) SetupChannels() {
 // GetAdoptChannel returns the channel used for adopting new elements.
 func (b *BaseElement) GetAdoptChannel() chan ElementI {
 	return b.AdoptChannel
+}
+
+// GetDisownChannel returns the channel used for adopting new elements.
+func (b *BaseElement) GetDisownChannel() chan ElementI {
+	return b.DisownChannel
 }
 
 // GetDestroyChannel returns the channel used for destroying the element.

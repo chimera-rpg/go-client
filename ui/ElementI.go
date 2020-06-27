@@ -8,6 +8,7 @@ type ElementI interface {
 	Render()
 	//
 	GetAdoptChannel() chan ElementI
+	GetDisownChannel() chan ElementI
 	GetDestroyChannel() chan bool
 	GetUpdateChannel() chan UpdateI
 	HandleUpdate(UpdateI)

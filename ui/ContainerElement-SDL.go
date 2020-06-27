@@ -77,7 +77,9 @@ func (w *Container) CalculateStyle() {
 
 // Destroy the window, clearing the SDL context and destroying the SDLWindow if it is a top-level window.
 func (w *Container) Destroy() {
-	w.Parent.DisownChild(w)
+	if w.Parent != nil {
+		w.Parent.DisownChild(w)
+	}
 
 	if w.SDLTexture != nil {
 		w.SDLTexture.Destroy()

@@ -23,6 +23,7 @@ func (i *ImageElement) Destroy() {
 	if i.SDLTexture != nil {
 		i.SDLTexture.Destroy()
 	}
+	i.BaseElement.Destroy()
 }
 
 // Render renders the ImageElement to the screen.

@@ -46,6 +46,21 @@ func (instance *Instance) CheckChannels(e ElementI) {
 			break
 		}
 	}
+	// Disown checking
+	for {
+		var disowned ElementI
+		select {
+		case disowned, valid = <-e.GetDisownChannel():
+			ok = true
+		default:
+			ok = false
+		}
+		if ok && valid {
+			e.DisownChild(disowned)
+		} else if !ok {
+			break
+		}
+	}
 	// Update checking
 	for {
 		var update UpdateI
