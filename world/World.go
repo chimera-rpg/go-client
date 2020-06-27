@@ -54,7 +54,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		w.objects[oID].Y = cmd.Y
 		w.objects[oID].X = cmd.X
 		w.objects[oID].Z = cmd.Z
-		w.objects[oID].Gone = false
+		w.objects[oID].Missing = false
 	}
 	// See if we need to invalidate any objects that no longer are contained in the given tile.
 	for _, oID := range w.maps[w.currentMap].GetTile(cmd.Y, cmd.X, cmd.Z).objectIDs {
@@ -68,9 +68,11 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 				break
 			}
 		}
+		// If the tile does not exist here _AND_ the object is still marked as being here, then flag the object as missing.
 		if !stillExists {
-			w.objects[oID].Gone = true
-			w.Log.Printf("oID is gone: %d\n", oID)
+			if w.objects[oID].Y == cmd.Y && w.objects[oID].X == cmd.X && w.objects[oID].Z == cmd.Z {
+				w.objects[oID].Missing = true
+			}
 		}
 	}
 	// Set the map tile.
@@ -106,7 +108,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			Type:        p.TypeID,
 			AnimationID: p.AnimationID,
 			FaceID:      p.FaceID,
-			Gone:        true,
+			Missing:     true,
 		}
 	}
 	return nil
