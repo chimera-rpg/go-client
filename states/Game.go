@@ -272,15 +272,22 @@ func (s *Game) Loop() {
 					Style: fmt.Sprintf(`
 						X %d
 						Y %d
-						W 48
-						H 48
+						W 64
+						H 64
 						Origin CenterX CenterY
-					`, o.X*48, o.Z*48),
+					`, o.X*64, o.Z*64),
 					Image: img,
 				})
 				s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 			} else {
+				bounds := img.Bounds()
+				w := bounds.Max.X * 4
+				h := bounds.Max.Y * 4
 				s.objectImages[o.ID].GetUpdateChannel() <- img
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(64 * int(o.X))}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(64 * int(o.Z))}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
 			}
 		}
 	}
