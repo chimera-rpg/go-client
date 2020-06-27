@@ -244,10 +244,19 @@ func (s *Game) Loop() {
 		// TODO: For each object, create a corresponding ImageElement. These should then have their X,Y,Z set to their position based upon which Tile they exist in. Additionally, their Image would be synchronized to the object's current animation and face (as well as frame). It may be necessary to introduce Z-ordering, for both objects within the same tile, as well as for objects which exist at a higher Y.
 		// FIXME: This is _very_ rough and is just for testing!
 		objects := s.world.GetObjects()
+		// Delete images that no longer correspond to an existing world object.
+		for oID, t := range s.objectImages {
+			o := s.world.GetObject(oID)
+			if o == nil {
+				t.GetDestroyChannel() <- true
+				delete(s.objectImages, oID)
+			}
+		}
+		// Iterate over world objects.
 		for _, o := range objects {
-			if o.Gone {
+			// If the object is missing (out of view), delete it. FIXME: This should probably convert the image rendering to semi-opaque or otherwise instead.
+			if o.Missing {
 				if t, ok := s.objectImages[o.ID]; ok {
-					s.Client.Log.Printf("Deleted %d\n", o.ID)
 					t.GetDestroyChannel() <- true
 					delete(s.objectImages, o.ID)
 				}
@@ -270,10 +279,9 @@ func (s *Game) Loop() {
 					Image: img,
 				})
 				s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
-				s.Client.Log.Printf("Created %d\n", o.ID)
+			} else {
+				s.objectImages[o.ID].GetUpdateChannel() <- img
 			}
-			s.objectImages[o.ID].GetUpdateChannel() <- img
-			//s.objectImages[o.ID].GetUpdateChannel() <-
 		}
 	}
 }
