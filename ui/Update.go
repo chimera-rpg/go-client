@@ -19,5 +19,15 @@ type UpdateY struct {
 	Number
 }
 
+// UpdateW represents a change to the W of an Element.
+type UpdateW struct {
+	Number
+}
+
+// UpdateH represents a change to the H of an Element.
+type UpdateH struct {
+	Number
+}
+
 // UpdateStyle represents an update to the Style of an element.
 type UpdateStyle = string
