@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
@@ -245,6 +246,11 @@ func (s *Game) Loop() {
 		objects := s.world.GetObjects()
 		for _, o := range objects {
 			if o.Gone {
+				if t, ok := s.objectImages[o.ID]; ok {
+					s.Client.Log.Printf("Deleted %d\n", o.ID)
+					t.GetDestroyChannel() <- true
+					delete(s.objectImages, o.ID)
+				}
 				continue
 			}
 			frames := s.Client.DataManager.GetFace(o.AnimationID, o.FaceID)
@@ -261,8 +267,10 @@ func (s *Game) Loop() {
 						H 48
 						Origin CenterX CenterY
 					`, o.X*48, o.Z*48),
+					Image: img,
 				})
 				s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
+				s.Client.Log.Printf("Created %d\n", o.ID)
 			}
 			s.objectImages[o.ID].GetUpdateChannel() <- img
 			//s.objectImages[o.ID].GetUpdateChannel() <-
