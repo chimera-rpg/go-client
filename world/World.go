@@ -2,6 +2,7 @@ package world
 
 import (
 	"errors"
+
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-common/network"
 	"github.com/sirupsen/logrus"
@@ -69,6 +70,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		}
 		if !stillExists {
 			w.objects[oID].Gone = true
+			w.Log.Printf("oID is gone: %d\n", oID)
 		}
 	}
 	// Set the map tile.
