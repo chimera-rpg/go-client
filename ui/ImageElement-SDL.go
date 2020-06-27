@@ -28,7 +28,7 @@ func (i *ImageElement) Destroy() {
 
 // Render renders the ImageElement to the screen.
 func (i *ImageElement) Render() {
-	if i.IsHidden() {
+	if i.IsHidden() || i.Image == nil {
 		return
 	}
 	if i.SDLTexture == nil {
