@@ -268,16 +268,32 @@ func (s *Game) Loop() {
 			}
 			img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
 			if _, ok := s.objectImages[o.ID]; !ok {
-				s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
-					Style: fmt.Sprintf(`
-						X %d
-						Y %d
-						W 64
-						H 64
-						Origin CenterX CenterY
-					`, o.X*64, o.Z*64),
-					Image: img,
-				})
+				if img != nil {
+					bounds := img.Bounds()
+					w := bounds.Max.X * 4
+					h := bounds.Max.Y * 4
+					s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
+						Style: fmt.Sprintf(`
+							X %d
+							Y %d
+							W %d
+							H %d
+							Origin CenterX CenterY
+						`, o.X*64, o.Z*64, w, h),
+						Image: img,
+					})
+				} else {
+					s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
+						Style: fmt.Sprintf(`
+							X %d
+							Y %d
+							W 64
+							H 64
+							Origin CenterX CenterY
+						`, o.X*64, o.Z*64),
+						Image: img,
+					})
+				}
 				s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 			} else {
 				bounds := img.Bounds()
