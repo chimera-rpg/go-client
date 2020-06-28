@@ -243,6 +243,7 @@ func (s *Game) Loop() {
 		}
 		// TODO: For each object, create a corresponding ImageElement. These should then have their X,Y,Z set to their position based upon which Tile they exist in. Additionally, their Image would be synchronized to the object's current animation and face (as well as frame). It may be necessary to introduce Z-ordering, for both objects within the same tile, as well as for objects which exist at a higher Y.
 		// FIXME: This is _very_ rough and is just for testing!
+		m := s.world.GetCurrentMap()
 		objects := s.world.GetObjects()
 		// Delete images that no longer correspond to an existing world object.
 		for oID, t := range s.objectImages {
@@ -266,6 +267,11 @@ func (s *Game) Loop() {
 			if len(frames) == 0 {
 				continue
 			}
+			// Adjust z-index to draw from top-right to bottom-left.
+			zIndex := m.GetWidth() - (m.GetWidth() - o.X)
+			zIndex += m.GetWidth() * o.Z
+			zIndex += (m.GetWidth() * m.GetHeight()) * o.Y
+
 			img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
 			if _, ok := s.objectImages[o.ID]; !ok {
 				if img != nil {
@@ -278,8 +284,9 @@ func (s *Game) Loop() {
 							Y %d
 							W %d
 							H %d
+							ZIndex %d
 							Origin CenterX CenterY
-						`, o.X*64, o.Z*64, w, h),
+						`, o.X*64, o.Z*64, w, h, zIndex),
 						Image: img,
 					})
 				} else {
@@ -289,8 +296,9 @@ func (s *Game) Loop() {
 							Y %d
 							W 64
 							H 64
+							ZIndex %d
 							Origin CenterX CenterY
-						`, o.X*64, o.Z*64),
+						`, o.X*64, o.Z*64, zIndex),
 						Image: img,
 					})
 				}
@@ -304,6 +312,7 @@ func (s *Game) Loop() {
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(64 * int(o.Z))}}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
 			}
 		}
 	}
