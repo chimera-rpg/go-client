@@ -1,6 +1,8 @@
 package ui
 
-import "sort"
+import (
+	"sort"
+)
 
 // BaseElement is our base implementation of the ElementI interface. Every
 // Element type must have BaseElement as an anonymous field and override
@@ -47,13 +49,6 @@ type BaseElement struct {
 	mr int32
 }
 
-// ByZIndex implements sort.Interface for []ElementI based on the ZIndex field.
-type ByZIndex []ElementI
-
-func (z ByZIndex) Len() int           { return len(z) }
-func (z ByZIndex) Swap(i, j int)      { z[i], z[j] = z[j], z[i] }
-func (z ByZIndex) Less(i, j int) bool { return z[i].GetZIndex() < z[i].GetZIndex() }
-
 // Destroy is our stub for destroying an element.
 func (b *BaseElement) Destroy() {
 	if b.Parent != nil {
@@ -70,7 +65,9 @@ func (b *BaseElement) Destroy() {
 // rendering is complete.
 func (b *BaseElement) Render() {
 	// Sort by ZIndex before rendering. FIXME: This should only be resorted when Z indices actually change.
-	sort.Sort(ByZIndex(b.Children))
+	sort.Slice(b.Children, func(i, j int) bool {
+		return b.Children[i].GetZIndex() < b.Children[j].GetZIndex()
+	})
 	// Render.
 	for _, child := range b.Children {
 		child.Render()
