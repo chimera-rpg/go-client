@@ -1,5 +1,7 @@
 package ui
 
+import "sort"
+
 // BaseElement is our base implementation of the ElementI interface. Every
 // Element type must have BaseElement as an anonymous field and override
 // any core functionality that it wishes to implement itself.
@@ -45,6 +47,13 @@ type BaseElement struct {
 	mr int32
 }
 
+// ByZIndex implements sort.Interface for []ElementI based on the ZIndex field.
+type ByZIndex []ElementI
+
+func (z ByZIndex) Len() int           { return len(z) }
+func (z ByZIndex) Swap(i, j int)      { z[i], z[j] = z[j], z[i] }
+func (z ByZIndex) Less(i, j int) bool { return z[i].GetZIndex() < z[i].GetZIndex() }
+
 // Destroy is our stub for destroying an element.
 func (b *BaseElement) Destroy() {
 	if b.Parent != nil {
@@ -60,6 +69,9 @@ func (b *BaseElement) Destroy() {
 // Inheriting elements will generally call this as a super once their own
 // rendering is complete.
 func (b *BaseElement) Render() {
+	// Sort by ZIndex before rendering. FIXME: This should only be resorted when Z indices actually change.
+	sort.Sort(ByZIndex(b.Children))
+	// Render.
 	for _, child := range b.Children {
 		child.Render()
 	}
@@ -84,6 +96,11 @@ func (b *BaseElement) GetWidth() int32 {
 // GetHeight gets the cached height value.
 func (b *BaseElement) GetHeight() int32 {
 	return b.h
+}
+
+// GetZIndex returns the element's rendering index.
+func (b *BaseElement) GetZIndex() int {
+	return int(b.Style.ZIndex.Value)
 }
 
 // SetValue sets the text value of the element.

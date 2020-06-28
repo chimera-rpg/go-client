@@ -55,6 +55,8 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.MinH = parseNumber(p.tokenValue())
 	case "MaxH":
 		s.MaxH = parseNumber(p.tokenValue())
+	case "ZIndex":
+		s.ZIndex = parseNumber(p.tokenValue())
 	case "Margin":
 		parts := strings.Split(p.tokenValue(), " ")
 		partsLen := len(parts)

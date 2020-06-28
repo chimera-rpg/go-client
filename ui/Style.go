@@ -79,6 +79,7 @@ type Style struct {
 	H               Number
 	MinH            Number
 	MaxH            Number
+	ZIndex          Number
 	PaddingLeft     Number
 	PaddingRight    Number
 	PaddingTop      Number

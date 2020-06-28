@@ -17,6 +17,7 @@ type ElementI interface {
 	GetY() int32
 	GetWidth() int32
 	GetHeight() int32
+	GetZIndex() int
 	//
 	GetContext() *Context
 	SetContext(c *Context)
