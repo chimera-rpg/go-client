@@ -35,7 +35,11 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 			"ID":   cmd.MapID,
 			"Name": cmd.Name,
 		}).Info("[World] Created map")
-		w.maps[cmd.MapID] = &DynamicMap{}
+		w.maps[cmd.MapID] = &DynamicMap{
+			height: uint32(cmd.Height),
+			width:  uint32(cmd.Width),
+			depth:  uint32(cmd.Depth),
+		}
 		w.maps[cmd.MapID].Init()
 	}
 	w.currentMap = cmd.MapID
