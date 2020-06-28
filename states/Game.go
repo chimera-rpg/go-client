@@ -253,6 +253,9 @@ func (s *Game) Loop() {
 				delete(s.objectImages, oID)
 			}
 		}
+		scale := 4
+		tileWidth := uint32(int(s.Client.AnimationsConfig.TileWidth) * scale)
+		tileHeight := uint32(int(s.Client.AnimationsConfig.TileHeight) * scale)
 		// Iterate over world objects.
 		for _, o := range objects {
 			// If the object is missing (out of view), delete it. FIXME: This should probably convert the image rendering to semi-opaque or otherwise instead.
@@ -268,16 +271,14 @@ func (s *Game) Loop() {
 				continue
 			}
 			// Adjust z-index to draw from top-right to bottom-left.
-			zIndex := m.GetWidth() - (m.GetWidth() - o.X)
-			zIndex += m.GetWidth() * o.Z
-			zIndex += (m.GetWidth() * m.GetHeight()) * o.Y
+			zIndex := (m.GetWidth() * m.GetDepth() * o.Y) + (m.GetWidth() * o.Z) + (m.GetWidth() - o.X)
 
 			img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
 			if _, ok := s.objectImages[o.ID]; !ok {
 				if img != nil {
 					bounds := img.Bounds()
-					w := bounds.Max.X * 4
-					h := bounds.Max.Y * 4
+					w := bounds.Max.X * scale
+					h := bounds.Max.Y * scale
 					s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
 						Style: fmt.Sprintf(`
 							X %d
@@ -286,7 +287,7 @@ func (s *Game) Loop() {
 							H %d
 							ZIndex %d
 							Origin CenterX CenterY
-						`, o.X*64, o.Z*64, w, h, zIndex),
+						`, o.X*tileWidth, o.Z*tileHeight, w, h, zIndex),
 						Image: img,
 					})
 				} else {
@@ -294,22 +295,36 @@ func (s *Game) Loop() {
 						Style: fmt.Sprintf(`
 							X %d
 							Y %d
-							W 64
-							H 64
+							W %d
+							H %d
 							ZIndex %d
 							Origin CenterX CenterY
-						`, o.X*64, o.Z*64, zIndex),
+						`, o.X*tileWidth, o.Z*tileHeight, tileWidth, tileHeight, zIndex),
 						Image: img,
 					})
 				}
+				/*s.MapContainer.GetAdoptChannel() <- ui.NewTextElement(ui.TextElementConfig{
+					Value: fmt.Sprintf("%dx%d", o.X, o.Z),
+					Style: fmt.Sprintf(`
+							ContentOrigin CenterX CenterY
+							Origin CenterX CenterY
+							ForegroundColor 255 255 255 255
+							X %d
+							Y %d
+							W %d
+							H %d
+							ZIndex 999999
+						`, o.X*tileWidth, o.Z*tileHeight, tileWidth, tileHeight),
+				})*/
+
 				s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 			} else {
 				bounds := img.Bounds()
-				w := bounds.Max.X * 4
-				h := bounds.Max.Y * 4
+				w := bounds.Max.X * scale
+				h := bounds.Max.Y * scale
 				s.objectImages[o.ID].GetUpdateChannel() <- img
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(64 * int(o.X))}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(64 * int(o.Z))}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(tileWidth * o.X)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(tileHeight * o.Z)}}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
