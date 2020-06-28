@@ -77,18 +77,13 @@ func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface
 		Program: "Golang Client",
 	}))
 
+	// Handle Features.
 	cmd := <-s.Client.CmdChan
 	switch t := cmd.(type) {
-	case network.CommandBasic:
-		if t.Type == network.Nokay {
-			msg := fmt.Sprintf("Server \"%s\" rejected us: %s", server, t.String)
-			s.Client.Log.Printf(msg)
-			state = client.StateI(&List{})
-			nextArgs = msg
-			return
-		}
+	case network.CommandFeatures:
+		s.Client.AnimationsConfig = t.AnimationsConfig
 	default:
-		msg := fmt.Sprintf("Server \"%s\" sent non CommandBasic.", server)
+		msg := fmt.Sprintf("Server \"%s\" sent non CommandFeatures.", server)
 		s.Client.Log.Print(msg)
 		state = client.StateI(&List{})
 		nextArgs = msg
