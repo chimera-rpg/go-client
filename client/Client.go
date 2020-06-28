@@ -5,6 +5,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
+	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
 	"github.com/sirupsen/logrus"
 )
@@ -12,14 +13,15 @@ import (
 // Client is the main handler of state, network transmission, and otherwise.
 type Client struct {
 	network.Connection
-	DataManager   *data.Manager
-	RootWindow    *ui.Window
-	LogHistory    []string
-	State         StateI
-	Log           *logrus.Logger
-	isRunning     bool
-	RenderChannel chan struct{}
-	StateChannel  chan StateMessage
+	DataManager      *data.Manager
+	RootWindow       *ui.Window
+	LogHistory       []string
+	State            StateI
+	Log              *logrus.Logger
+	isRunning        bool
+	RenderChannel    chan struct{}
+	StateChannel     chan StateMessage
+	AnimationsConfig cdata.AnimationsConfig
 }
 
 // Setup sets up a Client's base data structures for use.
