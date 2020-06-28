@@ -29,5 +29,10 @@ type UpdateH struct {
 	Number
 }
 
+// UpdateZIndex represents a change to the ZIndex of an Element.
+type UpdateZIndex struct {
+	Number
+}
+
 // UpdateStyle represents an update to the Style of an element.
 type UpdateStyle = string

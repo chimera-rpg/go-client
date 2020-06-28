@@ -652,6 +652,8 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Style.W = u.Number
 	case UpdateH:
 		b.Style.H = u.Number
+	case UpdateZIndex:
+		b.Style.ZIndex = u.Number
 	}
 	b.CalculateStyle()
 	b.SetDirty(true)
