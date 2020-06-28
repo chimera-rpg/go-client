@@ -7,13 +7,14 @@ type TileKey struct {
 
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
-	tiles   map[TileKey]DynamicMapTile
-	cameraX uint32
-	cameraY uint32
-	cameraZ uint32
-	cameraW uint32 // Width of the camera's viewport
-	cameraD uint32 // Depth of the camera's viewport
-	cameraH uint32 // Height of the camera's viewport
+	tiles                map[TileKey]DynamicMapTile
+	height, width, depth uint32
+	cameraX              uint32
+	cameraY              uint32
+	cameraZ              uint32
+	cameraW              uint32 // Width of the camera's viewport
+	cameraD              uint32 // Depth of the camera's viewport
+	cameraH              uint32 // Height of the camera's viewport
 }
 
 // Init initializes the DynamicMap.
@@ -54,4 +55,19 @@ func (d *DynamicMap) GetTile(y, x, z uint32) (tiles DynamicMapTile) {
 		return darray
 	}
 	return
+}
+
+// GetHeight gets height.
+func (d *DynamicMap) GetHeight() uint32 {
+	return d.height
+}
+
+// GetWidth gets width.
+func (d *DynamicMap) GetWidth() uint32 {
+	return d.width
+}
+
+// GetDepth gets depth.
+func (d *DynamicMap) GetDepth() uint32 {
+	return d.depth
 }
