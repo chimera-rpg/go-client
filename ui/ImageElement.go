@@ -1,6 +1,8 @@
 package ui
 
-import "image"
+import (
+	"image"
+)
 
 // ImageElementConfig is the configuration for construction.
 type ImageElementConfig struct {
@@ -19,7 +21,9 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	i.This = ElementI(&i)
 	i.Style.Parse(ImageElementStyle)
 	i.Style.Parse(c.Style)
-	i.Image = c.Image
+	if c.Image != nil {
+		i.Image = c.Image
+	}
 	i.SetupChannels()
 
 	i.OnCreated()

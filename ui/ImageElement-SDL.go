@@ -29,6 +29,7 @@ func (i *ImageElement) Destroy() {
 // Render renders the ImageElement to the screen.
 func (i *ImageElement) Render() {
 	if i.IsHidden() || i.Image == nil {
+		i.BaseElement.Render()
 		return
 	}
 	if i.SDLTexture == nil {
@@ -56,7 +57,7 @@ func (i *ImageElement) Render() {
 
 // SetImage sets the underlying texture to the passed go Image.
 func (i *ImageElement) SetImage(img image.Image) {
-	if i.Context == nil {
+	if i.Context == nil || img == nil {
 		return
 	}
 
