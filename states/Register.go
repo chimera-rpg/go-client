@@ -41,7 +41,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 			MinW 100
 			W 100%
 			MinH 300
-			MaxH 100%
+			H 100%
 		`,
 	})
 
