@@ -6,6 +6,7 @@ import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
+	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
 )
 
@@ -241,95 +242,7 @@ func (s *Game) Loop() {
 				s.Client.Log.Printf("mouse: %+v\n", e)
 			}
 		}
-		// TODO: For each object, create a corresponding ImageElement. These should then have their X,Y,Z set to their position based upon which Tile they exist in. Additionally, their Image would be synchronized to the object's current animation and face (as well as frame). It may be necessary to introduce Z-ordering, for both objects within the same tile, as well as for objects which exist at a higher Y.
-		// FIXME: This is _very_ rough and is just for testing!
-		m := s.world.GetCurrentMap()
-		objects := s.world.GetObjects()
-		// Delete images that no longer correspond to an existing world object.
-		for oID, t := range s.objectImages {
-			o := s.world.GetObject(oID)
-			if o == nil {
-				t.GetDestroyChannel() <- true
-				delete(s.objectImages, oID)
-			}
-		}
-		scale := 4
-		tileWidth := uint32(int(s.Client.AnimationsConfig.TileWidth) * scale)
-		tileHeight := uint32(int(s.Client.AnimationsConfig.TileHeight) * scale)
-		// Iterate over world objects.
-		for _, o := range objects {
-			// If the object is missing (out of view), delete it. FIXME: This should probably convert the image rendering to semi-opaque or otherwise instead.
-			if o.Missing {
-				if t, ok := s.objectImages[o.ID]; ok {
-					t.GetDestroyChannel() <- true
-					delete(s.objectImages, o.ID)
-				}
-				continue
-			}
-			frames := s.Client.DataManager.GetFace(o.AnimationID, o.FaceID)
-			if len(frames) == 0 {
-				continue
-			}
-			// Adjust z-index to draw from top-right to bottom-left.
-			zIndex := (m.GetWidth() * m.GetDepth() * o.Y) + (m.GetWidth() * o.Z) + (m.GetWidth() - o.X)
-
-			img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
-			if _, ok := s.objectImages[o.ID]; !ok {
-				if img != nil {
-					bounds := img.Bounds()
-					w := bounds.Max.X * scale
-					h := bounds.Max.Y * scale
-					s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
-						Style: fmt.Sprintf(`
-							X %d
-							Y %d
-							W %d
-							H %d
-							ZIndex %d
-							Origin CenterX CenterY
-						`, o.X*tileWidth, o.Z*tileHeight, w, h, zIndex),
-						Image: img,
-					})
-				} else {
-					s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
-						Style: fmt.Sprintf(`
-							X %d
-							Y %d
-							W %d
-							H %d
-							ZIndex %d
-							Origin CenterX CenterY
-						`, o.X*tileWidth, o.Z*tileHeight, tileWidth, tileHeight, zIndex),
-						Image: img,
-					})
-				}
-				/*s.MapContainer.GetAdoptChannel() <- ui.NewTextElement(ui.TextElementConfig{
-					Value: fmt.Sprintf("%dx%d", o.X, o.Z),
-					Style: fmt.Sprintf(`
-							ContentOrigin CenterX CenterY
-							Origin CenterX CenterY
-							ForegroundColor 255 255 255 255
-							X %d
-							Y %d
-							W %d
-							H %d
-							ZIndex 999999
-						`, o.X*tileWidth, o.Z*tileHeight, tileWidth, tileHeight),
-				})*/
-
-				s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
-			} else {
-				bounds := img.Bounds()
-				w := bounds.Max.X * scale
-				h := bounds.Max.Y * scale
-				s.objectImages[o.ID].GetUpdateChannel() <- img
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(tileWidth * o.X)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(tileHeight * o.Z)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
-			}
-		}
+		s.HandleRender()
 	}
 }
 
@@ -350,4 +263,112 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
 	return false
+}
+
+// HandleRender handles the rendering of our Game state.
+func (s *Game) HandleRender() {
+	// TODO: For each object, create a corresponding ImageElement. These should then have their X,Y,Z set to their position based upon which Tile they exist in. Additionally, their Image would be synchronized to the object's current animation and face (as well as frame). It may be necessary to introduce Z-ordering, for both objects within the same tile, as well as for objects which exist at a higher Y.
+	// FIXME: This is _very_ rough and is just for testing!
+	m := s.world.GetCurrentMap()
+	objects := s.world.GetObjects()
+	// Delete images that no longer correspond to an existing world object.
+	for oID, t := range s.objectImages {
+		o := s.world.GetObject(oID)
+		if o == nil {
+			t.GetDestroyChannel() <- true
+			delete(s.objectImages, oID)
+		}
+	}
+	// Iterate over world objects.
+	for _, o := range objects {
+		s.RenderObject(o, m)
+	}
+	return
+}
+
+func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
+	scale := 4
+	tileWidth := int(int(s.Client.AnimationsConfig.TileWidth) * scale)
+	tileHeight := int(int(s.Client.AnimationsConfig.TileHeight) * scale)
+	xOffset, yOffset := 0, 0
+	// If the object is missing (out of view), delete it. FIXME: This should probably convert the image rendering to semi-opaque or otherwise instead.
+	if o.Missing {
+		if t, ok := s.objectImages[o.ID]; ok {
+			t.GetDestroyChannel() <- true
+			delete(s.objectImages, o.ID)
+		}
+		return
+	}
+	frames := s.Client.DataManager.GetFace(o.AnimationID, o.FaceID)
+	// Bail if there are no frames to render.
+	if len(frames) == 0 {
+		return
+	}
+	// Calculate x and y render offset.
+	if adjust, ok := s.Client.AnimationsConfig.Adjustments[cdata.ArchetypeType(o.Type)]; ok {
+		xOffset += int(adjust.X)
+		yOffset += int(adjust.Y)
+	}
+	xOffset *= scale
+	yOffset *= scale
+	// Adjust z-index to draw from top-right to bottom-left.
+	zIndex := (m.GetWidth() * m.GetDepth() * o.Y) + (m.GetWidth() * o.Z) + (m.GetWidth() - o.X)
+
+	img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
+	if _, ok := s.objectImages[o.ID]; !ok {
+		if img != nil {
+			bounds := img.Bounds()
+			w := bounds.Max.X * scale
+			h := bounds.Max.Y * scale
+			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
+				Style: fmt.Sprintf(`
+							X %d
+							Y %d
+							W %d
+							H %d
+							ZIndex %d
+							Origin CenterX CenterY
+						`, int(o.X)*tileWidth+xOffset, int(o.Z)*tileHeight+yOffset, w, h, zIndex),
+				Image: img,
+			})
+		} else {
+			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
+				Style: fmt.Sprintf(`
+							X %d
+							Y %d
+							W %d
+							H %d
+							ZIndex %d
+							Origin CenterX CenterY
+						`, int(o.X)*tileWidth+xOffset, int(o.Z)*tileHeight+yOffset, tileWidth, tileHeight, zIndex),
+				Image: img,
+			})
+		}
+		/*s.MapContainer.GetAdoptChannel() <- ui.NewTextElement(ui.TextElementConfig{
+			Value: fmt.Sprintf("%dx%d", o.X, o.Z),
+			Style: fmt.Sprintf(`
+					ContentOrigin CenterX CenterY
+					Origin CenterX CenterY
+					ForegroundColor 255 255 255 255
+					X %d
+					Y %d
+					W %d
+					H %d
+					ZIndex 999999
+				`, o.X*tileWidth, o.Z*tileHeight, tileWidth, tileHeight),
+		})*/
+
+		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
+	} else {
+		bounds := img.Bounds()
+		w := bounds.Max.X * scale
+		h := bounds.Max.Y * scale
+		s.objectImages[o.ID].GetUpdateChannel() <- img
+		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(tileWidth*int(o.X) + xOffset)}}
+		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(tileHeight*int(o.Z) + yOffset)}}
+		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
+		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
+		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
+	}
+
 }
