@@ -5,14 +5,16 @@ import (
 	"image"
 	"strconv"
 	"strings"
+
 	// Package image/png is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
 	// image.Decode to understand PNG formatted images.
-	"github.com/sirupsen/logrus"
 	_ "image/png"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/chimera-rpg/go-common/network"
 	"github.com/kettek/apng"
@@ -225,6 +227,10 @@ func (m *Manager) GetCachedImage(iID uint32) (img image.Image) {
 	if img, ok := m.images[iID]; ok {
 		return img
 	}
+	imageData, err := m.GetImage(m.GetDataPath("ui/loading.png"))
+	if err != nil {
+		return imageData
+	}
 	return
 }
 
@@ -275,7 +281,7 @@ func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
 // EnsureImage ensures that the given image is available. If it is not, then send a graphics request.
 func (m *Manager) EnsureImage(iID uint32) {
 	if _, imageExists := m.images[iID]; !imageExists {
-		m.images[iID] = image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+		m.images[iID] = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
 		// Send request.
 		m.Log.WithFields(logrus.Fields{
 			"ID":       iID,
@@ -298,6 +304,7 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 		"Length":   len(cmd.Data),
 	}).Info("[Manager] Received Graphics")
 	if cmd.Type == network.Nokay {
+		m.Log.Warn("[Manager] Server sent missing image")
 		// FIXME: We should have some sort of "missing image" reference here.
 		m.images[cmd.GraphicsID] = image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
 	} else if cmd.Type == network.Set {
