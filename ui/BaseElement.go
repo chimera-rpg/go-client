@@ -402,7 +402,7 @@ func (b *BaseElement) DisownChild(c ElementI) {
 // AdoptChild adopts a given Element interface as a child.
 func (b *BaseElement) AdoptChild(c ElementI) {
 	b.Children = append(b.Children, c)
-	c.OnAdopted(b)
+	c.OnAdopted(b.This)
 
 	// Recalculate our style after adopting.
 	b.CalculateStyle()
