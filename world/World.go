@@ -51,13 +51,14 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		return errors.New("cannot set tile, as no map exists")
 	}
 	// Create object if it does not exist and update its properties to match the tile coordinates.
-	for _, oID := range cmd.ObjectIDs {
+	for oI, oID := range cmd.ObjectIDs {
 		if _, ok := w.objects[oID]; !ok {
 			w.objects[oID] = &Object{}
 		}
 		w.objects[oID].Y = cmd.Y
 		w.objects[oID].X = cmd.X
 		w.objects[oID].Z = cmd.Z
+		w.objects[oID].Index = oI
 		w.objects[oID].Missing = false
 	}
 	// See if we need to invalidate any objects that no longer are contained in the given tile.
