@@ -281,7 +281,13 @@ func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
 // EnsureImage ensures that the given image is available. If it is not, then send a graphics request.
 func (m *Manager) EnsureImage(iID uint32) {
 	if _, imageExists := m.images[iID]; !imageExists {
-		m.images[iID] = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+		imageData, err := m.GetImage(m.GetDataPath("ui/loading.png"))
+		if err != nil {
+			m.images[iID] = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+		} else {
+			m.images[iID] = imageData
+		}
+
 		// Send request.
 		m.Log.WithFields(logrus.Fields{
 			"ID":       iID,
@@ -306,7 +312,12 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 	if cmd.Type == network.Nokay {
 		m.Log.Warn("[Manager] Server sent missing image")
 		// FIXME: We should have some sort of "missing image" reference here.
-		m.images[cmd.GraphicsID] = image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+		imageData, err := m.GetImage(m.GetDataPath("ui/missing.png"))
+		if err != nil {
+			m.images[cmd.GraphicsID] = image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+		} else {
+			m.images[cmd.GraphicsID] = imageData
+		}
 	} else if cmd.Type == network.Set {
 		if cmd.DataType == network.GraphicsPng {
 			// Decode PNG
