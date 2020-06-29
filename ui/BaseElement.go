@@ -150,16 +150,16 @@ func (b *BaseElement) CalculateStyle() {
 		if b.Style.Origin.Has(RIGHT) {
 			x = b.Parent.GetWidth() - x
 		}
-		if b.Parent.IsContainer() {
-			//x = x + int32(b.Parent.GetX())
+		if !b.Parent.IsContainer() {
+			x = int32(b.Parent.GetX()) + x
 		}
 		if b.Style.Y.Percentage {
 			y = int32(b.Style.Y.PercentOf(float64(b.Parent.GetHeight())))
 		} else {
 			y = int32(b.Style.Y.Value)
 		}
-		if b.Parent.IsContainer() {
-			//y = y + int32(b.Parent.GetY())
+		if !b.Parent.IsContainer() {
+			y = int32(b.Parent.GetY()) + y
 		}
 		if b.Style.Origin.Has(BOTTOM) {
 			y = b.Parent.GetHeight() - y
