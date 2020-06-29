@@ -288,8 +288,8 @@ func (s *Game) HandleRender() {
 
 func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	scale := 4
-	tileWidth := int(int(s.Client.AnimationsConfig.TileWidth) * scale)
-	tileHeight := int(int(s.Client.AnimationsConfig.TileHeight) * scale)
+	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
+	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 	xOffset, yOffset := 0, 0
 	// If the object is missing (out of view), delete it. FIXME: This should probably convert the image rendering to semi-opaque or otherwise instead.
 	if o.Missing {
@@ -309,17 +309,48 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		xOffset += int(adjust.X)
 		yOffset += int(adjust.Y)
 	}
-	xOffset *= scale
-	yOffset *= scale
+
+	// These are the Z/X tile positions we are rendering the object from.
+	renderZ := int(o.Z)
+	if o.D > 1 {
+		renderZ += int(o.D / 2)
+	}
+	renderX := int(o.X)
+
+	// These are the Z/X tile positions we want to render with a greater z-index than.
+	indexZ := int(o.Z)
+	indexX := int(o.X)
+	if o.W > 1 {
+		indexX -= int(o.W / 2)
+		if indexX < 0 {
+			indexX = 0
+		}
+	}
+	if o.D > 1 {
+		indexZ += int(o.D / 2)
+		if indexZ > int(m.GetDepth()) {
+			indexZ = int(m.GetDepth())
+		}
+	}
+
 	// Adjust z-index to draw from top-right to bottom-left.
-	zIndex := (m.GetWidth() * m.GetDepth() * o.Y) + (m.GetWidth() * o.Z) + (m.GetWidth() - o.X)
+	zIndex := (m.GetWidth() * m.GetDepth() * o.Y) + (m.GetWidth() * uint32(indexZ)) + (m.GetWidth() - uint32(indexX)) + uint32(o.Index)
+
+	x := (int(renderX)*tileWidth+xOffset)*scale + 100
+	y := (int(renderZ)*tileHeight+yOffset)*scale + 100
+	w := tileWidth * scale
+	h := tileHeight * scale
 
 	img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
 	if _, ok := s.objectImages[o.ID]; !ok {
 		if img != nil {
 			bounds := img.Bounds()
-			w := bounds.Max.X * scale
-			h := bounds.Max.Y * scale
+			w = bounds.Max.X * scale
+			h = bounds.Max.Y * scale
+			if o.D > 1 {
+				y -= h
+				y += int(o.D/2) * tileHeight * scale
+			}
 			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
 							X %d
@@ -327,8 +358,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 							W %d
 							H %d
 							ZIndex %d
-							Origin CenterX CenterY
-						`, int(o.X)*tileWidth+xOffset, int(o.Z)*tileHeight+yOffset, w, h, zIndex),
+						`, x, y, w, h, zIndex),
 				Image: img,
 			})
 		} else {
@@ -339,36 +369,40 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 							W %d
 							H %d
 							ZIndex %d
-							Origin CenterX CenterY
-						`, int(o.X)*tileWidth+xOffset, int(o.Z)*tileHeight+yOffset, tileWidth, tileHeight, zIndex),
+						`, x, y, w, h, zIndex),
 				Image: img,
 			})
 		}
-		/*s.MapContainer.GetAdoptChannel() <- ui.NewTextElement(ui.TextElementConfig{
+		/*s.objectImages[o.ID].GetAdoptChannel() <- ui.NewTextElement(ui.TextElementConfig{
 			Value: fmt.Sprintf("%dx%d", o.X, o.Z),
 			Style: fmt.Sprintf(`
 					ContentOrigin CenterX CenterY
 					Origin CenterX CenterY
 					ForegroundColor 255 255 255 255
-					X %d
-					Y %d
+					X 0
+					Y 0
 					W %d
 					H %d
 					ZIndex 999999
-				`, o.X*tileWidth, o.Z*tileHeight, tileWidth, tileHeight),
+				`, tileWidth, tileHeight),
 		})*/
 
 		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 	} else {
-		bounds := img.Bounds()
-		w := bounds.Max.X * scale
-		h := bounds.Max.Y * scale
-		s.objectImages[o.ID].GetUpdateChannel() <- img
-		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(tileWidth*int(o.X) + xOffset)}}
-		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(tileHeight*int(o.Z) + yOffset)}}
-		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
-		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
-		s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
+		if img != nil {
+			bounds := img.Bounds()
+			w = bounds.Max.X * scale
+			h = bounds.Max.Y * scale
+			if o.D > 1 {
+				y -= h
+				y += int(o.D/2) * tileHeight * scale
+			}
+			s.objectImages[o.ID].GetUpdateChannel() <- img
+			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(x)}}
+			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(y)}}
+			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
+			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
+			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
+		}
 	}
-
 }
