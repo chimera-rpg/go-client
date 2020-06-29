@@ -212,7 +212,7 @@ func (s *Login) Loop() {
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
 			if ret {
-				//return
+				return
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
