@@ -1,12 +1,8 @@
 package ui
 
-import (
-	"github.com/chimera-rpg/go-client/data"
-)
-
 // Instance is the managing instance of the entire UI system.
 type Instance struct {
-	dataManager     *data.Manager
+	dataManager     DataManagerI
 	HeldElement     ElementI
 	FocusedElement  ElementI
 	HoveredElements []ElementI

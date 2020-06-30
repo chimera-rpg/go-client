@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chimera-rpg/go-client/data"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
 
 // Setup sets up the needed libraries and pulls all needed data from the
 // location passed in the call.
-func (instance *Instance) Setup(dataManager *data.Manager) (err error) {
+func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
 	instance.dataManager = dataManager
 	// Initialize SDL
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {

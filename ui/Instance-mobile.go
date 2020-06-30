@@ -18,7 +18,7 @@ import (
 
 // Setup sets up the needed libraries and pulls all needed data from the
 // location passed in the call.
-func (instance *Instance) Setup(dataManager *data.Manager) (err error) {
+func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
 	instance.dataManager = dataManager
 
 	err = instance.RootWindow.Setup(WindowConfig{
