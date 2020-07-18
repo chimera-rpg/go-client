@@ -310,34 +310,23 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		yOffset += int(adjust.Y)
 	}
 
-	// These are the Z/X tile positions we are rendering the object from.
-	renderZ := int(o.Z)
-	if o.D > 1 {
-		renderZ += int(o.D / 2)
-	}
-	renderX := int(o.X)
+	xOffset += int(o.Y) * int(s.Client.AnimationsConfig.YStep.X)
+	yOffset += int(o.Y) * int(-s.Client.AnimationsConfig.YStep.Y)
 
-	// These are the Z/X tile positions we want to render with a greater z-index than.
+	startX := 0
+	startY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
+
+	oX := (int(o.X)*tileWidth + xOffset + startX)
+	oY := (int(o.Z)*tileHeight - yOffset + startY)
+
 	indexZ := int(o.Z)
 	indexX := int(o.X)
-	if o.W > 1 {
-		indexX -= int(o.W / 2)
-		if indexX < 0 {
-			indexX = 0
-		}
-	}
-	if o.D > 1 {
-		indexZ += int(o.D / 2)
-		if indexZ > int(m.GetDepth()) {
-			indexZ = int(m.GetDepth())
-		}
-	}
+	indexY := int(o.Y)
 
-	// Adjust z-index to draw from top-right to bottom-left.
-	zIndex := (m.GetWidth() * m.GetDepth() * o.Y) + (m.GetWidth() * uint32(indexZ)) + (m.GetWidth() - uint32(indexX)) + uint32(o.Index)
+	zIndex := (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX) + o.Index
 
-	x := (int(renderX)*tileWidth+xOffset)*scale + 100
-	y := (int(renderZ)*tileHeight+yOffset)*scale + 100
+	x := oX*scale + 100
+	y := oY*scale + 100
 	w := tileWidth * scale
 	h := tileHeight * scale
 
@@ -349,7 +338,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 			h = bounds.Max.Y * scale
 			if o.D > 1 {
 				y -= h
-				y += int(o.D/2) * tileHeight * scale
+				y += (int(o.D/2)*tileHeight + tileHeight/4) * scale
 			}
 			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
@@ -373,19 +362,6 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				Image: img,
 			})
 		}
-		/*s.objectImages[o.ID].GetAdoptChannel() <- ui.NewTextElement(ui.TextElementConfig{
-			Value: fmt.Sprintf("%dx%d", o.X, o.Z),
-			Style: fmt.Sprintf(`
-					ContentOrigin CenterX CenterY
-					Origin CenterX CenterY
-					ForegroundColor 255 255 255 255
-					X 0
-					Y 0
-					W %d
-					H %d
-					ZIndex 999999
-				`, tileWidth, tileHeight),
-		})*/
 
 		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 	} else {
@@ -395,7 +371,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 			h = bounds.Max.Y * scale
 			if o.D > 1 {
 				y -= h
-				y += int(o.D/2) * tileHeight * scale
+				y += (int(o.D/2)*tileHeight + tileHeight/4) * scale
 			}
 			s.objectImages[o.ID].GetUpdateChannel() <- img
 			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(x)}}
