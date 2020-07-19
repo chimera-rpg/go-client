@@ -54,6 +54,10 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	for oI, oID := range cmd.ObjectIDs {
 		if _, ok := w.objects[oID]; !ok {
 			w.objects[oID] = &Object{}
+		} else {
+			if w.objects[oID].Y != cmd.Y || w.objects[oID].X != cmd.X || w.objects[oID].Z != cmd.Z || w.objects[oID].Index != oI {
+				w.objects[oID].Changed = true
+			}
 		}
 		w.objects[oID].Y = cmd.Y
 		w.objects[oID].X = cmd.X

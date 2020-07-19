@@ -376,11 +376,14 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				y -= h
 				y += (int(o.D/2)*tileHeight + tileHeight/4) * scale
 			}
-			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(x)}}
-			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(y)}}
-			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
-			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
-			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
+			if o.Changed {
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(x)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(y)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
+				o.Changed = false
+			}
 			// Only update the image if the image ID has changed.
 			if s.objectImageIDs[o.ID] != frames[0].ImageID {
 				s.objectImageIDs[o.ID] = frames[0].ImageID

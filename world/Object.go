@@ -9,6 +9,7 @@ type Object struct {
 	Y, X, Z     uint32 // We keep Y, X, Z information here to make it easier to render objects. This is updated when Tile updates are received.
 	H, W, D     uint8
 	Missing     bool // Represents if the object is currently in an unknown location. This happens when a Tile that holds an Object no longer holds it and no other Tile has claimed it.
+	Changed     bool // Represents if the object's position has been changed. Cleared by Game.RenderObject
 }
 
 // ObjectsFilter returns a new slice containing all Objects in the slice that satisfy the predicate f.
