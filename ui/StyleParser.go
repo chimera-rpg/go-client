@@ -116,9 +116,9 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 	case "OutlineColor":
 		s.OutlineColor = parseColor(p.tokenValue())
 	case "Origin":
-		s.Origin = parseOrigin(p.tokenValue())
+		s.Origin = parseOrigin(s, p.tokenValue())
 	case "ContentOrigin":
-		s.ContentOrigin = parseOrigin(p.tokenValue())
+		s.ContentOrigin = parseOrigin(s, p.tokenValue())
 	case "Resize":
 		s.Resize = parseResize(p.tokenValue())
 	}
@@ -165,18 +165,29 @@ func parseResize(s string) (f Flags) {
 	return
 }
 
-func parseOrigin(s string) (f Flags) {
+func parseOrigin(style *Style, s string) (f Flags) {
+	f = style.Origin
 	parts := strings.Split(s, " ")
 	for _, n := range parts {
 		switch n {
 		case "CenterX":
 			f.Set(CENTERX)
+			f.Clear(RIGHT)
 		case "CenterY":
 			f.Set(CENTERY)
+			f.Clear(BOTTOM)
 		case "Bottom":
 			f.Set(BOTTOM)
+			f.Clear(CENTERY)
 		case "Right":
 			f.Set(RIGHT)
+			f.Clear(CENTERX)
+		case "Top":
+			f.Clear(CENTERY)
+			f.Clear(BOTTOM)
+		case "Left":
+			f.Clear(CENTERX)
+			f.Clear(RIGHT)
 		}
 	}
 	return
