@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -25,6 +26,7 @@ type Game struct {
 	keyBinds        []uint8
 	inputChan       chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
 	objectImages    map[uint32]ui.ElementI
+	objectImageIDs  map[uint32]data.StringID
 }
 
 // UserInput is an interface used in a channel in Game for handling UI input.
@@ -50,6 +52,7 @@ type MouseInput struct {
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	s.inputChan = make(chan UserInput)
 	s.objectImages = make(map[uint32]ui.ElementI)
+	s.objectImageIDs = make(map[uint32]data.StringID)
 	// Initialize our world.
 	s.world.Init(s.Client.DataManager, s.Client.Log)
 
@@ -267,7 +270,6 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 
 // HandleRender handles the rendering of our Game state.
 func (s *Game) HandleRender() {
-	// TODO: For each object, create a corresponding ImageElement. These should then have their X,Y,Z set to their position based upon which Tile they exist in. Additionally, their Image would be synchronized to the object's current animation and face (as well as frame). It may be necessary to introduce Z-ordering, for both objects within the same tile, as well as for objects which exist at a higher Y.
 	// FIXME: This is _very_ rough and is just for testing!
 	m := s.world.GetCurrentMap()
 	objects := s.world.GetObjects()
@@ -296,6 +298,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		if t, ok := s.objectImages[o.ID]; ok {
 			t.GetDestroyChannel() <- true
 			delete(s.objectImages, o.ID)
+			delete(s.objectImageIDs, o.ID)
 		}
 		return
 	}
@@ -350,6 +353,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 						`, x, y, w, h, zIndex),
 				Image: img,
 			})
+			s.objectImageIDs[o.ID] = frames[0].ImageID
 		} else {
 			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
@@ -362,7 +366,6 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				Image: img,
 			})
 		}
-
 		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 	} else {
 		if img != nil {
@@ -373,12 +376,16 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				y -= h
 				y += (int(o.D/2)*tileHeight + tileHeight/4) * scale
 			}
-			s.objectImages[o.ID].GetUpdateChannel() <- img
 			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(x)}}
 			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(y)}}
 			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
 			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
 			s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
+			// Only update the image if the image ID has changed.
+			if s.objectImageIDs[o.ID] != frames[0].ImageID {
+				s.objectImageIDs[o.ID] = frames[0].ImageID
+				s.objectImages[o.ID].GetUpdateChannel() <- img
+			}
 		}
 	}
 }
