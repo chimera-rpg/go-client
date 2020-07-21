@@ -292,7 +292,6 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	scale := 4
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
-	xOffset, yOffset := 0, 0
 	// If the object is missing (out of view), delete it. FIXME: This should probably convert the image rendering to semi-opaque or otherwise instead.
 	if o.Missing {
 		if t, ok := s.objectImages[o.ID]; ok {
@@ -307,29 +306,31 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	if len(frames) == 0 {
 		return
 	}
-	// Calculate x and y render offset.
+	// Calculate our origin.
+	originX := 0
+	originY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
+	originX += int(o.Y) * int(s.Client.AnimationsConfig.YStep.X)
+	originY += int(o.Y) * int(s.Client.AnimationsConfig.YStep.Y)
+	originX += int(o.X) * tileWidth
+	originY += int(o.Z) * tileHeight
+	// Calculate object-specific offsets.
+	offsetX := 0
+	offsetY := 0
 	if adjust, ok := s.Client.AnimationsConfig.Adjustments[cdata.ArchetypeType(o.Type)]; ok {
-		xOffset += int(adjust.X)
-		yOffset += int(adjust.Y)
+		offsetX += int(adjust.X)
+		offsetY += int(adjust.Y)
 	}
 
-	xOffset += int(o.Y) * int(s.Client.AnimationsConfig.YStep.X)
-	yOffset += int(o.Y) * int(-s.Client.AnimationsConfig.YStep.Y)
-
-	startX := 0
-	startY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
-
-	oX := (int(o.X)*tileWidth + xOffset + startX)
-	oY := (int(o.Z)*tileHeight - yOffset + startY)
-
+	// Get our render z-index.
 	indexZ := int(o.Z)
 	indexX := int(o.X)
 	indexY := int(o.Y)
 
 	zIndex := (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX) + o.Index
 
-	x := oX*scale + 100
-	y := oY*scale + 100
+	// Calculate our scaled pixel position at which to render.
+	x := (originX+offsetX)*scale + 100
+	y := (originY+offsetY)*scale + 100
 	w := tileWidth * scale
 	h := tileHeight * scale
 
@@ -339,9 +340,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 			bounds := img.Bounds()
 			w = bounds.Max.X * scale
 			h = bounds.Max.Y * scale
-			if o.D > 1 {
-				y -= h
-				y += (int(o.D/2)*tileHeight + tileHeight/4) * scale
+			if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
+				y -= h - (tileHeight * scale)
 			}
 			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
@@ -372,9 +372,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 			bounds := img.Bounds()
 			w = bounds.Max.X * scale
 			h = bounds.Max.Y * scale
-			if o.D > 1 {
-				y -= h
-				y += (int(o.D/2)*tileHeight + tileHeight/4) * scale
+			if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
+				y -= h - (tileHeight * scale)
 			}
 			if o.Changed {
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(x)}}
