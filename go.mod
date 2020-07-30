@@ -1,7 +1,7 @@
 module github.com/chimera-rpg/go-client
 
 require (
-	github.com/chimera-rpg/go-common v0.0.0-20200630020335-8066864ae980
+	github.com/chimera-rpg/go-common v0.0.0-20200730115515-f7e16a48b7d4
 	github.com/eczarny/lexer v0.0.0-20141213044152-5fcb9a5b73e7
 	github.com/kettek/apng v0.0.0-20190523045756-e5135b1219f5
 	github.com/sirupsen/logrus v1.6.0
