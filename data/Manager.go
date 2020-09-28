@@ -301,7 +301,7 @@ func (m *Manager) EnsureImage(iID uint32) {
 	}
 }
 
-// HandleGraphicsCommand
+// HandleGraphicsCommand handles CommandGraphics.
 func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 	m.Log.WithFields(logrus.Fields{
 		"ID":       cmd.GraphicsID,
