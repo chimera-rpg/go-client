@@ -10,11 +10,12 @@ import (
 
 // World is a collection of all the current known client representations of the game world.
 type World struct {
-	dataManager *data.Manager
-	maps        map[data.StringID]*DynamicMap
-	currentMap  data.StringID
-	objects     map[uint32]*Object
-	Log         *logrus.Logger
+	dataManager  *data.Manager
+	maps         map[data.StringID]*DynamicMap
+	currentMap   data.StringID
+	objects      map[uint32]*Object
+	viewObjectID uint32
+	Log          *logrus.Logger
 }
 
 // Init initializes the given world object with the passed client.
@@ -99,6 +100,8 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 		w.CreateObjectFromPayload(cmd.ObjectID, p)
 	case network.CommandObjectPayloadDelete:
 		w.DeleteObject(cmd.ObjectID)
+	case network.CommandObjectPayloadViewTarget:
+		w.viewObjectID = cmd.ObjectID
 	default:
 		w.Log.WithFields(logrus.Fields{
 			"payload": p,
@@ -150,6 +153,11 @@ func (w *World) GetObjects() []*Object {
 // GetObject returns a pointer to an object based upon its ID.
 func (w *World) GetObject(oID uint32) *Object {
 	return w.objects[oID]
+}
+
+// GetViewObject returns a pointer to the object which the view should be centered on.
+func (w *World) GetViewObject() *Object {
+	return w.objects[w.viewObjectID]
 }
 
 // GetCurrentMap returns a pointer to the current map.
