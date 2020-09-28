@@ -1,5 +1,6 @@
 package world
 
+// Object represents an arbitrary map object.
 type Object struct {
 	ID          uint32
 	Type        uint8

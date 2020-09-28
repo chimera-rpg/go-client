@@ -27,6 +27,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.currentMap = 0
 }
 
+// HandleMapCommand handles a map command, creating a new DynamicMap if it does not exist.
 func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 	if _, ok := w.maps[cmd.MapID]; ok {
 		// TODO: ?
@@ -46,6 +47,7 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 	return nil
 }
 
+// HandleTileCommand handles a CommandTile, creating missing objects, updating object positions, and invalidates objects that go missing.
 func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	if _, ok := w.maps[w.currentMap]; !ok {
 		return errors.New("cannot set tile, as no map exists")
@@ -89,6 +91,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	return nil
 }
 
+// HandleObjectCommand handles an ObjectCommand, creating or deleting depending on the payload.
 func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	switch p := cmd.Payload.(type) {
 	case network.CommandObjectPayloadCreate:
@@ -104,6 +107,7 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	return nil
 }
 
+// CreateObjectFromPayload creates or updates an Object associated with an object ID from a creation payload.
 func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPayloadCreate) error {
 	if _, ok := w.objects[oID]; ok {
 		// Update existing object.
@@ -126,6 +130,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 	return nil
 }
 
+// DeleteObject deletes the given object ID from the world's objects field.
 func (w *World) DeleteObject(oID uint32) error {
 	delete(w.objects, oID)
 	return nil
