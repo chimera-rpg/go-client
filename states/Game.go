@@ -288,6 +288,7 @@ func (s *Game) HandleRender() {
 	return
 }
 
+// RenderObject renders a given Object within a DynamicMap.
 func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	scale := 4
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
@@ -376,11 +377,11 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				y -= h - (tileHeight * scale)
 			}
 			if o.Changed {
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{ui.Number{Value: float64(x)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{ui.Number{Value: float64(y)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{ui.Number{Value: float64(w)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{ui.Number{Value: float64(h)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{ui.Number{Value: float64(zIndex)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{Number: ui.Number{Value: float64(x)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(y)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{Number: ui.Number{Value: float64(w)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{Number: ui.Number{Value: float64(h)}}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
 				o.Changed = false
 			}
 			// Only update the image if the image ID has changed.
