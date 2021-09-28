@@ -1,8 +1,6 @@
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/chimera-rpg/go-common v0.0.0-20210928015113-54058741749b h1:c29ZkNV7k1cgPdzX6PRrf2K7O0Cvb3PWQ89SneZpzEw=
-github.com/chimera-rpg/go-common v0.0.0-20210928015113-54058741749b/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
-github.com/chimera-rpg/go-common v0.0.0-20210928015550-090f47f2bbe1 h1:bhyAiKVVMU5D7H6uipzWCP6INg7PuXgA8wzEw9GaqzY=
-github.com/chimera-rpg/go-common v0.0.0-20210928015550-090f47f2bbe1/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
+github.com/chimera-rpg/go-common v0.0.0-20210928231317-f1d132a840b6 h1:ADwBnDFnB3l38dwqGYAwQDL/M6Oy+JOJ1wiB/Vx8U4A=
+github.com/chimera-rpg/go-common v0.0.0-20210928231317-f1d132a840b6/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
