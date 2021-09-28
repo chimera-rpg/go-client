@@ -135,6 +135,8 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			W 70%
 			H 20%
 			BackgroundColor 0 0 128 128
+			Display Columns
+			Direction Reverse
 		`,
 		Events: ui.Events{
 			OnWindowResized: func(w, h int32) {
@@ -448,7 +450,6 @@ func (s *Game) UpdateMessageWindow() {
 		e := ui.NewTextElement(ui.TextElementConfig{
 			Value: str,
 			Style: fmt.Sprintf(`
-				Origin Bottom
 				ForegroundColor 200 200 200 255
 				OutlineColor 20 20 20 255
 			`),
@@ -468,11 +469,5 @@ func (s *Game) UpdateMessageWindow() {
 		if i >= len(s.messageElements) {
 			addMessage(fmt.Sprintf("[%s] <%s>: %s", msgName, m.Received.Local(), m.Message.Body))
 		}
-	}
-	var y float64
-	// Update UI positioning.
-	for i := len(s.messageElements) - 1; i >= 0; i-- {
-		s.messageElements[i].GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: y}}
-		y += float64(s.messageElements[i].GetHeight())
 	}
 }
