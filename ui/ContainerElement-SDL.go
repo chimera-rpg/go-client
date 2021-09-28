@@ -1,3 +1,4 @@
+//go:build !mobile
 // +build !mobile
 
 package ui
@@ -71,7 +72,33 @@ func (w *Container) Render() {
 func (w *Container) CalculateStyle() {
 	w.BaseElement.CalculateStyle()
 	if w.IsDirty() {
+		w.reflow()
+		// Update texture.
 		w.updateTexture()
+	}
+}
+
+func (w *Container) AdoptChild(c ElementI) {
+	w.BaseElement.AdoptChild(c)
+	w.reflow()
+}
+
+func (w *Container) reflow() {
+	var y int32
+	if w.Style.Display.Has(COLUMNS) {
+		if w.Style.Direction.Has(REVERSE) {
+			y := w.h
+			for i := len(w.Children) - 1; i >= 0; i-- {
+				child := w.Children[i]
+				y -= child.GetHeight()
+				child.SetY(y)
+			}
+		} else {
+			for _, child := range w.Children {
+				child.SetY(y)
+				y += child.GetHeight()
+			}
+		}
 	}
 }
 
