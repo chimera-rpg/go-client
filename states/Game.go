@@ -447,28 +447,32 @@ func (s *Game) UpdateMessageWindow() {
 	addMessage := func(str string) ui.ElementI {
 		e := ui.NewTextElement(ui.TextElementConfig{
 			Value: str,
-			Style: `
+			Style: fmt.Sprintf(`
 				Origin Bottom
 				ForegroundColor 200 200 200 255
 				OutlineColor 20 20 20 255
-			`,
+			`),
 		})
 		s.messageElements = append(s.messageElements, e)
 		s.MessageWindow.GetAdoptChannel() <- s.messageElements[len(s.messageElements)-1]
 		return e
 	}
 
-	i := 0
-	for k, c := range s.Client.MessageHistory {
+	// Create message UI as needed.
+	for i := len(s.Client.MessageHistory) - 1; i >= 0; i-- {
+		m := s.Client.MessageHistory[i]
 		msgName := ""
-		if k == network.ServerMessage {
+		if m.Message.Type == network.ServerMessage {
 			msgName = "SERVER"
 		}
-		for _, m := range c {
-			if i >= len(s.messageElements) {
-				addMessage(fmt.Sprintf("[%s] <%s>: %s", msgName, m.Received.Local(), m.Message.Body))
-			}
-			s.messageElements[i].GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(i * 10)}}
+		if i >= len(s.messageElements) {
+			addMessage(fmt.Sprintf("[%s] <%s>: %s", msgName, m.Received.Local(), m.Message.Body))
 		}
+	}
+	var y float64
+	// Update UI positioning.
+	for i := len(s.messageElements) - 1; i >= 0; i-- {
+		s.messageElements[i].GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: y}}
+		y += float64(s.messageElements[i].GetHeight())
 	}
 }
