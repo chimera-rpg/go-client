@@ -188,6 +188,10 @@ func (t *TextElement) SetValue(value string) (err error) {
 func (t *TextElement) CalculateStyle() {
 	w, h, err := t.Context.Font.SizeUTF8(t.Value)
 	if err == nil {
+		if t.Style.OutlineColor.A > 0 {
+			w += 4
+			h += 4
+		}
 		// FIXME: We shouldn't do this.
 		t.w = int32(w)
 		t.h = int32(h)
