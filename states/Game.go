@@ -281,6 +281,42 @@ func (s *Game) HandleRender() {
 			delete(s.objectImages, oID)
 		}
 	}
+
+	if o := s.world.GetViewObject(); o != nil {
+		scale := 4
+		tileWidth := int(s.Client.AnimationsConfig.TileWidth)
+		tileHeight := int(s.Client.AnimationsConfig.TileHeight)
+
+		originX := 0
+		originY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
+		originX += int(o.Y) * int(s.Client.AnimationsConfig.YStep.X)
+		originY += int(o.Y) * int(s.Client.AnimationsConfig.YStep.Y)
+		originX += int(o.X) * tileWidth
+		originY += int(o.Z) * tileHeight
+		// Calculate object-specific offsets.
+		offsetX := 0
+		offsetY := 0
+		if adjust, ok := s.Client.AnimationsConfig.Adjustments[cdata.ArchetypeType(o.Type)]; ok {
+			offsetX += int(adjust.X)
+			offsetY += int(adjust.Y)
+		}
+
+		// Calculate our scaled pixel position at which to render.
+		x := float64((originX+offsetX)*scale + 100)
+		y := float64((originY+offsetY)*scale + 100)
+		// Adjust for centering based on target's sizing.
+		x += float64(int(o.W)*tileWidth*scale) / 2
+		y += float64((int(o.H)*int(s.Client.AnimationsConfig.YStep.Y)+(int(o.H)*tileHeight))*scale) / 2
+		// Center within the map container.
+		x -= float64(s.MapContainer.GetWidth()) / 2
+		y -= float64(s.MapContainer.GetHeight()) / 2
+
+		s.MapContainer.GetUpdateChannel() <- ui.UpdateScroll{
+			Left: ui.Number{Value: x},
+			Top:  ui.Number{Value: y},
+		}
+	}
+
 	// Iterate over world objects.
 	for _, o := range objects {
 		s.RenderObject(o, m)
