@@ -78,9 +78,19 @@ func (b *BaseElement) Render() {
 	b.Dirty = false
 }
 
+// SetX gets the cached x value.
+func (b *BaseElement) SetX(x int32) {
+	b.x = x
+}
+
 // GetX gets the cached x value.
 func (b *BaseElement) GetX() int32 {
 	return b.x
+}
+
+// SetY sets the cached y value.
+func (b *BaseElement) SetY(y int32) {
+	b.y = y
 }
 
 // GetY gets the cached y value.

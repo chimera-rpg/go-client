@@ -13,7 +13,9 @@ type ElementI interface {
 	GetUpdateChannel() chan UpdateI
 	HandleUpdate(UpdateI)
 	//
+	SetX(int32)
 	GetX() int32
+	SetY(int32)
 	GetY() int32
 	GetWidth() int32
 	GetHeight() int32
