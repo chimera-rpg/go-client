@@ -10,10 +10,6 @@ type TextElementConfig struct {
 // TextElementStyle is our default styling for TextElements.
 var TextElementStyle = `
 	ForegroundColor 0 0 0 255
-	Padding 6
-	MinH 12
-	H 7%
-	MaxH 30
 `
 
 // NewTextElement creates a new TextElement from the passed configuration.
@@ -36,5 +32,7 @@ func (t *TextElement) HandleUpdate(update UpdateI) {
 	switch u := update.(type) {
 	case UpdateValue:
 		t.SetValue(u.Value)
+	default:
+		t.BaseElement.HandleUpdate(update)
 	}
 }
