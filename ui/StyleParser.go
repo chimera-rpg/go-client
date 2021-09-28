@@ -134,6 +134,10 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.ContentOrigin = parseOrigin(s, p.tokenValue())
 	case "Resize":
 		s.Resize = parseResize(p.tokenValue())
+	case "Display":
+		s.Display = parseDisplay(s, p.tokenValue())
+	case "Direction":
+		s.Direction = parseDirection(s, p.tokenValue())
 	}
 }
 
@@ -202,6 +206,32 @@ func parseOrigin(style *Style, s string) (f Flags) {
 			f.Clear(CENTERX)
 			f.Clear(RIGHT)
 		}
+	}
+	return
+}
+
+func parseDisplay(style *Style, s string) (f Flags) {
+	f = style.Display
+	switch s {
+	case "Columns":
+		f.Set(COLUMNS)
+		f.Clear(ROWS)
+	case "Rows":
+		f.Set(ROWS)
+		f.Clear(COLUMNS)
+	}
+	return
+}
+
+func parseDirection(style *Style, s string) (f Flags) {
+	f = style.Direction
+	switch s {
+	case "Regular":
+		f.Set(REGULAR)
+		f.Clear(REVERSE)
+	case "Reverse":
+		f.Set(REVERSE)
+		f.Clear(REGULAR)
 	}
 	return
 }

@@ -20,6 +20,18 @@ const (
 	TOCONTENT Bits = 1 << iota
 )
 
+// These const values are the bit flags for Display options.
+const (
+	COLUMNS Bits = 1 << iota
+	ROWS
+)
+
+// These const values are the bit flags for Direction options.
+const (
+	REGULAR Bits = 1 << iota
+	REVERSE
+)
+
 // Number is our special number container type.
 type Number struct {
 	Value      float64
@@ -71,6 +83,8 @@ type Style struct {
 	Origin          Flags
 	ContentOrigin   Flags
 	Resize          Flags
+	Display         Flags
+	Direction       Flags
 	X               Number
 	Y               Number
 	W               Number
