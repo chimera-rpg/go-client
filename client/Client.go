@@ -15,6 +15,7 @@ type Client struct {
 	network.Connection
 	DataManager      *data.Manager
 	RootWindow       *ui.Window
+	MessageHistory   map[int][]Message
 	LogHistory       []string
 	State            StateI
 	Log              *logrus.Logger
@@ -36,6 +37,8 @@ func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, l *logrus.L
 
 	c.RenderChannel = make(chan struct{})
 	c.StateChannel = make(chan StateMessage)
+
+	c.MessageHistory = make(map[int][]Message)
 
 	c.isRunning = true
 	return

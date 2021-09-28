@@ -16,7 +16,8 @@ import (
 type Game struct {
 	client.State
 	GameContainer   ui.Container
-	ChatWindow      ui.Container
+	MessageWindow   ui.Container
+	messageElements []ui.ElementI
 	MapContainer    ui.Container
 	InventoryWindow ui.Container
 	GroundWindow    ui.Container
@@ -32,6 +33,8 @@ type Game struct {
 // UserInput is an interface used in a channel in Game for handling UI input.
 type UserInput interface {
 }
+
+type ResizeEvent struct{}
 
 // KeyInput is the Userinput for key events.
 type KeyInput struct {
@@ -124,8 +127,8 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.MapContainer.AdoptChannel <- mapText
 	s.GameContainer.AdoptChannel <- s.MapContainer.This
 	// Sub-window: chat
-	err = s.ChatWindow.Setup(ui.ContainerConfig{
-		Value: "Chat",
+	err = s.MessageWindow.Setup(ui.ContainerConfig{
+		Value: "Messages",
 		Style: `
 			X 8
 			Y 8
@@ -133,8 +136,13 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			H 20%
 			BackgroundColor 0 0 128 128
 		`,
+		Events: ui.Events{
+			OnWindowResized: func(w, h int32) {
+				s.inputChan <- ResizeEvent{}
+			},
+		},
 	})
-	s.GameContainer.AdoptChannel <- s.ChatWindow.This
+	s.GameContainer.AdoptChannel <- s.MessageWindow.This
 	// Sub-window: inventory
 	err = s.InventoryWindow.Setup(ui.ContainerConfig{
 		Value: "Inventory",
@@ -198,7 +206,7 @@ func (s *Game) Close() {
 	s.StatsWindow.Destroy()
 	s.GroundWindow.Destroy()
 	s.InventoryWindow.Destroy()
-	s.ChatWindow.Destroy()
+	s.MessageWindow.Destroy()
 }
 
 // Loop is our loop for managing network activity and beyond.
@@ -216,6 +224,8 @@ func (s *Game) Loop() {
 			return
 		case inp := <-s.inputChan:
 			switch e := inp.(type) {
+			case ResizeEvent:
+				s.UpdateMessageWindow()
 			case KeyInput:
 				// TODO: Move to key bind system.
 				if e.pressed && !e.repeat {
@@ -262,6 +272,9 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.world.HandleObjectCommand(c)
 	case network.CommandTile:
 		s.world.HandleTileCommand(c)
+	case network.CommandMessage:
+		s.Client.HandleMessageCommand(c)
+		s.UpdateMessageWindow()
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
@@ -425,6 +438,37 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				s.objectImageIDs[o.ID] = frames[0].ImageID
 				s.objectImages[o.ID].GetUpdateChannel() <- img
 			}
+		}
+	}
+}
+
+// UpdateMessageWindow synchronizes the message window with the client's message history.
+func (s *Game) UpdateMessageWindow() {
+	addMessage := func(str string) ui.ElementI {
+		e := ui.NewTextElement(ui.TextElementConfig{
+			Value: str,
+			Style: `
+				Origin Bottom
+				ForegroundColor 200 200 200 255
+				OutlineColor 20 20 20 255
+			`,
+		})
+		s.messageElements = append(s.messageElements, e)
+		s.MessageWindow.GetAdoptChannel() <- s.messageElements[len(s.messageElements)-1]
+		return e
+	}
+
+	i := 0
+	for k, c := range s.Client.MessageHistory {
+		msgName := ""
+		if k == network.ServerMessage {
+			msgName = "SERVER"
+		}
+		for _, m := range c {
+			if i >= len(s.messageElements) {
+				addMessage(fmt.Sprintf("[%s] <%s>: %s", msgName, m.Received.Local(), m.Message.Body))
+			}
+			s.messageElements[i].GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(i * 10)}}
 		}
 	}
 }
