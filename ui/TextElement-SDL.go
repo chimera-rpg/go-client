@@ -186,6 +186,16 @@ func (t *TextElement) SetValue(value string) (err error) {
 // CalculateStyle is the same as BaseElement with the addition of always
 // creating the SDL texture if it has not been created.
 func (t *TextElement) CalculateStyle() {
+	w, h, err := t.Context.Font.SizeUTF8(t.Value)
+	if err == nil {
+		// FIXME: We shouldn't do this.
+		t.w = int32(w)
+		t.h = int32(h)
+		t.Style.W.Percentage = false
+		t.Style.W.Value = float64(w)
+		t.Style.H.Percentage = false
+		t.Style.H.Value = float64(h)
+	}
 	if t.SDLTexture == nil {
 		t.SetValue(t.Value)
 	}
