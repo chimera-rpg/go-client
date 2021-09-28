@@ -88,6 +88,8 @@ type Style struct {
 	MarginRight     Number
 	MarginTop       Number
 	MarginBottom    Number
+	ScrollLeft      Number
+	ScrollTop       Number
 	ForegroundColor color.NRGBA
 	BackgroundColor color.NRGBA
 	OutlineColor    color.NRGBA

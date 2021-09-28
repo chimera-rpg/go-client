@@ -109,6 +109,19 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.PaddingTop = parseNumber(p.tokenValue())
 	case "PaddingBottom":
 		s.PaddingBottom = parseNumber(p.tokenValue())
+	case "Scroll":
+		parts := strings.Split(p.tokenValue(), " ")
+		partsLen := len(parts)
+		if partsLen == 1 { // l
+			s.ScrollLeft = parseNumber(parts[0])
+		} else if partsLen == 2 { // l t
+			s.ScrollLeft = parseNumber(parts[0])
+			s.ScrollTop = parseNumber(parts[1])
+		}
+	case "ScrollLeft":
+		s.ScrollLeft = parseNumber(p.tokenValue())
+	case "ScrollTop":
+		s.ScrollTop = parseNumber(p.tokenValue())
 	case "ForegroundColor":
 		s.ForegroundColor = parseColor(p.tokenValue())
 	case "BackgroundColor":

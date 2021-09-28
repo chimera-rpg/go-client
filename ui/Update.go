@@ -29,6 +29,21 @@ type UpdateH struct {
 	Number
 }
 
+// UpdateScroll represents a change to the scroll left and top of an Element.
+type UpdateScroll struct {
+	Left, Top Number
+}
+
+// UpdateScrollLeft represents a change to the scroll left of an Element.
+type UpdateScrollLeft struct {
+	Number
+}
+
+// UpdateScrollTop represents a change to the scroll top of an Element.
+type UpdateScrollTop struct {
+	Number
+}
+
 // UpdateZIndex represents a change to the ZIndex of an Element.
 type UpdateZIndex struct {
 	Number
