@@ -74,4 +74,5 @@ type ElementI interface {
 	OnFocus() bool
 	Blur()
 	OnBlur() bool
+	OnWindowResized(w, h int32)
 }

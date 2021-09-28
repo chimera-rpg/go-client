@@ -1,3 +1,4 @@
+//go:build !mobile
 // +build !mobile
 
 package ui
@@ -74,6 +75,8 @@ func (instance *Instance) Loop() {
 			case *sdl.WindowEvent:
 				if t.Event == sdl.WINDOWEVENT_RESIZED {
 					instance.RootWindow.Resize(t.WindowID, t.Data1, t.Data2)
+					// Send Resized down the tree.
+					instance.HandleEvent(event)
 				} else if t.Event == sdl.WINDOWEVENT_CLOSE {
 					instance.Running = false
 				} else if t.Event == sdl.WINDOWEVENT_EXPOSED {
@@ -177,6 +180,9 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 	switch t := event.(type) {
 	case *sdl.WindowEvent:
+		if t.Event == sdl.WINDOWEVENT_RESIZED {
+			e.OnWindowResized(t.Data1, t.Data2)
+		}
 	case *sdl.MouseMotionEvent:
 		if e.Hit(t.X, t.Y) {
 			// OnMouseIn

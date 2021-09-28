@@ -20,4 +20,5 @@ type Events struct {
 	OnAdopted         func(parent ElementI)
 	OnFocus           func() bool
 	OnBlur            func() bool
+	OnWindowResized   func(w int32, h int32)
 }

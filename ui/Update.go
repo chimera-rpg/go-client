@@ -51,3 +51,6 @@ type UpdateZIndex struct {
 
 // UpdateStyle represents an update to the Style of an element.
 type UpdateStyle = string
+
+// UpdateDirt is an message that marks the element as dirty or not.
+type UpdateDirt = bool

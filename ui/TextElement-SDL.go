@@ -1,3 +1,4 @@
+//go:build !mobile
 // +build !mobile
 
 package ui
@@ -50,6 +51,9 @@ func (t *TextElement) Render() {
 	}
 	if t.Style.ContentOrigin.Has(CENTERY) {
 		ty += t.h/2 - t.th/2 - t.pb
+	}
+	if t.Style.Origin.Has(BOTTOM) {
+		//ty -= t.h
 	}
 	dst := sdl.Rect{
 		X: tx,
@@ -186,4 +190,11 @@ func (t *TextElement) CalculateStyle() {
 		t.SetValue(t.Value)
 	}
 	t.BaseElement.CalculateStyle()
+}
+
+// OnWindowResized is the same as BaseElement but always recreates the
+// underlying SDL texture.
+func (t *TextElement) OnWindowResized(w, h int32) {
+	t.SetValue(t.Value)
+	t.BaseElement.OnWindowResized(w, h)
 }

@@ -616,6 +616,13 @@ func (b *BaseElement) OnBlur() bool {
 	return true
 }
 
+// OnWindowResized is called when an element in the element's heirarchy has been resized.
+func (b *BaseElement) OnWindowResized(w, h int32) {
+	if b.Events.OnWindowResized != nil {
+		b.Events.OnWindowResized(w, h)
+	}
+}
+
 // CanHold returns if the element should be considered as holdable.
 func (b *BaseElement) CanHold() bool {
 	return b.Holdable
@@ -668,6 +675,7 @@ func (b *BaseElement) GetUpdateChannel() chan UpdateI {
 
 // HandleUpdate is the base stub for handling update messages.
 func (b *BaseElement) HandleUpdate(update UpdateI) {
+	dirty := true
 	switch u := update.(type) {
 	case UpdateValue:
 		b.SetValue(u.Value)
@@ -688,7 +696,9 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Style.ScrollTop = u.Number
 	case UpdateZIndex:
 		b.Style.ZIndex = u.Number
+	case UpdateDirt:
+		dirty = u
 	}
 	b.CalculateStyle()
-	b.SetDirty(true)
+	b.SetDirty(dirty)
 }
