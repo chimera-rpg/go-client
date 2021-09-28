@@ -14,10 +14,7 @@ type Message struct {
 
 // HandleMessageCommand received network.CommandMessage types and adds it to the client's message history.
 func (c *Client) HandleMessageCommand(m network.CommandMessage) {
-	if _, ok := c.MessageHistory[m.Type]; !ok {
-		c.MessageHistory[m.Type] = make([]Message, 0)
-	}
-	c.MessageHistory[m.Type] = append(c.MessageHistory[m.Type], Message{
+	c.MessageHistory = append(c.MessageHistory, Message{
 		Received: time.Now(),
 		Message:  m,
 	})
