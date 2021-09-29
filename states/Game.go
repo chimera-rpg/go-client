@@ -365,13 +365,18 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	originY += int(o.Y) * int(s.Client.AnimationsConfig.YStep.Y)
 	originX += int(o.X) * tileWidth
 	originY += int(o.Z) * tileHeight
-	// Calculate object-specific offsets.
+
+	// Calculate archetype type-specific offsets.
 	offsetX := 0
 	offsetY := 0
 	if adjust, ok := s.Client.AnimationsConfig.Adjustments[cdata.ArchetypeType(o.Type)]; ok {
 		offsetX += int(adjust.X)
 		offsetY += int(adjust.Y)
 	}
+
+	// Set animation frame offsets.
+	offsetX += int(frames[0].X)
+	offsetY += int(frames[0].Y)
 
 	// Get our render z-index.
 	indexZ := int(o.Z)
