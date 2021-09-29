@@ -56,8 +56,10 @@ func (w *Container) Render() {
 	}
 	if w.Style.BackgroundColor.A > 0 {
 		w.Context.Renderer.SetDrawColor(w.Style.BackgroundColor.R, w.Style.BackgroundColor.G, w.Style.BackgroundColor.B, w.Style.BackgroundColor.A)
-		w.Context.Renderer.Clear()
+	} else {
+		w.Context.Renderer.SetDrawColor(0, 0, 0, 0)
 	}
+	w.Context.Renderer.Clear()
 
 	w.BaseElement.Render()
 	if w.Parent != nil {
@@ -90,11 +92,19 @@ func (w *Container) reflow() {
 			y := w.h
 			for i := len(w.Children) - 1; i >= 0; i-- {
 				child := w.Children[i]
+				switch c := child.(type) {
+				case *Container:
+					c.reflow()
+				}
 				y -= child.GetHeight()
 				child.SetY(y)
 			}
 		} else {
 			for _, child := range w.Children {
+				switch c := child.(type) {
+				case *Container:
+					c.reflow()
+				}
 				child.SetY(y)
 				y += child.GetHeight()
 			}
