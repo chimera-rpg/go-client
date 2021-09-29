@@ -568,6 +568,14 @@ func (b *BaseElement) OnTextEdit(str string, start int32, length int32) bool {
 	return true
 }
 
+// OnTextSubmit handles when a text edit event is received.
+func (b *BaseElement) OnTextSubmit(str string) bool {
+	if b.Events.OnTextSubmit != nil {
+		return b.Events.OnTextSubmit(str)
+	}
+	return true
+}
+
 // OnChange is called when the object's value is changed.
 func (b *BaseElement) OnChange() {
 	if b.Events.OnChange != nil {
@@ -708,6 +716,8 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Style.ZIndex = u.Number
 	case UpdateDirt:
 		dirty = u
+	case UpdateFocus:
+		b.Focus()
 	}
 	b.CalculateStyle()
 	b.SetDirty(dirty)

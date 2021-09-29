@@ -54,3 +54,6 @@ type UpdateStyle = string
 
 // UpdateDirt is an message that marks the element as dirty or not.
 type UpdateDirt = bool
+
+// UpdateFocus is a message that marks the element as focused.
+type UpdateFocus struct{}

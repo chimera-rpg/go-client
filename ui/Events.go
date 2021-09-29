@@ -16,6 +16,7 @@ type Events struct {
 	OnKeyUp           func(key uint8, modifiers uint16) bool
 	OnTextInput       func(str string) bool
 	OnTextEdit        func(str string, start int32, length int32) bool
+	OnTextSubmit      func(str string) bool
 	OnChange          func() bool
 	OnAdopted         func(parent ElementI)
 	OnFocus           func() bool
