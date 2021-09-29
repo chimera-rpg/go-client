@@ -73,7 +73,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 		Style: `
 			W 100%
 			H 100%
-			BackgroundColor 139 186 139 255
+			BackgroundColor 139 186 139 0
 		`,
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
@@ -119,12 +119,12 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	// Sub-window: map
 	err = s.MapContainer.Setup(ui.ContainerConfig{
 		Style: `
-			X 50%
+			X 20%
 			Y 50%
 			W 80%
-			H 80%
+			H 100%
 			BackgroundColor 0 0 0 255
-			Origin CenterX CenterY
+			Origin CenterY
 		`,
 	})
 	mapText := ui.NewTextElement(ui.TextElementConfig{
@@ -136,11 +136,12 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	// Sub-window: chat
 	s.ChatWindow.Setup(ui.ContainerConfig{
 		Style: `
-			X 0
+			X 60%
 			Y 0
-			W 70%
+			W 50%
 			H 20%
-			BackgroundColor 0 0 128 128
+			Origin Bottom CenterX
+			BackgroundColor 0 0 0 0
 		`,
 		Events: ui.Events{
 			OnWindowResized: func(w, h int32) {
@@ -172,6 +173,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 		Style: `
 			W 100%
 			Origin Bottom
+			BackgroundColor 0 0 0 32
 		`,
 		SubmitOnEnter: true,
 		ClearOnSubmit: true,
@@ -187,6 +189,14 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 				}
 				return true
 			},
+			OnFocus: func() bool {
+				s.ChatInput.GetStyle().BackgroundColor.A = 128
+				return true
+			},
+			OnBlur: func() bool {
+				s.ChatInput.GetStyle().BackgroundColor.A = 32
+				return true
+			},
 		},
 	})
 
@@ -197,22 +207,21 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	err = s.InventoryWindow.Setup(ui.ContainerConfig{
 		Value: "Inventory",
 		Style: `
-			X 50%
-			Y 50%
-			W 50%
-			H 80%
-			Origin CenterX CenterY
+			X 0
+			Y 0
+			W 20%
+			H 70%
 			BackgroundColor 0 128 0 128
 		`,
 	})
 	s.GameContainer.AdoptChannel <- s.InventoryWindow.This
-	s.InventoryWindow.SetHidden(true)
 	// Sub-window: ground
 	err = s.GroundWindow.Setup(ui.ContainerConfig{
 		Value: "Ground",
 		Style: `
+			X 0
 			Y 70%
-			W 30%
+			W 20%
 			H 30%
 			BackgroundColor 128 128 128 128
 		`,
@@ -222,21 +231,22 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	err = s.StatsWindow.Setup(ui.ContainerConfig{
 		Value: "Stats",
 		Style: `
-			X 30%
-			W 40%
+			X 60%
+			Y 0
+			W 50%
 			H 20%
+			Origin CenterX
 			BackgroundColor 128 0 0 128
 		`,
 	})
 	s.GameContainer.AdoptChannel <- s.StatsWindow.This
-	s.StatsWindow.SetHidden(true)
 	// Sub-window: state
 	err = s.StateWindow.Setup(ui.ContainerConfig{
 		Value: "State",
 		Style: `
-			X 30%
+			X 20%
 			Y 80%
-			W 40%
+			W 80%
 			H 20%
 			BackgroundColor 128 128 0 128
 		`,
