@@ -16,7 +16,9 @@ import (
 type Game struct {
 	client.State
 	GameContainer   ui.Container
-	MessageWindow   ui.Container
+	MessagesWindow  ui.Container
+	ChatInput       ui.ElementI
+	ChatWindow      ui.Container
 	messageElements []ui.ElementI
 	MapContainer    ui.Container
 	InventoryWindow ui.Container
@@ -35,6 +37,10 @@ type UserInput interface {
 }
 
 type ResizeEvent struct{}
+
+type ChatEvent struct {
+	Body string
+}
 
 // KeyInput is the Userinput for key events.
 type KeyInput struct {
@@ -126,17 +132,15 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	})
 	s.MapContainer.AdoptChannel <- mapText
 	s.GameContainer.AdoptChannel <- s.MapContainer.This
+
 	// Sub-window: chat
-	err = s.MessageWindow.Setup(ui.ContainerConfig{
-		Value: "Messages",
+	s.ChatWindow.Setup(ui.ContainerConfig{
 		Style: `
-			X 8
-			Y 8
+			X 0
+			Y 0
 			W 70%
 			H 20%
 			BackgroundColor 0 0 128 128
-			Display Columns
-			Direction Reverse
 		`,
 		Events: ui.Events{
 			OnWindowResized: func(w, h int32) {
@@ -144,7 +148,51 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			},
 		},
 	})
-	s.GameContainer.AdoptChannel <- s.MessageWindow.This
+
+	err = s.MessagesWindow.Setup(ui.ContainerConfig{
+		Value: "Messages",
+		Style: `
+			Display Columns
+			Direction Reverse
+			Origin Bottom
+			Y 30
+			W 100%
+			H 100%
+			BackgroundColor 0 0 0 0
+		`,
+		Events: ui.Events{
+			OnWindowResized: func(w, h int32) {
+				s.inputChan <- ResizeEvent{}
+			},
+		},
+	})
+
+	s.ChatInput = ui.NewInputElement(ui.InputElementConfig{
+		Value: "",
+		Style: `
+			W 100%
+			Origin Bottom
+		`,
+		SubmitOnEnter: true,
+		ClearOnSubmit: true,
+		BlurOnSubmit:  true,
+		Placeholder:   "...",
+		Events: ui.Events{
+			OnTextSubmit: func(str string) bool {
+				if str == "" {
+					return true
+				}
+				s.inputChan <- ChatEvent{
+					Body: str,
+				}
+				return true
+			},
+		},
+	})
+
+	s.ChatWindow.GetAdoptChannel() <- s.MessagesWindow.This
+	s.ChatWindow.GetAdoptChannel() <- s.ChatInput
+	s.GameContainer.AdoptChannel <- s.ChatWindow.This
 	// Sub-window: inventory
 	err = s.InventoryWindow.Setup(ui.ContainerConfig{
 		Value: "Inventory",
@@ -208,7 +256,7 @@ func (s *Game) Close() {
 	s.StatsWindow.Destroy()
 	s.GroundWindow.Destroy()
 	s.InventoryWindow.Destroy()
-	s.MessageWindow.Destroy()
+	s.MessagesWindow.Destroy()
 }
 
 // Loop is our loop for managing network activity and beyond.
@@ -227,7 +275,7 @@ func (s *Game) Loop() {
 		case inp := <-s.inputChan:
 			switch e := inp.(type) {
 			case ResizeEvent:
-				s.UpdateMessageWindow()
+				s.UpdateMessagesWindow()
 			case KeyInput:
 				// TODO: Move to key bind system.
 				if e.pressed && !e.repeat {
@@ -251,8 +299,15 @@ func (s *Game) Loop() {
 						s.Client.Send(network.CommandCmd{
 							Cmd: network.East,
 						})
+					} else if e.code == 13 { // enter
+						s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
 					}
 				}
+			case ChatEvent:
+				s.Client.Send(network.CommandMessage{
+					Type: network.ChatMessage,
+					Body: e.Body,
+				})
 			case MouseInput:
 				s.Client.Log.Printf("mouse: %+v\n", e)
 			}
@@ -276,7 +331,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.world.HandleTileCommand(c)
 	case network.CommandMessage:
 		s.Client.HandleMessageCommand(c)
-		s.UpdateMessageWindow()
+		s.UpdateMessagesWindow()
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
@@ -449,8 +504,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	}
 }
 
-// UpdateMessageWindow synchronizes the message window with the client's message history.
-func (s *Game) UpdateMessageWindow() {
+// UpdateMessagesWindow synchronizes the message window with the client's message history.
+func (s *Game) UpdateMessagesWindow() {
 	addMessage := func(str string) ui.ElementI {
 		e := ui.NewTextElement(ui.TextElementConfig{
 			Value: str,
@@ -460,19 +515,22 @@ func (s *Game) UpdateMessageWindow() {
 			`),
 		})
 		s.messageElements = append(s.messageElements, e)
-		s.MessageWindow.GetAdoptChannel() <- s.messageElements[len(s.messageElements)-1]
+		s.MessagesWindow.GetAdoptChannel() <- s.messageElements[len(s.messageElements)-1]
 		return e
 	}
 
 	// Create message UI as needed.
 	for i := len(s.Client.MessageHistory) - 1; i >= 0; i-- {
-		m := s.Client.MessageHistory[i]
-		msgName := ""
-		if m.Message.Type == network.ServerMessage {
-			msgName = "SERVER"
-		}
 		if i >= len(s.messageElements) {
-			addMessage(fmt.Sprintf("[%s] <%s>: %s", msgName, m.Received.Local(), m.Message.Body))
+			m := s.Client.MessageHistory[i]
+			msgName := ""
+			if m.Message.Type == network.ServerMessage {
+				msgName = "SERVER"
+				addMessage(fmt.Sprintf("[%s] <%s>: %s", msgName, m.Received.Local(), m.Message.Body))
+			} else if m.Message.Type == network.ChatMessage {
+				msgName = "CHAT"
+				addMessage(fmt.Sprintf("[%s] %s: %s", msgName, m.Message.From, m.Message.Body))
+			}
 		}
 	}
 }
