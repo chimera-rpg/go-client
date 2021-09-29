@@ -10,4 +10,5 @@ type Animation struct {
 type AnimationFrame struct {
 	ImageID uint32
 	Time    int
+	X, Y    int8
 }

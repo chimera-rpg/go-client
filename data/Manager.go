@@ -270,6 +270,8 @@ func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
 			m.animations[cmd.AnimationID].Faces[faceID][frameIndex] = AnimationFrame{
 				ImageID: frame.ImageID,
 				Time:    frame.Time,
+				X:       frame.X,
+				Y:       frame.Y,
 			}
 			// Request any unknown graphics.
 			m.EnsureImage(frame.ImageID)
