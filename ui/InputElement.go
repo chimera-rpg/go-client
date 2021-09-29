@@ -2,11 +2,14 @@ package ui
 
 // InputElementConfig is the construction configuration for an InputElement.
 type InputElementConfig struct {
-	Style       string
-	Value       string
-	Events      Events
-	Password    bool
-	Placeholder string
+	Style         string
+	Value         string
+	Events        Events
+	Password      bool
+	Placeholder   string
+	SubmitOnEnter bool
+	ClearOnSubmit bool
+	BlurOnSubmit  bool
 }
 
 // InputElementStyle is the default styling for an InputElement.
@@ -33,6 +36,9 @@ func NewInputElement(c InputElementConfig) ElementI {
 	i.isPassword = c.Password
 	i.placeholder = c.Placeholder
 	i.Focusable = true
+	i.submitOnEnter = c.SubmitOnEnter
+	i.clearOnSubmit = c.ClearOnSubmit
+	i.blurOnSubmit = c.BlurOnSubmit
 	i.SetupChannels()
 
 	i.OnCreated()
@@ -46,9 +52,19 @@ func (i *InputElement) SyncComposition() {
 	i.SetValue(string(i.composition))
 }
 
+// ClearComposition clears the current composition.
+func (i *InputElement) ClearComposition() {
+	i.SetValue("")
+	i.composition = []rune("")
+	i.cursor = 0
+}
+
 // OnKeyDown handles base key presses for moving the cursor, deleting runes, and
 // otherwise.
 func (i *InputElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool {
+	if !i.Focused {
+		return true
+	}
 	switch key {
 	case 27: // esc
 		//BlurFocusedElement()
@@ -76,6 +92,16 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool 
 		i.cursor = 0
 	case 82: // up
 		i.cursor = len(i.composition)
+	case 13: // enter
+		if i.submitOnEnter {
+			i.OnTextSubmit(string(i.composition))
+		}
+		if i.clearOnSubmit {
+			i.ClearComposition()
+		}
+		if i.blurOnSubmit {
+			i.Blur()
+		}
 	}
 	i.SyncComposition()
 	if i.Events.OnKeyDown != nil {
@@ -119,5 +145,11 @@ func (i *InputElement) HandleUpdate(update UpdateI) {
 	switch u := update.(type) {
 	case UpdateValue:
 		i.SetValue(u.Value)
+		i.composition = []rune(u.Value)
+		if i.cursor > len(i.composition) {
+			i.cursor = len(i.composition)
+		}
+	default:
+		i.BaseElement.HandleUpdate(update)
 	}
 }

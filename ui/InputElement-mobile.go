@@ -1,3 +1,4 @@
+//go:build mobile
 // +build mobile
 
 package ui
@@ -12,12 +13,15 @@ type InputElement struct {
 	BaseElement
 	GLTexture gl.Texture
 
-	tw          int32 // Texture width
-	th          int32 // Texture height
-	cursor      int
-	composition []rune
-	isPassword  bool
-	placeholder string
+	tw            int32 // Texture width
+	th            int32 // Texture height
+	cursor        int
+	composition   []rune
+	isPassword    bool
+	placeholder   string
+	submitOnEnter bool
+	clearOnSubmit bool
+	blurOnSubmit  bool
 }
 
 // Destroy cleans up the InputElement's resources.

@@ -1,3 +1,4 @@
+//go:build !mobile
 // +build !mobile
 
 package ui
@@ -12,14 +13,17 @@ import (
 // field.
 type InputElement struct {
 	BaseElement
-	SDLTexture  *sdl.Texture
-	Image       []byte
-	tw          int32 // Texture width
-	th          int32 // Texture height
-	cursor      int
-	composition []rune
-	isPassword  bool
-	placeholder string
+	SDLTexture    *sdl.Texture
+	Image         []byte
+	tw            int32 // Texture width
+	th            int32 // Texture height
+	cursor        int
+	composition   []rune
+	isPassword    bool
+	placeholder   string
+	submitOnEnter bool
+	clearOnSubmit bool
+	blurOnSubmit  bool
 }
 
 // Destroy cleans up the InputElement's resources.
