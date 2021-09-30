@@ -46,7 +46,7 @@ func (w *Container) Setup(c ContainerConfig) (err error) {
 	return nil
 }
 
-// GetX returns the cached x property. In the case of Containers this is 0.
+/*// GetX returns the cached x property. In the case of Containers this is 0.
 func (w *Container) GetX() int32 {
 	return 0
 }
@@ -54,7 +54,7 @@ func (w *Container) GetX() int32 {
 // GetY returns the cached y property. In the case of Containers this is 0.
 func (w *Container) GetY() int32 {
 	return 0
-}
+}*/
 
 // IsContainer Returns whether or not this Element should be considered as a container.
 func (w *Container) IsContainer() bool {
