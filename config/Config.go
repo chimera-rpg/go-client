@@ -10,8 +10,10 @@ import (
 
 // Config represents our global configuration.
 type Config struct {
-	Game GameConfig `yaml:"Game"`
-	path string     `yaml:"-"`
+	Game       GameConfig
+	Servers    map[string]*ServerConfig
+	LastServer string // Last server accessed by the client.
+	path       string `yaml:"-"`
 }
 
 // Read attempts to parse the given YAML file and set it as the target path for saving.
@@ -51,4 +53,12 @@ func (c *Config) Write() error {
 type GameConfig struct {
 	CommandPrefix string
 	Bindings      binds.Bindings
+}
+
+// ServerConfig is the configuration for per-server settings.
+type ServerConfig struct {
+	Username         string
+	Password         string
+	Character        string
+	RememberPassword bool
 }
