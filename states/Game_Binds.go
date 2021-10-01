@@ -86,6 +86,12 @@ var (
 )
 
 func (s *Game) SetupBinds() {
+	// This isn't the right place for this.
+	if s.Client.DataManager.Config.Game.CommandPrefix == "" {
+		s.Client.DataManager.Config.Game.CommandPrefix = "/"
+	}
+
+	// Set up bindings.
 	s.bindings = &s.Client.DataManager.Config.Game.Bindings
 	s.bindings.Init()
 	s.bindings.SetFunction("north", func(i ...interface{}) {

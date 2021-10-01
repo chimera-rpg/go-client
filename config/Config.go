@@ -49,5 +49,6 @@ func (c *Config) Write() error {
 
 // GameConfig is the configuration for the game state.
 type GameConfig struct {
-	Bindings binds.Bindings
+	CommandPrefix string
+	Bindings      binds.Bindings
 }
