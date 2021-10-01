@@ -46,6 +46,7 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 			Margin 5%
 			W 60%
 		`,
+		Value:       s.Client.DataManager.Config.LastServer,
 		Placeholder: "host:port",
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
@@ -69,6 +70,8 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		Value: "CONNECT",
 		Events: ui.Events{
 			OnMouseButtonUp: func(which uint8, x int32, y int32) bool {
+				s.Client.DataManager.Config.LastServer = elHost.GetValue()
+				s.Client.CurrentServer = elHost.GetValue()
 				s.Client.StateChannel <- client.StateMessage{State: &Handshake{}, Args: elHost.GetValue()}
 				return false
 			},

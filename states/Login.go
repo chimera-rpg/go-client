@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
 )
@@ -13,8 +14,11 @@ import (
 // or recovering an account.
 type Login struct {
 	client.State
-	LoginContainer ui.Container
-	OutputText     ui.ElementI
+	LoginContainer         ui.Container
+	OutputText             ui.ElementI
+	usernameEl, passwordEl ui.ElementI
+	rememberPasswordEl     ui.ElementI
+	rememberPassword       bool
 }
 
 // LoginStateID represents the current sub state of the Login state.
@@ -43,6 +47,12 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		message:  "Connected.",
 	}
 
+	if v, ok := s.Client.DataManager.Config.Servers[s.Client.CurrentServer]; ok {
+		lstate.username = v.Username
+		lstate.password = v.Password
+		s.rememberPassword = v.RememberPassword
+	}
+
 	switch t := v.(type) {
 	case LoginState:
 		lstate = t
@@ -57,9 +67,9 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		`,
 	})
 
-	var elUsername, elPassword, elLogin, elRegister, elDisconnect ui.ElementI
+	var elLogin, elRegister, elDisconnect ui.ElementI
 
-	elUsername = ui.NewInputElement(ui.InputElementConfig{
+	s.usernameEl = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -71,7 +81,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value:       lstate.username,
 		Events: ui.Events{
 			OnAdopted: func(parent ui.ElementI) {
-				elUsername.Focus()
+				s.usernameEl.Focus()
 			},
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
@@ -82,7 +92,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		},
 	})
 
-	elPassword = ui.NewInputElement(ui.InputElementConfig{
+	s.passwordEl = ui.NewInputElement(ui.InputElementConfig{
 		Style: `
 			Origin CenterX CenterY
 			X 50%
@@ -101,6 +111,35 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
 					elLogin.OnMouseButtonUp(1, 0, 0)
+				}
+				return true
+			},
+		},
+	})
+
+	remember := "remember: no"
+	if s.rememberPassword {
+		remember = "remember: yes"
+	}
+	s.rememberPasswordEl = ui.NewButtonElement(ui.ButtonElementConfig{
+		Style: `
+			Origin CenterX CenterY
+			X 70%
+			Y 40%
+			H 20%
+			W 100%
+			MaxW 200
+			MaxH 30
+			MinH 25
+		`,
+		Value: remember,
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x, y int32) bool {
+				s.rememberPassword = !s.rememberPassword
+				if s.rememberPassword {
+					s.rememberPasswordEl.GetUpdateChannel() <- ui.UpdateValue{Value: "remember: yes"}
+				} else {
+					s.rememberPasswordEl.GetUpdateChannel() <- ui.UpdateValue{Value: "remember: no"}
 				}
 				return true
 			},
@@ -154,8 +193,8 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Send(network.Command(network.CommandLogin{
 					Type: network.Login,
-					User: elUsername.GetValue(),
-					Pass: elPassword.GetValue(),
+					User: s.usernameEl.GetValue(),
+					Pass: s.passwordEl.GetValue(),
 				}))
 				return false
 			},
@@ -175,8 +214,9 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: lstate.message,
 	})
 
-	s.LoginContainer.AdoptChannel <- elUsername
-	s.LoginContainer.AdoptChannel <- elPassword
+	s.LoginContainer.AdoptChannel <- s.usernameEl
+	s.LoginContainer.AdoptChannel <- s.passwordEl
+	s.LoginContainer.AdoptChannel <- s.rememberPasswordEl
 	s.LoginContainer.AdoptChannel <- elLogin
 	s.LoginContainer.AdoptChannel <- elDisconnect
 	s.LoginContainer.AdoptChannel <- elRegister
@@ -237,6 +277,21 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 			msg := fmt.Sprintf("Server accepted us: %s", t.String)
 			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
+			// Set our username and password for this server.
+			serverName := s.Client.CurrentServer
+			if s.Client.DataManager.Config.Servers == nil {
+				s.Client.DataManager.Config.Servers = make(map[string]*config.ServerConfig)
+			}
+			if _, ok := s.Client.DataManager.Config.Servers[serverName]; !ok {
+				s.Client.DataManager.Config.Servers[serverName] = &config.ServerConfig{}
+			}
+			s.Client.DataManager.Config.Servers[serverName].Username = s.usernameEl.GetValue()
+			if s.rememberPassword {
+				s.Client.DataManager.Config.Servers[serverName].Password = s.passwordEl.GetValue()
+			} else {
+				s.Client.DataManager.Config.Servers[serverName].Password = ""
+			}
+			s.Client.DataManager.Config.Servers[serverName].RememberPassword = s.rememberPassword
 			s.Client.StateChannel <- client.StateMessage{State: &CharacterCreation{}, Args: msg}
 			return true
 		}

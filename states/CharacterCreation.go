@@ -107,6 +107,12 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 		}
 	}
 
+	isFocused := false
+	if name == s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character {
+		isFocused = true
+		fmt.Println("should fcous it", name)
+	}
+
 	elChar := ui.NewButtonElement(ui.ButtonElementConfig{
 		Style: fmt.Sprintf(`
 			Origin CenterX CenterY
@@ -119,6 +125,7 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
 				s.Client.Log.Printf("Logging in with character %s", name)
+				s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character = name
 				s.Client.Send(network.Command(network.CommandCharacter{
 					Type:       network.ChooseCharacter,
 					Characters: []string{name},
@@ -127,6 +134,9 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 			},
 		},
 	})
+	if isFocused {
+		elChar.Focus()
+	}
 	s.CharactersContainer.AdoptChannel <- elChar
 }
 
@@ -169,6 +179,10 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 			s.Client.Log.Printf("Server rejected us: %s\n", t.String)
 		} else if t.Type == network.Okay {
 			s.Client.Log.Printf("Server accepted us: %s\n", t.String)
+			// Might as well save the configuration now.
+			if err := s.Client.DataManager.Config.Write(); err != nil {
+				s.Client.Log.Errorln(err)
+			}
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
 			return true
 		}
@@ -182,6 +196,10 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 		} else if t.Type == network.ChooseCharacter {
 			// ChooseCharacter is how the server lets us know we're logging in as a character.
 			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
+			// Might as well save the configuration now.
+			if err := s.Client.DataManager.Config.Write(); err != nil {
+				s.Client.Log.Errorln(err)
+			}
 			return true
 		} else {
 			s.Client.Log.Printf("Unhandled CommandCharacter type %d\n", t.Type)
