@@ -13,6 +13,7 @@ import (
 // Client is the main handler of state, network transmission, and otherwise.
 type Client struct {
 	network.Connection
+	CurrentServer    string
 	DataManager      *data.Manager
 	RootWindow       *ui.Window
 	MessageHistory   []Message
