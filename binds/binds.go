@@ -2,22 +2,32 @@ package binds
 
 // Bindings represent a structure for managing and triggering binds.
 type Bindings struct {
-	keygroups map[string][]KeyGroup
+	Keygroups map[string][]KeyGroup
 	functions map[string]func(i ...interface{})
 }
 
 // NewBindings returns a constructed Bindings.
 func NewBindings() *Bindings {
 	return &Bindings{
-		keygroups: make(map[string][]KeyGroup),
+		Keygroups: make(map[string][]KeyGroup),
 		functions: make(map[string]func(...interface{})),
+	}
+}
+
+// Init ensures the Bindings structure is initialized.
+func (b *Bindings) Init() {
+	if b.Keygroups == nil {
+		b.Keygroups = make(map[string][]KeyGroup)
+	}
+	if b.functions == nil {
+		b.functions = make(map[string]func(...interface{}))
 	}
 }
 
 // Trigger calls any bound functions that are tied to the given keygroup.
 func (b *Bindings) Trigger(k KeyGroup, i ...interface{}) {
 	var triggers []string
-	for name, keygroups := range b.keygroups {
+	for name, keygroups := range b.Keygroups {
 		for _, keygroup := range keygroups {
 			if keygroup.Same(k) {
 				triggers = append(triggers, name)
@@ -36,10 +46,16 @@ func (b *Bindings) SetFunction(name string, f func(i ...interface{})) {
 	b.functions[name] = f
 }
 
+// HasKeyGroupsForName returns if there are any keygroups matching the given name.
+func (b *Bindings) HasKeygroupsForName(name string) bool {
+	_, ok := b.Keygroups[name]
+	return ok
+}
+
 // AddKeygroup adds a keygroup.
 func (b *Bindings) AddKeygroup(name string, k KeyGroup) {
 	if b.FindKeyGroupIndex(name, k) == -1 {
-		b.keygroups[name] = append(b.keygroups[name], k)
+		b.Keygroups[name] = append(b.Keygroups[name], k)
 	}
 }
 
@@ -47,13 +63,13 @@ func (b *Bindings) AddKeygroup(name string, k KeyGroup) {
 func (b *Bindings) RemoveKeygroup(name string, k KeyGroup) {
 	i := b.FindKeyGroupIndex(name, k)
 	if i != -1 {
-		b.keygroups[name] = append(b.keygroups[name][:i], b.keygroups[name][i+1:]...)
+		b.Keygroups[name] = append(b.Keygroups[name][:i], b.Keygroups[name][i+1:]...)
 	}
 }
 
 // FindKeyGroupIndex finds a key group entry matching the given one, returning its position. -1 indicates missing.
 func (b *Bindings) FindKeyGroupIndex(name string, k KeyGroup) int {
-	if arr, ok := b.keygroups[name]; ok {
+	if arr, ok := b.Keygroups[name]; ok {
 		for i, v := range arr {
 			if k.Same(v) {
 				return i
