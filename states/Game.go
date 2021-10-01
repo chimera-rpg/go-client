@@ -78,12 +78,18 @@ func (s *Game) Loop() {
 					Repeat:    e.repeat,
 				}, nil)
 			case ChatEvent:
-				s.Client.Send(network.CommandMessage{
-					Type: network.ChatMessage,
-					Body: e.Body,
-				})
+				if s.isChatCommand(e.Body) {
+					s.processChatCommand(e.Body)
+				} else {
+					s.Client.Send(network.CommandMessage{
+						Type: network.ChatMessage,
+						Body: e.Body,
+					})
+				}
 			case MouseInput:
 				s.Client.Log.Printf("mouse: %+v\n", e)
+			case DisconnectEvent:
+				return
 			}
 		}
 		s.HandleRender()

@@ -19,6 +19,9 @@ type ChatEvent struct {
 	Body string
 }
 
+// DisconnectEvent is used to tell the client to disconnect.
+type DisconnectEvent struct{}
+
 // KeyInput is the Userinput for key events.
 type KeyInput struct {
 	code      uint8
@@ -207,6 +210,8 @@ func (s *Game) UpdateMessagesWindow() {
 			} else if m.Message.Type == network.ChatMessage {
 				msgName = "CHAT"
 				addMessage(fmt.Sprintf("[%s] %s: %s", msgName, m.Message.From, m.Message.Body))
+			} else if m.Message.Type == network.LocalMessage {
+				addMessage(m.Message.Body)
 			}
 		}
 	}
