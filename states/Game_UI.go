@@ -210,6 +210,17 @@ func (s *Game) UpdateMessagesWindow() {
 			} else if m.Message.Type == network.ChatMessage {
 				msgName = "CHAT"
 				addMessage(fmt.Sprintf("[%s] %s: %s", msgName, m.Message.From, m.Message.Body))
+			} else if m.Message.Type == network.TargetMessage {
+				if m.Message.FromObjectID != s.world.GetViewObject().ID {
+					n := "???"
+					o := s.world.GetObject(m.Message.FromObjectID)
+					if o != nil {
+						// TODO: Look up object or something...?
+					}
+					addMessage(fmt.Sprintf("%s: %s", n, m.Message.Body))
+				} else {
+					addMessage(fmt.Sprintf("%s", m.Message.Body))
+				}
 			} else if m.Message.Type == network.MapMessage {
 				msgName = "MAP"
 				addMessage(fmt.Sprintf("[%s] %s", msgName, m.Message.Body))
