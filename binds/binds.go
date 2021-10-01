@@ -41,6 +41,13 @@ func (b *Bindings) Trigger(k KeyGroup, i ...interface{}) {
 	}
 }
 
+// RunFunction attempts to run the function associated with name
+func (b *Bindings) RunFunction(name string, i ...interface{}) {
+	if f, ok := b.functions[name]; ok {
+		f(i...)
+	}
+}
+
 // SetFunction sets the associated bind name to a function.
 func (b *Bindings) SetFunction(name string, f func(i ...interface{})) {
 	b.functions[name] = f
