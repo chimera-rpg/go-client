@@ -3,6 +3,8 @@ github.com/chimera-rpg/go-common v0.0.0-20210928231317-f1d132a840b6 h1:ADwBnDFnB
 github.com/chimera-rpg/go-common v0.0.0-20210928231317-f1d132a840b6/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
 github.com/chimera-rpg/go-common v0.0.0-20210929081620-2c77e5c54622 h1:XQbowecxdcQxLm9o/NmbXKUEhtrnfQLLhRYlotQMvdM=
 github.com/chimera-rpg/go-common v0.0.0-20210929081620-2c77e5c54622/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
+github.com/chimera-rpg/go-common v0.0.0-20211001072856-edf99fe72db7 h1:96ISQ2iwDxur4nNqBW8gtpGgXqSGdofRPrxZlJhU2GE=
+github.com/chimera-rpg/go-common v0.0.0-20211001072856-edf99fe72db7/go.mod h1:/FwRKhQznOZpTqwkeKsxXiRD2BJVU5hU5B932mDTQnY=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
