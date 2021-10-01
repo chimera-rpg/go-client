@@ -1,6 +1,7 @@
 package states
 
 import (
+	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
@@ -27,6 +28,7 @@ type Game struct {
 	inputChan       chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
 	objectImages    map[uint32]ui.ElementI
 	objectImageIDs  map[uint32]data.StringID
+	bindings        *binds.Bindings
 }
 
 // Init our Game state.
@@ -34,6 +36,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.inputChan = make(chan UserInput)
 	s.objectImages = make(map[uint32]ui.ElementI)
 	s.objectImageIDs = make(map[uint32]data.StringID)
+	s.SetupBinds()
 	// Initialize our world.
 	s.world.Init(s.Client.DataManager, s.Client.Log)
 
@@ -68,32 +71,12 @@ func (s *Game) Loop() {
 			case ResizeEvent:
 				s.UpdateMessagesWindow()
 			case KeyInput:
-				// TODO: Move to key bind system.
-				if e.pressed && !e.repeat {
-					if e.code == 107 || e.code == 82 { // up
-						s.Client.Log.Println("send north")
-						s.Client.Send(network.CommandCmd{
-							Cmd: network.North,
-						})
-					} else if e.code == 106 || e.code == 81 { // down
-						s.Client.Log.Println("send south")
-						s.Client.Send(network.CommandCmd{
-							Cmd: network.South,
-						})
-					} else if e.code == 104 || e.code == 80 { // left
-						s.Client.Log.Println("send west")
-						s.Client.Send(network.CommandCmd{
-							Cmd: network.West,
-						})
-					} else if e.code == 108 || e.code == 79 { // right
-						s.Client.Log.Println("send east")
-						s.Client.Send(network.CommandCmd{
-							Cmd: network.East,
-						})
-					} else if e.code == 13 { // enter
-						s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
-					}
-				}
+				s.bindings.Trigger(binds.KeyGroup{
+					Keys:      []uint8{e.code},
+					Modifiers: e.modifiers,
+					Pressed:   e.pressed,
+					Repeat:    e.repeat,
+				}, nil)
 			case ChatEvent:
 				s.Client.Send(network.CommandMessage{
 					Type: network.ChatMessage,
