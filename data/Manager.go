@@ -16,6 +16,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-common/network"
 	"github.com/kettek/apng"
 )
@@ -26,6 +27,7 @@ type Manager struct {
 	Log        *logrus.Logger
 	DataPath   string // Path for client data (fonts, etc.)
 	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
+	Config     config.Config
 	CachePath  string // Path for local cache (downloaded PNGs, etc.)
 	animations map[uint32]Animation
 	images     map[uint32]image.Image
@@ -51,7 +53,7 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	}
 	if _, err = os.Stat(m.ConfigPath); err != nil {
 		if os.IsNotExist(err) {
-			err = os.MkdirAll(m.ConfigPath, 0640)
+			err = os.MkdirAll(m.ConfigPath, 0750)
 		}
 		if err != nil {
 			return
@@ -74,6 +76,11 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 		if err != nil {
 			return
 		}
+	}
+
+	// Read in our config.
+	if err := m.Config.Read(path.Join(m.ConfigPath, "client.yaml")); err != nil {
+		m.Log.Info(err)
 	}
 
 	m.animations = make(map[uint32]Animation)
