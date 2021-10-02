@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+	"image/color"
 
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
@@ -204,13 +205,16 @@ func (s *Game) UpdateMessagesWindow() {
 		if i >= len(s.messageElements) {
 			m := s.Client.MessageHistory[i]
 			msgName := ""
+			// Just print server messages.
 			if m.Message.Type == network.ServerMessage {
 				msgName = "SERVER"
 				addMessage(fmt.Sprintf("[%s] <%s>: %s", msgName, m.Received.Local(), m.Message.Body))
 			} else if m.Message.Type == network.ChatMessage {
+				// Just print chat messages.
 				msgName = "CHAT"
 				addMessage(fmt.Sprintf("[%s] %s: %s", msgName, m.Message.From, m.Message.Body))
 			} else if m.Message.Type == network.TargetMessage {
+				// Target messages get printed plainly.
 				if m.Message.FromObjectID != s.world.GetViewObject().ID {
 					n := "???"
 					o := s.world.GetObject(m.Message.FromObjectID)
@@ -220,6 +224,39 @@ func (s *Game) UpdateMessagesWindow() {
 					addMessage(fmt.Sprintf("%s: %s", n, m.Message.Body))
 				} else {
 					addMessage(fmt.Sprintf("%s", m.Message.Body))
+				}
+			} else if m.Message.Type == network.NPCMessage || m.Message.Type == network.PCMessage {
+				// NPC/PC messages print as `X says: ...` and provide either a truncated version of the statement as floating text or the msg Title as the floating text. If the object is not known no floating text is shown.
+				// TODO: It'd be nice if we had a local objectID -> name field we could use.
+				o := s.world.GetObject(m.Message.FromObjectID)
+				if o != nil {
+					col := color.RGBA{255, 255, 255, 200}
+					if m.Message.Type == network.NPCMessage {
+						col = color.RGBA{128, 128, 128, 200}
+					} else if o == s.world.GetViewObject() {
+						col = color.RGBA{255, 255, 255, 150}
+					}
+					// Prefer using the message's Title for the popup text.
+					text := m.Message.Title
+					if text == "" {
+						if len(m.Message.Body) > 40 {
+							text = m.Message.Body[:40] + "..."
+						} else {
+							text = m.Message.Body
+						}
+					}
+					mapMessage, err := s.createMapMessage(m.Message.FromObjectID, text, col)
+					if err != nil {
+						// TODO: Print some sort of error.
+					}
+					s.mapMessages = append(s.mapMessages, mapMessage)
+					s.MapContainer.GetAdoptChannel() <- mapMessage.el
+				}
+				// FIXME: Replace wtih GetPlayerObject()
+				if o == s.world.GetViewObject() {
+					addMessage(fmt.Sprintf("You speak: %s", m.Message.Body))
+				} else {
+					addMessage(fmt.Sprintf("%s speaks: %s", m.Message.From, m.Message.Body))
 				}
 			} else if m.Message.Type == network.MapMessage {
 				msgName = "MAP"

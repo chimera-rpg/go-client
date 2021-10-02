@@ -1,6 +1,8 @@
 package states
 
 import (
+	"time"
+
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/data"
@@ -28,6 +30,7 @@ type Game struct {
 	inputChan       chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
 	objectImages    map[uint32]ui.ElementI
 	objectImageIDs  map[uint32]data.StringID
+	mapMessages     []MapMessage
 	bindings        *binds.Bindings
 }
 
@@ -55,6 +58,13 @@ func (s *Game) Close() {
 
 // Loop is our loop for managing network activity and beyond.
 func (s *Game) Loop() {
+	cleanupChan := make(chan struct{})
+	go func() {
+		for {
+			time.Sleep(time.Second * 1)
+			cleanupChan <- struct{}{}
+		}
+	}()
 	for {
 		select {
 		case cmd := <-s.Client.CmdChan:
@@ -91,6 +101,7 @@ func (s *Game) Loop() {
 			case DisconnectEvent:
 				return
 			}
+		case <-cleanupChan:
 		}
 		s.HandleRender()
 	}

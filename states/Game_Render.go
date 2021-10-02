@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
@@ -23,16 +24,11 @@ func (s *Game) HandleRender() {
 	}
 
 	if o := s.world.GetViewObject(); o != nil {
+		renderX, renderY, _ := s.GetRenderPosition(m, o.Y, o.X, o.Z)
 		scale := 4
 		tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 		tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 
-		originX := 0
-		originY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
-		originX += int(o.Y) * int(s.Client.AnimationsConfig.YStep.X)
-		originY += int(o.Y) * int(s.Client.AnimationsConfig.YStep.Y)
-		originX += int(o.X) * tileWidth
-		originY += int(o.Z) * tileHeight
 		// Calculate object-specific offsets.
 		offsetX := 0
 		offsetY := 0
@@ -41,9 +37,9 @@ func (s *Game) HandleRender() {
 			offsetY += int(adjust.Y)
 		}
 
-		// Calculate our scaled pixel position at which to render.
-		x := float64((originX+offsetX)*scale + 100)
-		y := float64((originY+offsetY)*scale + 100)
+		x := float64(renderX + offsetX*scale)
+		y := float64(renderY + offsetY*scale)
+
 		// Adjust for centering based on target's sizing.
 		x += float64(int(o.W)*tileWidth*scale) / 2
 		y += float64((int(o.H)*int(s.Client.AnimationsConfig.YStep.Y)+(int(o.H)*tileHeight))*scale) / 2
@@ -61,6 +57,45 @@ func (s *Game) HandleRender() {
 	for _, o := range objects {
 		s.RenderObject(o, m)
 	}
+
+	// Iterate over world messages.
+	now := time.Now()
+	for i := len(s.mapMessages) - 1; i >= 0; i-- {
+		msg := s.mapMessages[i]
+		if now.After(msg.destroyTime) {
+			s.MapContainer.GetDisownChannel() <- msg.el
+			msg.el.GetDestroyChannel() <- true
+			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
+		} else {
+			// TODO: Check if msg has associated object and if it has moved.
+		}
+	}
+
+	return
+}
+
+// GetRenderPosition gets world to pixel coordinate positions for a given tile location.
+func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, targetY, targetZ int) {
+	scale := 4
+	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
+	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
+
+	originX := 0
+	originY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
+	originX += int(y) * int(s.Client.AnimationsConfig.YStep.X)
+	originY += int(y) * int(s.Client.AnimationsConfig.YStep.Y)
+	originX += int(x) * tileWidth
+	originY += int(z) * tileHeight
+
+	indexZ := int(z)
+	indexX := int(x)
+	indexY := int(y)
+
+	targetZ = (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX)
+
+	// Calculate our scaled pixel position at which to render.
+	targetX = (originX)*scale + 100
+	targetY = (originY)*scale + 100
 	return
 }
 
@@ -83,13 +118,10 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	if len(frames) == 0 {
 		return
 	}
-	// Calculate our origin.
-	originX := 0
-	originY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
-	originX += int(o.Y) * int(s.Client.AnimationsConfig.YStep.X)
-	originY += int(o.Y) * int(s.Client.AnimationsConfig.YStep.Y)
-	originX += int(o.X) * tileWidth
-	originY += int(o.Z) * tileHeight
+
+	// Get our render position.
+	x, y, zIndex := s.GetRenderPosition(m, o.Y, o.X, o.Z)
+	zIndex += o.Index
 
 	// Calculate archetype type-specific offsets.
 	offsetX := 0
@@ -103,16 +135,11 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	offsetX += int(frames[0].X)
 	offsetY += int(frames[0].Y)
 
-	// Get our render z-index.
-	indexZ := int(o.Z)
-	indexX := int(o.X)
-	indexY := int(o.Y)
-
-	zIndex := (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX) + o.Index
+	// Adjust our target position.
+	x += offsetX * scale
+	y += offsetY * scale
 
 	// Calculate our scaled pixel position at which to render.
-	x := (originX+offsetX)*scale + 100
-	y := (originY+offsetY)*scale + 100
 	w := tileWidth * scale
 	h := tileHeight * scale
 
