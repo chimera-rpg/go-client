@@ -53,7 +53,13 @@ func (b *Bindings) SetFunction(name string, f func(i ...interface{})) {
 	b.functions[name] = f
 }
 
-// HasKeyGroupsForName returns if there are any keygroups matching the given name.
+// HasFunction returns if there is a bound function matching name.
+func (b *Bindings) HasFunction(name string) bool {
+	_, ok := b.functions[name]
+	return ok
+}
+
+// HasKeygroupsForName returns if there are any keygroups matching the given name.
 func (b *Bindings) HasKeygroupsForName(name string) bool {
 	_, ok := b.Keygroups[name]
 	return ok
