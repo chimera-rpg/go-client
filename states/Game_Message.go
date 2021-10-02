@@ -28,6 +28,14 @@ func (s *Game) createMapMessage(objectID uint32, body string, col color.RGBA) (M
 	// Get our initial render position
 	xPos, yPos, _ := s.GetRenderPosition(s.world.GetCurrentMap(), y, x, z)
 
+	// Adjust timer to be
+	// Average characters in a word: 4.7; assume slow reading speed 100 wpm, so 1.6 wps; let's assume 4 chars per word so 6 chars per second.
+	charsPerSecond := len(body) / 6
+	// Ensure minimum of 2 seconds on screen.
+	if charsPerSecond < 2 {
+		charsPerSecond = 2
+	}
+
 	// Create our MapMessage.
 	m := MapMessage{
 		objectID: objectID,
@@ -44,7 +52,7 @@ func (s *Game) createMapMessage(objectID uint32, body string, col color.RGBA) (M
 			`, xPos, yPos, col.R, col.G, col.B, col.A),
 			Value: body,
 		}),
-		destroyTime: time.Now().Add(time.Millisecond * time.Duration(200*len(body))),
+		destroyTime: time.Now().Add(time.Second * time.Duration(charsPerSecond)),
 	}
 
 	return m, nil
