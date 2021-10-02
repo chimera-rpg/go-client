@@ -52,6 +52,24 @@ type BaseElement struct {
 	st int32
 }
 
+// BaseElementConfig provides teh configuration for a new BaseElement.
+type BaseElementConfig struct {
+	Style  string
+	Events Events
+}
+
+// NewBaseElement creates a new BaseElement using the passed configuration.
+func NewBaseElement(c BaseElementConfig) ElementI {
+	b := BaseElement{}
+	b.This = ElementI(&b)
+	b.Style.Parse(c.Style)
+	b.Events = c.Events
+	b.SetupChannels()
+	b.OnCreated()
+
+	return ElementI(&b)
+}
+
 // Destroy is our stub for destroying an element.
 func (b *BaseElement) Destroy() {
 	if b.Parent != nil {
