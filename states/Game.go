@@ -49,6 +49,7 @@ type Game struct {
 	objectImages     map[uint32]ui.ElementI
 	objectImageIDs   map[uint32]data.StringID
 	mapMessages      []MapMessage
+	MessageHistory   []Message
 	bindings         *binds.Bindings
 }
 
@@ -72,17 +73,29 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 
 // Close our Game state.
 func (s *Game) Close() {
+	go func() {
+		s.Client.Connection.Close()
+	}()
 	s.CleanupUI()
 }
 
 // Loop is our loop for managing network activity and beyond.
 func (s *Game) Loop() {
 	cleanupChan := make(chan struct{})
+	cleanupChanQuit := make(chan struct{})
 	go func() {
 		for {
-			time.Sleep(time.Second * 1)
-			cleanupChan <- struct{}{}
+			select {
+			case <-cleanupChanQuit:
+				return
+			default:
+				cleanupChan <- struct{}{}
+				time.Sleep(time.Second * 1)
+			}
 		}
+	}()
+	defer func() {
+		cleanupChanQuit <- struct{}{}
 	}()
 	for {
 		select {
@@ -132,6 +145,8 @@ func (s *Game) Loop() {
 				}
 				s.ChatType.GetUpdateChannel() <- ui.UpdateValue{Value: CommandModeStrings[s.CommandMode]}
 			case DisconnectEvent:
+				s.Client.Log.Print("Disconnected from server.")
+				s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
 				return
 			}
 		case <-cleanupChan:
@@ -154,10 +169,19 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 	case network.CommandTile:
 		s.world.HandleTileCommand(c)
 	case network.CommandMessage:
-		s.Client.HandleMessageCommand(c)
+		s.HandleMessageCommand(c)
 		s.UpdateMessagesWindow()
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
 	return false
+}
+
+// HandleMessageCommand received network.CommandMessage types and adds it to the client's message history.
+func (s *Game) HandleMessageCommand(m network.CommandMessage) {
+	s.MessageHistory = append(s.MessageHistory, Message{
+		Received: time.Now(),
+		Message:  m,
+	})
+	s.UpdateMessagesWindow()
 }

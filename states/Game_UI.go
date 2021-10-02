@@ -130,7 +130,7 @@ func (s *Game) SetupUI() (err error) {
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x, y int32) bool {
 				s.inputChan <- ChangeCommandMode{}
-				return true
+				return false
 			},
 		},
 	})
@@ -199,12 +199,7 @@ func (s *Game) SetupUI() (err error) {
 
 // CleanupUI destroys all UI elements.
 func (s *Game) CleanupUI() {
-	s.MapContainer.Destroy()
-	s.StateWindow.Destroy()
-	s.StatsWindow.Destroy()
-	s.GroundWindow.Destroy()
-	s.InventoryWindow.Destroy()
-	s.MessagesWindow.Destroy()
+	s.GameContainer.GetDestroyChannel() <- true
 }
 
 // UpdateMessagesWindow synchronizes the message window with the client's message history.
@@ -223,9 +218,9 @@ func (s *Game) UpdateMessagesWindow() {
 	}
 
 	// Create message UI as needed.
-	for i := len(s.Client.MessageHistory) - 1; i >= 0; i-- {
+	for i := len(s.MessageHistory) - 1; i >= 0; i-- {
 		if i >= len(s.messageElements) {
-			m := s.Client.MessageHistory[i]
+			m := s.MessageHistory[i]
 			msgName := ""
 			// Just print server messages.
 			if m.Message.Type == network.ServerMessage {

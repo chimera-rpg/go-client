@@ -16,7 +16,6 @@ type Client struct {
 	CurrentServer    string
 	DataManager      *data.Manager
 	RootWindow       *ui.Window
-	MessageHistory   []Message
 	LogHistory       []string
 	State            StateI
 	Log              *logrus.Logger

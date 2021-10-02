@@ -6,7 +6,14 @@ import (
 	"time"
 
 	"github.com/chimera-rpg/go-client/ui"
+	"github.com/chimera-rpg/go-common/network"
 )
+
+// Message is a container for a received network message.
+type Message struct {
+	Received time.Time
+	Message  network.CommandMessage
+}
 
 // MapMessage represents a floating message on the map.
 type MapMessage struct {

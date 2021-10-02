@@ -11,7 +11,7 @@ import (
 
 // Print prints a local message.
 func (s *Game) Print(str string) {
-	s.Client.HandleMessageCommand(network.CommandMessage{
+	s.HandleMessageCommand(network.CommandMessage{
 		Type: network.LocalMessage,
 		Body: str,
 	})
@@ -35,7 +35,7 @@ func (s *Game) handleChatCommand(cmd string, args ...string) {
 	case "cmd":
 		cmdMultiplier := regexp.MustCompile(`^([^*]*)[*]*\s*([0-9]*)`)
 		if len(args) == 0 || strings.TrimSpace(args[0]) == "" {
-			s.Client.HandleMessageCommand(network.CommandMessage{
+			s.HandleMessageCommand(network.CommandMessage{
 				Type: network.LocalMessage,
 				Body: fmt.Sprintf("missing command for \"cmd\""),
 			})
@@ -54,11 +54,7 @@ func (s *Game) handleChatCommand(cmd string, args ...string) {
 					} else {
 						i, err := strconv.Atoi(results[2])
 						if err != nil {
-							s.Client.HandleMessageCommand(network.CommandMessage{
-								Type: network.LocalMessage,
-								Body: fmt.Sprintf("couldn't parse number in %s", p),
-							})
-							s.UpdateMessagesWindow()
+							s.Print(fmt.Sprintf("couldn't parse number in %s", p))
 						} else {
 							for j := 0; j < i; j++ {
 								s.bindings.RunFunction(cmdString)
@@ -74,11 +70,7 @@ func (s *Game) handleChatCommand(cmd string, args ...string) {
 		if s.bindings.HasFunction(cmd) {
 			s.bindings.RunFunction(cmd, args)
 		} else {
-			s.Client.HandleMessageCommand(network.CommandMessage{
-				Type: network.LocalMessage,
-				Body: fmt.Sprintf("unknown command \"%s\"", cmd),
-			})
-			s.UpdateMessagesWindow()
+			s.Print(fmt.Sprintf("unknown command \"%s\"", cmd))
 		}
 	}
 }
