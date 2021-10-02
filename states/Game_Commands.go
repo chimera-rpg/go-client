@@ -29,6 +29,11 @@ func (s *Game) handleChatCommand(cmd string, args ...string) {
 		os.Exit(0)
 	case "disconnect":
 		s.inputChan <- DisconnectEvent{}
+	case "say":
+		s.Client.Send(network.CommandMessage{
+			Type: network.PCMessage,
+			Body: strings.Join(args, " "),
+		})
 	case "cmd":
 		cmdMultiplier := regexp.MustCompile(`^([^*]*)[*]*\s*([0-9]*)`)
 		if len(args) == 0 || strings.TrimSpace(args[0]) == "" {
