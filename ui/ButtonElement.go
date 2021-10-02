@@ -2,9 +2,11 @@ package ui
 
 // ButtonElementConfig provides the configuration for a new ButtonElemenb.
 type ButtonElementConfig struct {
-	Style  string
-	Value  string
-	Events Events
+	Style   string
+	Value   string
+	Events  Events
+	NoFocus bool
+	NoHold  bool
 }
 
 // ButtonElementStyle is the default style for ButtonElements.
@@ -21,8 +23,16 @@ var ButtonElementStyle = `
 func NewButtonElement(c ButtonElementConfig) ElementI {
 	b := ButtonElement{}
 	b.This = ElementI(&b)
-	b.Holdable = true
-	b.Focusable = true
+	if c.NoHold {
+		b.Holdable = false
+	} else {
+		b.Holdable = true
+	}
+	if c.NoFocus {
+		b.Focusable = false
+	} else {
+		b.Focusable = true
+	}
 	b.Style.Parse(ButtonElementStyle)
 	b.Style.Parse(c.Style)
 	b.SetValue(c.Value)
@@ -37,7 +47,9 @@ func NewButtonElement(c ButtonElementConfig) ElementI {
 func (b *ButtonElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool {
 	switch key {
 	case 13: // Activate button when enter is hit
-		b.SetHeld(true)
+		if b.CanHold() {
+			b.SetHeld(true)
+		}
 	}
 	return false
 }
@@ -47,8 +59,10 @@ func (b *ButtonElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool
 func (b *ButtonElement) OnKeyUp(key uint8, modifiers uint16) bool {
 	switch key {
 	case 13: // Activate button when enter is released
-		b.SetHeld(false)
-		b.OnMouseButtonUp(1, 0, 0)
+		if b.CanHold() {
+			b.SetHeld(false)
+			b.OnMouseButtonUp(1, 0, 0)
+		}
 	}
 	return false
 }
