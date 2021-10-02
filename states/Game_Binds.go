@@ -1,6 +1,9 @@
 package states
 
 import (
+	"os"
+	"strings"
+
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
@@ -132,6 +135,52 @@ func (s *Game) SetupBinds() {
 	s.bindings.SetFunction("west run", func(i ...interface{}) {
 		s.Client.Send(network.CommandCmd{
 			Cmd: network.West,
+		})
+	})
+	s.bindings.SetFunction("quit", func(i ...interface{}) {
+		os.Exit(0)
+	})
+	s.bindings.SetFunction("disconnect", func(i ...interface{}) {
+		s.inputChan <- DisconnectEvent{}
+	})
+	s.bindings.SetFunction("say", func(i ...interface{}) {
+		str := ""
+		switch v := i[0].(type) {
+		case string:
+			str = v
+		case []string:
+			str = strings.Join(v, " ")
+		default:
+			s.Print("say failed")
+			return
+		}
+		if str == "" {
+			s.Print("say what?")
+			return
+		}
+		s.Client.Send(network.CommandMessage{
+			Type: network.PCMessage,
+			Body: str,
+		})
+	})
+	s.bindings.SetFunction("chat", func(i ...interface{}) {
+		str := ""
+		switch v := i[0].(type) {
+		case string:
+			str = v
+		case []string:
+			str = strings.Join(v, " ")
+		default:
+			s.Print("chat failed")
+			return
+		}
+		if str == "" {
+			s.Print("chat what?")
+			return
+		}
+		s.Client.Send(network.CommandMessage{
+			Type: network.ChatMessage,
+			Body: str,
 		})
 	})
 

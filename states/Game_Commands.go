@@ -2,13 +2,20 @@ package states
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/chimera-rpg/go-common/network"
 )
+
+// Print prints a local message.
+func (s *Game) Print(str string) {
+	s.Client.HandleMessageCommand(network.CommandMessage{
+		Type: network.LocalMessage,
+		Body: str,
+	})
+}
 
 func (s *Game) isChatCommand(c string) bool {
 	if strings.HasPrefix(c, s.Client.DataManager.Config.Game.CommandPrefix) {
@@ -25,20 +32,6 @@ func (s *Game) processChatCommand(c string) {
 
 func (s *Game) handleChatCommand(cmd string, args ...string) {
 	switch cmd {
-	case "quit":
-		os.Exit(0)
-	case "disconnect":
-		s.inputChan <- DisconnectEvent{}
-	case "say":
-		s.Client.Send(network.CommandMessage{
-			Type: network.PCMessage,
-			Body: strings.Join(args, " "),
-		})
-	case "chat":
-		s.Client.Send(network.CommandMessage{
-			Type: network.ChatMessage,
-			Body: strings.Join(args, " "),
-		})
 	case "cmd":
 		cmdMultiplier := regexp.MustCompile(`^([^*]*)[*]*\s*([0-9]*)`)
 		if len(args) == 0 || strings.TrimSpace(args[0]) == "" {
@@ -78,10 +71,14 @@ func (s *Game) handleChatCommand(cmd string, args ...string) {
 			}
 		}
 	default:
-		s.Client.HandleMessageCommand(network.CommandMessage{
-			Type: network.LocalMessage,
-			Body: fmt.Sprintf("unknown command \"%s\"", cmd),
-		})
-		s.UpdateMessagesWindow()
+		if s.bindings.HasFunction(cmd) {
+			s.bindings.RunFunction(cmd, args)
+		} else {
+			s.Client.HandleMessageCommand(network.CommandMessage{
+				Type: network.LocalMessage,
+				Body: fmt.Sprintf("unknown command \"%s\"", cmd),
+			})
+			s.UpdateMessagesWindow()
+		}
 	}
 }
