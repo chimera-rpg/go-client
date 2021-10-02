@@ -34,6 +34,11 @@ func (s *Game) handleChatCommand(cmd string, args ...string) {
 			Type: network.PCMessage,
 			Body: strings.Join(args, " "),
 		})
+	case "chat":
+		s.Client.Send(network.CommandMessage{
+			Type: network.ChatMessage,
+			Body: strings.Join(args, " "),
+		})
 	case "cmd":
 		cmdMultiplier := regexp.MustCompile(`^([^*]*)[*]*\s*([0-9]*)`)
 		if len(args) == 0 || strings.TrimSpace(args[0]) == "" {

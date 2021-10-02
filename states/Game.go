@@ -16,13 +16,14 @@ type CommandMode = int
 const (
 	CommandModeChat = iota
 	CommandModeSay
-	CommandModeCmd
+
+//	CommandModeCmd
 )
 
 var CommandModeStrings = []string{
 	"CHAT",
 	"SAY",
-	"CMD",
+	//	"CMD",
 }
 
 // Game is our live Game state, used once the user has connected to the server
@@ -109,10 +110,18 @@ func (s *Game) Loop() {
 				if s.isChatCommand(e.Body) {
 					s.processChatCommand(e.Body)
 				} else {
-					s.Client.Send(network.CommandMessage{
-						Type: network.ChatMessage,
-						Body: e.Body,
-					})
+					if s.CommandMode == CommandModeChat {
+						s.Client.Send(network.CommandMessage{
+							Type: network.ChatMessage,
+							Body: e.Body,
+						})
+
+					} else if s.CommandMode == CommandModeSay {
+						s.Client.Send(network.CommandMessage{
+							Type: network.PCMessage,
+							Body: e.Body,
+						})
+					}
 				}
 			case MouseInput:
 				s.Client.Log.Printf("mouse: %+v\n", e)
