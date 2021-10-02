@@ -34,10 +34,21 @@ var MessagesWindowStyle string = `
 	BackgroundColor 0 0 0 0
 `
 
-var ChatInputStyle string = `
+var CommandContainerStyle string = `
 	W 100%
+	H 26
 	Origin Bottom
 	BackgroundColor 0 0 0 32
+`
+
+var CommandTypeStyle string = `
+	W 10%
+	H 100%
+`
+
+var ChatInputStyle string = `
+	X 10%
+	W 85%
 `
 
 var InventoryWindowStyle string = `

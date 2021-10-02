@@ -12,6 +12,9 @@ import (
 type UserInput interface {
 }
 
+// ChangeCommandMode notifies the UI to change the command mode.
+type ChangeCommandMode struct{}
+
 // ResizeEvent is used to notify the UI of a resize change.
 type ResizeEvent struct{}
 
@@ -115,6 +118,23 @@ func (s *Game) SetupUI() (err error) {
 		},
 	})
 
+	s.CommandContainer = ui.NewBaseElement(ui.BaseElementConfig{
+		Style: CommandContainerStyle,
+	})
+
+	s.ChatType = ui.NewButtonElement(ui.ButtonElementConfig{
+		Value:   CommandModeStrings[s.CommandMode],
+		Style:   CommandTypeStyle,
+		NoFocus: true,
+		NoHold:  true,
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x, y int32) bool {
+				s.inputChan <- ChangeCommandMode{}
+				return true
+			},
+		},
+	})
+
 	s.ChatInput = ui.NewInputElement(ui.InputElementConfig{
 		Value:         "",
 		Style:         ChatInputStyle,
@@ -144,7 +164,9 @@ func (s *Game) SetupUI() (err error) {
 	})
 
 	s.ChatWindow.GetAdoptChannel() <- s.MessagesWindow.This
-	s.ChatWindow.GetAdoptChannel() <- s.ChatInput
+	s.ChatWindow.GetAdoptChannel() <- s.CommandContainer
+	s.CommandContainer.GetAdoptChannel() <- s.ChatType
+	s.CommandContainer.GetAdoptChannel() <- s.ChatInput
 	s.GameContainer.AdoptChannel <- s.ChatWindow.This
 	// Sub-window: inventory
 	err = s.InventoryWindow.Setup(ui.ContainerConfig{

@@ -11,27 +11,44 @@ import (
 	"github.com/chimera-rpg/go-common/network"
 )
 
+type CommandMode = int
+
+const (
+	CommandModeChat = iota
+	CommandModeSay
+	CommandModeCmd
+)
+
+var CommandModeStrings = []string{
+	"CHAT",
+	"SAY",
+	"CMD",
+}
+
 // Game is our live Game state, used once the user has connected to the server
 // and joined as a player character.
 type Game struct {
 	client.State
-	GameContainer   ui.Container
-	MessagesWindow  ui.Container
-	ChatInput       ui.ElementI
-	ChatWindow      ui.Container
-	messageElements []ui.ElementI
-	MapContainer    ui.Container
-	InventoryWindow ui.Container
-	GroundWindow    ui.Container
-	StatsWindow     ui.Container
-	StateWindow     ui.Container
-	world           world.World
-	keyBinds        []uint8
-	inputChan       chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
-	objectImages    map[uint32]ui.ElementI
-	objectImageIDs  map[uint32]data.StringID
-	mapMessages     []MapMessage
-	bindings        *binds.Bindings
+	CommandMode      CommandMode
+	GameContainer    ui.Container
+	MessagesWindow   ui.Container
+	ChatType         ui.ElementI
+	ChatInput        ui.ElementI
+	ChatWindow       ui.Container
+	messageElements  []ui.ElementI
+	CommandContainer ui.ElementI
+	MapContainer     ui.Container
+	InventoryWindow  ui.Container
+	GroundWindow     ui.Container
+	StatsWindow      ui.Container
+	StateWindow      ui.Container
+	world            world.World
+	keyBinds         []uint8
+	inputChan        chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
+	objectImages     map[uint32]ui.ElementI
+	objectImageIDs   map[uint32]data.StringID
+	mapMessages      []MapMessage
+	bindings         *binds.Bindings
 }
 
 // Init our Game state.
@@ -40,6 +57,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.objectImages = make(map[uint32]ui.ElementI)
 	s.objectImageIDs = make(map[uint32]data.StringID)
 	s.SetupBinds()
+	s.CommandMode = CommandModeChat
 	// Initialize our world.
 	s.world.Init(s.Client.DataManager, s.Client.Log)
 
@@ -98,6 +116,12 @@ func (s *Game) Loop() {
 				}
 			case MouseInput:
 				s.Client.Log.Printf("mouse: %+v\n", e)
+			case ChangeCommandMode:
+				s.CommandMode++
+				if s.CommandMode >= len(CommandModeStrings) {
+					s.CommandMode = 0
+				}
+				s.ChatType.GetUpdateChannel() <- ui.UpdateValue{Value: CommandModeStrings[s.CommandMode]}
 			case DisconnectEvent:
 				return
 			}
