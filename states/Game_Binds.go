@@ -141,18 +141,22 @@ func (s *Game) SetupBinds() {
 		os.Exit(0)
 	})
 	s.bindings.SetFunction("disconnect", func(i ...interface{}) {
-		s.inputChan <- DisconnectEvent{}
+		go func() {
+			s.inputChan <- DisconnectEvent{}
+		}()
 	})
 	s.bindings.SetFunction("say", func(i ...interface{}) {
 		str := ""
-		switch v := i[0].(type) {
-		case string:
-			str = v
-		case []string:
-			str = strings.Join(v, " ")
-		default:
-			s.Print("say failed")
-			return
+		if len(i) > 0 {
+			switch v := i[0].(type) {
+			case string:
+				str = v
+			case []string:
+				str = strings.Join(v, " ")
+			default:
+				s.Print("say failed")
+				return
+			}
 		}
 		if str == "" {
 			s.Print("say what?")
@@ -165,14 +169,16 @@ func (s *Game) SetupBinds() {
 	})
 	s.bindings.SetFunction("chat", func(i ...interface{}) {
 		str := ""
-		switch v := i[0].(type) {
-		case string:
-			str = v
-		case []string:
-			str = strings.Join(v, " ")
-		default:
-			s.Print("chat failed")
-			return
+		if len(i) > 0 {
+			switch v := i[0].(type) {
+			case string:
+				str = v
+			case []string:
+				str = strings.Join(v, " ")
+			default:
+				s.Print("chat failed")
+				return
+			}
 		}
 		if str == "" {
 			s.Print("chat what?")
