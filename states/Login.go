@@ -19,6 +19,7 @@ type Login struct {
 	usernameEl, passwordEl ui.ElementI
 	rememberPasswordEl     ui.ElementI
 	rememberPassword       bool
+	pendingLogin           bool
 }
 
 // LoginStateID represents the current sub state of the Login state.
@@ -191,11 +192,14 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Value: "LOGIN",
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.Send(network.Command(network.CommandLogin{
-					Type: network.Login,
-					User: s.usernameEl.GetValue(),
-					Pass: s.passwordEl.GetValue(),
-				}))
+				if !s.pendingLogin {
+					s.pendingLogin = true
+					s.Client.Send(network.Command(network.CommandLogin{
+						Type: network.Login,
+						User: s.usernameEl.GetValue(),
+						Pass: s.passwordEl.GetValue(),
+					}))
+				}
 				return false
 			},
 		},
@@ -273,6 +277,7 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 			msg := fmt.Sprintf("Server rejected us: %s", t.String)
 			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
+			s.pendingLogin = false
 		} else if t.Type == network.Okay {
 			msg := fmt.Sprintf("Server accepted us: %s", t.String)
 			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
