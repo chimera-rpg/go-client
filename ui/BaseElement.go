@@ -35,10 +35,13 @@ type BaseElement struct {
 	// Context is cached when the object is created.
 	Context *Context
 	// x, y, w, h are cached values from CalculateStyle
-	x  int32
-	y  int32
-	w  int32
-	h  int32
+	x int32
+	y int32
+	w int32
+	h int32
+	// ax, ay are cached absolute values.
+	ax int32
+	ay int32
 	pt int32
 	pb int32
 	pl int32
@@ -98,6 +101,7 @@ func (b *BaseElement) Render() {
 
 // SetX gets the cached x value.
 func (b *BaseElement) SetX(x int32) {
+	b.ax += b.x - x
 	b.x = x
 }
 
@@ -108,12 +112,23 @@ func (b *BaseElement) GetX() int32 {
 
 // SetY sets the cached y value.
 func (b *BaseElement) SetY(y int32) {
+	b.ay += b.y - y
 	b.y = y
 }
 
 // GetY gets the cached y value.
 func (b *BaseElement) GetY() int32 {
 	return b.y
+}
+
+// GetAbsoluteX gets the cached absolute x value.
+func (b *BaseElement) GetAbsoluteX() int32 {
+	return b.ax
+}
+
+// GetAbsoluteY gets the cached absolute y value.
+func (b *BaseElement) GetAbsoluteY() int32 {
+	return b.ay
 }
 
 // GetWidth gets the cached width value.
@@ -157,20 +172,13 @@ func (b *BaseElement) GetStyle() *Style {
 	return &b.Style
 }
 
-// Hit detects if the passed x and y arguments fall within the element's box
+// Hit detects if the passed x and y arguments fall within the element's absolute box
 func (b *BaseElement) Hit(x int32, y int32) bool {
 	if b.Hidden {
 		return false
 	}
-	if b.Parent != nil {
-		lx, ly := b.Parent.GetX()+b.x, b.Parent.GetY()+b.y
-		if x >= lx && y >= ly && x <= lx+b.w && y <= ly+b.h {
-			return true
-		}
-	} else {
-		if x >= b.x && y >= b.y && x <= b.x+b.w && y <= b.y+b.h {
-			return true
-		}
+	if x >= b.ax && y >= b.ay && x <= b.ax+b.w && y <= b.ay+b.h {
+		return true
 	}
 	return false
 }
@@ -181,31 +189,42 @@ func (b *BaseElement) CalculateStyle() {
 	if b.Hidden {
 		return
 	}
-	var x, y, w, minw, maxw, h, minh, maxh, pt, pb, pl, pr, mt, mb, ml, mr, sl, st int32 = b.x, b.y, b.w, 0, 0, b.h, 0, 0, b.pt, b.pb, b.pl, b.pr, b.mt, b.mb, b.ml, b.mr, b.sl, b.st
+	var x, y, ax, ay, w, minw, maxw, h, minh, maxh, pt, pb, pl, pr, mt, mb, ml, mr, sl, st int32 = b.x, b.y, b.ax, b.ay, b.w, 0, 0, b.h, 0, 0, b.pt, b.pb, b.pl, b.pr, b.mt, b.mb, b.ml, b.mr, b.sl, b.st
 	if b.Parent != nil {
 		if b.Style.X.Percentage {
 			x = int32(b.Style.X.PercentOf(float64(b.Parent.GetWidth())))
 		} else {
 			x = int32(b.Style.X.Value)
 		}
-		if b.Style.Origin.Has(RIGHT) {
-			x = b.Parent.GetWidth() - x
-		}
 		if !b.Parent.IsContainer() {
+			ax = int32(b.Parent.GetAbsoluteX()) + x
 			x = int32(b.Parent.GetX()) + x
+		} else {
+			ax = int32(b.Parent.GetAbsoluteX()) + x
 		}
 		x -= b.Parent.GetScrollLeft()
+		ax -= b.Parent.GetScrollLeft()
+		if b.Style.Origin.Has(RIGHT) {
+			x = b.Parent.GetWidth() - x
+			ax = b.Parent.GetAbsoluteX() + b.Parent.GetWidth() - ax
+		}
+		var relY int32
 		if b.Style.Y.Percentage {
-			y = int32(b.Style.Y.PercentOf(float64(b.Parent.GetHeight())))
+			relY = int32(b.Style.Y.PercentOf(float64(b.Parent.GetHeight())))
 		} else {
-			y = int32(b.Style.Y.Value)
+			relY = int32(b.Style.Y.Value)
 		}
 		if !b.Parent.IsContainer() {
-			y = int32(b.Parent.GetY()) + y
+			y = int32(b.Parent.GetY()) + relY
+		} else {
+			y = relY
 		}
+		ay = int32(b.Parent.GetAbsoluteY()) + relY
 		y -= b.Parent.GetScrollTop()
+		ay -= b.Parent.GetScrollTop()
 		if b.Style.Origin.Has(BOTTOM) {
-			y = b.Parent.GetHeight() - y
+			y = b.Parent.GetHeight() - relY
+			ay += (b.Parent.GetHeight() - relY*2) // W...why  do we do relY*2
 		}
 		if b.Style.W.Percentage {
 			w = int32(b.Style.W.PercentOf(float64(b.Parent.GetWidth())))
@@ -284,9 +303,11 @@ func (b *BaseElement) CalculateStyle() {
 		if !b.Style.X.Percentage {
 			x = int32(b.Style.X.Value)
 		}
+		ax = x
 		if !b.Style.Y.Percentage {
 			y = int32(b.Style.Y.Value)
 		}
+		ay = y
 		if !b.Style.W.Percentage {
 			w = int32(b.Style.W.Value)
 		}
@@ -358,9 +379,11 @@ func (b *BaseElement) CalculateStyle() {
 		st = int32(b.Style.ScrollTop.Value)
 	}
 
-	if x != b.x || y != b.y || w != b.w || h != b.h || pl != b.pl || pr != b.pr || pt != b.pt || pb != b.pb || ml != b.ml || mr != b.mr || mt != b.mt || mb != b.mb || sl != b.sl || st != b.st {
+	if x != b.x || y != b.y || ax != b.ax || ay != b.ay || w != b.w || h != b.h || pl != b.pl || pr != b.pr || pt != b.pt || pb != b.pb || ml != b.ml || mr != b.mr || mt != b.mt || mb != b.mb || sl != b.sl || st != b.st {
 		b.x = x
 		b.y = y
+		b.ax = ax
+		b.ay = ay
 		b.w = w + pl + pr
 		b.h = h + pt + pb
 		b.pl = pl
@@ -378,17 +401,23 @@ func (b *BaseElement) CalculateStyle() {
 	if b.Dirty || b.LastStyle != b.Style {
 		if b.Style.Origin.Has(CENTERX) {
 			b.x = b.x - b.w/2
+			b.ax = b.ax - b.w/2
 		} else if b.Style.Origin.Has(RIGHT) {
 			b.x = b.x - b.w - b.mr
+			b.ax = b.ax - b.w - b.mr
 		} else {
 			b.x = b.x + b.ml
+			b.ax = b.ax + b.ml
 		}
 		if b.Style.Origin.Has(CENTERY) {
 			b.y = b.y - b.h/2
+			b.ay = b.ay - b.h/2
 		} else if b.Style.Origin.Has(BOTTOM) {
 			b.y = b.y - b.h - b.mb
+			b.ay = b.ay - b.h - b.mb
 		} else {
 			b.y = b.y + b.mt
+			b.ay = b.ay + b.mt
 		}
 		b.LastStyle = b.Style
 		b.Dirty = true
