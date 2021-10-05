@@ -196,7 +196,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				}
 
 				if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
-					y -= h - (tileHeight * scale)
+					y -= int(sh) - (tileHeight * scale)
 				}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
 					X: ui.Number{Value: float64(x)},
