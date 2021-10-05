@@ -87,6 +87,10 @@ var (
 		Keys:    []uint8{13},
 		Pressed: true,
 	}
+	defaultFocusCommand = binds.KeyGroup{
+		Keys:    []uint8{47},
+		Pressed: true,
+	}
 )
 
 func (s *Game) SetupBinds() {
@@ -208,6 +212,10 @@ func (s *Game) SetupBinds() {
 	s.bindings.SetFunction("focus chat", func(i ...interface{}) {
 		s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
 	})
+	s.bindings.SetFunction("focus cmd", func(i ...interface{}) {
+		s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
+		s.ChatInput.GetUpdateChannel() <- ui.UpdateValue{Value: "/"}
+	})
 	if !s.bindings.HasKeygroupsForName("north") {
 		s.bindings.AddKeygroup("north", defaultNorth1)
 		s.bindings.AddKeygroup("north", defaultNorth2)
@@ -243,5 +251,8 @@ func (s *Game) SetupBinds() {
 
 	if !s.bindings.HasKeygroupsForName("focus chat") {
 		s.bindings.AddKeygroup("focus chat", defaultFocusChat)
+	}
+	if !s.bindings.HasKeygroupsForName("focus cmd") {
+		s.bindings.AddKeygroup("focus cmd", defaultFocusCommand)
 	}
 }
