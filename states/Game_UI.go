@@ -66,6 +66,15 @@ func (s *Game) SetupUI() (err error) {
 				}
 				return true
 			},
+		},
+	})
+	s.GameContainer.Focus()
+	s.Client.RootWindow.AdoptChannel <- s.GameContainer.This
+
+	// Sub-window: map
+	err = s.MapContainer.Setup(ui.ContainerConfig{
+		Style: MapContainerStyle,
+		Events: ui.Events{
 			OnMouseButtonDown: func(buttonID uint8, x int32, y int32) bool {
 				s.inputChan <- MouseInput{
 					button:  buttonID,
@@ -85,13 +94,6 @@ func (s *Game) SetupUI() (err error) {
 				return true
 			},
 		},
-	})
-	s.GameContainer.Focus()
-	s.Client.RootWindow.AdoptChannel <- s.GameContainer.This
-
-	// Sub-window: map
-	err = s.MapContainer.Setup(ui.ContainerConfig{
-		Style: MapContainerStyle,
 	})
 	mapText := ui.NewTextElement(ui.TextElementConfig{
 		Value: "Map",

@@ -1,6 +1,7 @@
 package states
 
 import (
+	"math"
 	"time"
 
 	"github.com/chimera-rpg/go-client/binds"
@@ -142,7 +143,9 @@ func (s *Game) Loop() {
 					}
 				}
 			case MouseInput:
-				s.Client.Log.Printf("mouse: %+v\n", e)
+				if e.button == 3 {
+					s.MoveWithMouse(e)
+				}
 			case ChangeCommandMode:
 				s.CommandMode++
 				if s.CommandMode >= len(CommandModeStrings) {
@@ -200,4 +203,32 @@ func (s *Game) HandleMessageCommand(m network.CommandMessage) {
 		Message:  m,
 	})
 	s.UpdateMessagesWindow()
+}
+
+func (s *Game) MoveWithMouse(e MouseInput) {
+	x1 := e.x - s.MapContainer.GetAbsoluteX()
+	y1 := e.y - s.MapContainer.GetAbsoluteY()
+	x2 := s.MapContainer.GetWidth() / 2
+	y2 := s.MapContainer.GetHeight() / 2
+	dY := y2 - y1
+	dX := x2 - x1
+	dA := (math.Atan2(float64(dY), float64(dX)) * 180 / math.Pi) + 180
+	/****
+	    	275
+	  225 		315
+	180  	 o	 360
+	  135 	 	45
+		 		90
+	******/
+	if !e.pressed {
+		if dA >= 315 || dA <= 45 {
+			s.bindings.RunFunction("east")
+		} else if dA > 45 && dA <= 135 {
+			s.bindings.RunFunction("south")
+		} else if dA > 135 && dA <= 225 {
+			s.bindings.RunFunction("west")
+		} else if dA > 225 && dA <= 315 {
+			s.bindings.RunFunction("north")
+		}
+	}
 }
