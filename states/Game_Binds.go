@@ -6,6 +6,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/ui"
+	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
 )
 
@@ -187,6 +188,13 @@ func (s *Game) SetupBinds() {
 		s.Client.Send(network.CommandMessage{
 			Type: network.ChatMessage,
 			Body: str,
+		})
+	})
+
+	s.bindings.SetFunction("squeeze", func(i ...interface{}) {
+		s.Client.Send(network.CommandStatus{
+			Type:   cdata.SqueezingStatus,
+			Active: true,
 		})
 	})
 
