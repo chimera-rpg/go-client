@@ -105,12 +105,15 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	scale := 4
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
-	// If the object is missing, set its alpha to be semi-transparent. FIXME: I would prefer if we could set this to be desaturated or similar.
-	if o.Missing && o != s.world.GetViewObject() {
-		if _, ok := s.objectImages[o.ID]; ok {
-			//t.GetUpdateChannel() <- ui.UpdateAlpha{Number: ui.Number{Value: 128}}
+	// If the object is currently missing, hide it. FIXME: It'd be better to keep it on screen, but grayscale, if it is outside of player view. If in player view, then it should be hidden.
+	if o != s.world.GetViewObject() {
+		if t, ok := s.objectImages[o.ID]; ok {
+			if o.Missing {
+				t.GetUpdateChannel() <- ui.UpdateHidden(true)
+				return
+			}
+			t.GetUpdateChannel() <- ui.UpdateHidden(false)
 		}
-		return
 	}
 	frames := s.Client.DataManager.GetFace(o.AnimationID, o.FaceID)
 	// Bail if there are no frames to render.
