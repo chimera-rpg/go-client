@@ -62,3 +62,6 @@ type UpdateDirt = bool
 
 // UpdateFocus is a message that marks the element as focused.
 type UpdateFocus struct{}
+
+// UpdateHidden as a message that marks the element to be hidden or not.
+type UpdateHidden bool

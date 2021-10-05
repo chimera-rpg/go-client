@@ -770,6 +770,8 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		dirty = u
 	case UpdateFocus:
 		b.Focus()
+	case UpdateHidden:
+		b.SetHidden(bool(u))
 	}
 	b.CalculateStyle()
 	b.SetDirty(dirty)
