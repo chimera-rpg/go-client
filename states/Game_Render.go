@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/chimera-rpg/go-client/ui"
@@ -104,12 +105,10 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	scale := 4
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
-	// If the object is missing (out of view), delete it. FIXME: This should probably convert the image rendering to semi-opaque or otherwise instead.
-	if o.Missing {
-		if t, ok := s.objectImages[o.ID]; ok {
-			t.GetDestroyChannel() <- true
-			delete(s.objectImages, o.ID)
-			delete(s.objectImageIDs, o.ID)
+	// If the object is missing, set its alpha to be semi-transparent. FIXME: I would prefer if we could set this to be desaturated or similar.
+	if o.Missing && o != s.world.GetViewObject() {
+		if _, ok := s.objectImages[o.ID]; ok {
+			//t.GetUpdateChannel() <- ui.UpdateAlpha{Number: ui.Number{Value: 128}}
 		}
 		return
 	}
@@ -178,17 +177,30 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 	} else {
 		if img != nil {
-			bounds := img.Bounds()
-			w = bounds.Max.X * scale
-			h = bounds.Max.Y * scale
-			if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
-				y -= h - (tileHeight * scale)
-			}
 			if o.Changed {
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateX{Number: ui.Number{Value: float64(x)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(y)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateW{Number: ui.Number{Value: float64(w)}}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateH{Number: ui.Number{Value: float64(h)}}
+				bounds := img.Bounds()
+				w = bounds.Max.X * scale
+				h = bounds.Max.Y * scale
+
+				var sw, sh float64
+				sw = float64(w)
+				sh = float64(h)
+				if o.Squeezing {
+					sw = math.Max(float64(w-w/4), float64(tileWidth*scale))
+				}
+				if o.Crouching {
+					sh = math.Max(float64(h-h/3), float64(tileHeight*scale))
+				}
+
+				if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
+					y -= h - (tileHeight * scale)
+				}
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
+					X: ui.Number{Value: float64(x)},
+					Y: ui.Number{Value: float64(y)},
+					W: ui.Number{Value: sw},
+					H: ui.Number{Value: sh},
+				}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
 				o.Changed = false
 			}
