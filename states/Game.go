@@ -177,6 +177,9 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		if c.Type == cdata.SqueezingStatus {
 			s.world.GetViewObject().Squeezing = c.Active
 			s.world.GetViewObject().Changed = true
+		} else if c.Type == cdata.CrouchingStatus {
+			s.world.GetViewObject().Crouching = c.Active
+			s.world.GetViewObject().Changed = true
 		}
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)

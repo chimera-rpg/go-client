@@ -198,6 +198,13 @@ func (s *Game) SetupBinds() {
 		})
 	})
 
+	s.bindings.SetFunction("crouch", func(i ...interface{}) {
+		s.Client.Send(network.CommandStatus{
+			Type:   cdata.CrouchingStatus,
+			Active: true,
+		})
+	})
+
 	s.bindings.SetFunction("focus chat", func(i ...interface{}) {
 		s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
 	})
