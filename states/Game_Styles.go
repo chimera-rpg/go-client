@@ -77,9 +77,10 @@ var StatsWindowStyle string = `
 `
 
 var StateWindowStyle string = `
-	X 20%
-	Y 80%
-	W 80%
-	H 20%
-	BackgroundColor 128 128 0 128
+	Origin Right
+	X 0
+	Y 20%
+	W 10%
+	H 40%
+	BackgroundColor 0 0 0 0
 `

@@ -44,6 +44,8 @@ type Game struct {
 	GroundWindow     ui.Container
 	StatsWindow      ui.Container
 	StateWindow      ui.Container
+	statusElements   map[cdata.StatusType]ui.ElementI
+	statuses         map[cdata.StatusType]bool
 	world            world.World
 	keyBinds         []uint8
 	inputChan        chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
@@ -59,6 +61,8 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.inputChan = make(chan UserInput)
 	s.objectImages = make(map[uint32]ui.ElementI)
 	s.objectImageIDs = make(map[uint32]data.StringID)
+	s.statuses = make(map[cdata.StatusType]bool)
+	s.statusElements = make(map[cdata.StatusType]ui.ElementI)
 	s.SetupBinds()
 	s.CommandMode = CommandModeChat
 	// Initialize our world.
@@ -181,6 +185,8 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 			s.world.GetViewObject().Crouching = c.Active
 			s.world.GetViewObject().Changed = true
 		}
+		s.statuses[c.Type] = c.Active
+		s.UpdateStateWindow()
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}

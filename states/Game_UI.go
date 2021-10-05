@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/chimera-rpg/go-client/ui"
+	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
 )
 
@@ -192,7 +193,6 @@ func (s *Game) SetupUI() (err error) {
 		Style: StateWindowStyle,
 	})
 	s.GameContainer.AdoptChannel <- s.StateWindow.This
-	s.StateWindow.SetHidden(true)
 
 	return err
 }
@@ -282,5 +282,41 @@ func (s *Game) UpdateMessagesWindow() {
 				addMessage(m.Message.Body)
 			}
 		}
+	}
+}
+
+func (s *Game) UpdateStateWindow() {
+	addStatus := func(status cdata.StatusType) ui.ElementI {
+		e := ui.NewTextElement(ui.TextElementConfig{
+			Value: cdata.StatusMapToString[status],
+			Style: `
+				ForegroundColor 200 200 200 255
+				OutlineColor 20 20 20 255
+				X 50%
+				Origin CenterX
+			`,
+		})
+		s.statusElements[status] = e
+		s.StateWindow.GetAdoptChannel() <- e
+		return e
+	}
+
+	// Add any missing.
+	for k := range s.statuses {
+		if _, ok := s.statusElements[k]; !ok {
+			addStatus(k)
+		}
+	}
+
+	// Readjust UI.
+	y := int32(0)
+	for k, v := range s.statusElements {
+		v.GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(y)}}
+		if s.statuses[k] {
+			v.GetUpdateChannel() <- ui.UpdateHidden(false)
+		} else {
+			v.GetUpdateChannel() <- ui.UpdateHidden(true)
+		}
+		y += v.GetHeight()
 	}
 }
