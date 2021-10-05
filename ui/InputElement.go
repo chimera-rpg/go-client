@@ -146,9 +146,7 @@ func (i *InputElement) HandleUpdate(update UpdateI) {
 	case UpdateValue:
 		i.SetValue(u.Value)
 		i.composition = []rune(u.Value)
-		if i.cursor > len(i.composition) {
-			i.cursor = len(i.composition)
-		}
+		i.cursor = len(i.composition)
 	default:
 		i.BaseElement.HandleUpdate(update)
 	}
