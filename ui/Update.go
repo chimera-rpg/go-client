@@ -14,7 +14,7 @@ type UpdateX struct {
 	Number
 }
 
-// UpdateY represents a change to the X of an Element.
+// UpdateY represents a change to the Y of an Element.
 type UpdateY struct {
 	Number
 }
@@ -27,6 +27,11 @@ type UpdateW struct {
 // UpdateH represents a change to the H of an Element.
 type UpdateH struct {
 	Number
+}
+
+// UpdateDimensions represents a change to the x, y, w, and h of an Element.
+type UpdateDimensions struct {
+	X, Y, W, H Number
 }
 
 // UpdateScroll represents a change to the scroll left and top of an Element.

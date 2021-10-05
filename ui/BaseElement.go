@@ -752,6 +752,11 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Style.W = u.Number
 	case UpdateH:
 		b.Style.H = u.Number
+	case UpdateDimensions:
+		b.Style.X.Value = u.X.Value
+		b.Style.Y.Value = u.Y.Value
+		b.Style.W.Value = u.W.Value
+		b.Style.H.Value = u.H.Value
 	case UpdateScroll:
 		b.Style.ScrollLeft = u.Left
 		b.Style.ScrollTop = u.Top
