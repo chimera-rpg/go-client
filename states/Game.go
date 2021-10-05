@@ -8,6 +8,7 @@ import (
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
+	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
 )
 
@@ -171,6 +172,12 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 	case network.CommandMessage:
 		s.HandleMessageCommand(c)
 		s.UpdateMessagesWindow()
+	case network.CommandStatus:
+		// FIXME: Move
+		if c.Type == cdata.SqueezingStatus {
+			s.world.GetViewObject().Squeezing = c.Active
+			s.world.GetViewObject().Changed = true
+		}
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
