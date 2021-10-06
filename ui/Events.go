@@ -12,6 +12,8 @@ type Events struct {
 	OnMouseButtonUp   func(button uint8, x int32, y int32) bool
 	OnMouseIn         func(x int32, y int32) bool
 	OnMouseOut        func(x int32, y int32) bool
+	OnHold            func(button uint8, x int32, y int32) bool
+	OnUnhold          func(button uint8, x int32, y int32) bool
 	OnKeyDown         func(key uint8, modifiers uint16, repeat bool) bool
 	OnKeyUp           func(key uint8, modifiers uint16) bool
 	OnTextInput       func(str string) bool
@@ -22,4 +24,9 @@ type Events struct {
 	OnFocus           func() bool
 	OnBlur            func() bool
 	OnWindowResized   func(w int32, h int32)
+}
+
+type MouseEvent struct {
+	Button uint8
+	X, Y   int32
 }

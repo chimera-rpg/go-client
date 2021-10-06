@@ -14,6 +14,9 @@ import (
 // Setup sets up the needed libraries and pulls all needed data from the
 // location passed in the call.
 func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
+	instance.ToBeHeldElements = make(map[uint8][]ElementI, 0)
+	instance.HeldElements = make(map[uint8][]ElementI)
+	instance.HeldPendingTimer = make(map[uint8]time.Time)
 	instance.dataManager = dataManager
 	// Initialize SDL
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
@@ -62,12 +65,26 @@ func (instance *Instance) Loop() {
 	// Tick at 60fps. TODO: Make this configurable.
 	ticker := time.NewTicker(time.Second / 60)
 
-	for range ticker.C {
+	for curTime := range ticker.C {
 		if !instance.Running {
 			ticker.Stop()
 			return
 		}
 		instance.CheckChannels(instance.RootWindow.This)
+
+		// Handle held elements.
+		for k, t := range instance.HeldPendingTimer {
+			if curTime.After(t) {
+				for _, he := range instance.ToBeHeldElements[k] {
+					if !he.OnHold(k, instance.MouseX, instance.MouseY) {
+						break
+					}
+				}
+				instance.HeldElements[k] = append(instance.HeldElements[k], instance.ToBeHeldElements[k]...)
+				instance.ToBeHeldElements = make(map[uint8][]ElementI)
+			}
+		}
+
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
@@ -126,6 +143,9 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 	switch t := event.(type) {
 	case *sdl.WindowEvent:
 	case *sdl.MouseMotionEvent:
+		instance.MouseX = t.X
+		instance.MouseY = t.Y
+		// TODO: Check all elements that are ToBeHeld and if they not longer Hit, remove from ToBeHeld
 	case *sdl.MouseButtonEvent:
 		if instance.FocusedElement != nil {
 			if !instance.FocusedElement.Hit(t.X, t.Y) {
@@ -139,6 +159,15 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 				instance.HeldElement.SetHeld(false)
 				instance.HeldElement = nil
 			}
+		}
+		if t.State == sdl.RELEASED {
+			for _, he := range instance.HeldElements[t.Button] {
+				if !he.OnUnhold(t.Button, t.X, t.Y) {
+					break
+				}
+			}
+			instance.HeldElements = make(map[uint8][]ElementI)
+			instance.ToBeHeldElements = make(map[uint8][]ElementI, 0)
 		}
 	case *sdl.KeyboardEvent:
 		if instance.FocusedElement != nil {
@@ -225,6 +254,8 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 				if !e.OnMouseButtonDown(t.Button, t.X, t.Y) {
 					return
 				}
+				instance.ToBeHeldElements[t.Button] = append(instance.ToBeHeldElements[t.Button], e)
+				instance.HeldPendingTimer[t.Button] = time.Now().Add(200 * time.Millisecond)
 			} else {
 				if !e.OnMouseButtonUp(t.Button, t.X, t.Y) {
 					return

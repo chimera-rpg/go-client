@@ -583,6 +583,22 @@ func (b *BaseElement) OnMouseButtonUp(buttonID uint8, x int32, y int32) bool {
 	return true
 }
 
+// OnHold handles when a button press is held for a duration.
+func (b *BaseElement) OnHold(buttonID uint8, x int32, y int32) bool {
+	if b.Events.OnHold != nil {
+		return b.Events.OnHold(buttonID, x, y)
+	}
+	return true
+}
+
+// OnUnhold handles when a button is released after held for a duration.
+func (b *BaseElement) OnUnhold(buttonID uint8, x int32, y int32) bool {
+	if b.Events.OnUnhold != nil {
+		return b.Events.OnUnhold(buttonID, x, y)
+	}
+	return true
+}
+
 // OnKeyDown handles when a key is depresed.
 func (b *BaseElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool {
 	if b.Events.OnKeyDown != nil {
