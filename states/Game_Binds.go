@@ -11,6 +11,10 @@ import (
 )
 
 var (
+	defaultClearCommands = binds.KeyGroup{
+		Keys:    []uint8{96}, // ~
+		Pressed: true,
+	}
 	defaultNorth1 = binds.KeyGroup{
 		Keys:    []uint8{107},
 		Pressed: true,
@@ -20,14 +24,24 @@ var (
 		Pressed: true,
 	}
 	defaultNorthRun1 = binds.KeyGroup{
-		Keys:    []uint8{107},
-		Pressed: true,
-		Repeat:  true,
+		Keys:     []uint8{107},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
 	}
 	defaultNorthRun2 = binds.KeyGroup{
+		Keys:     []uint8{82},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
+	}
+	defaultNorthRunStop1 = binds.KeyGroup{
+		Keys:    []uint8{107},
+		Pressed: false,
+	}
+	defaultNorthRunStop2 = binds.KeyGroup{
 		Keys:    []uint8{82},
-		Pressed: true,
-		Repeat:  true,
+		Pressed: false,
 	}
 	defaultSouth1 = binds.KeyGroup{
 		Keys:    []uint8{106},
@@ -38,14 +52,24 @@ var (
 		Pressed: true,
 	}
 	defaultSouthRun1 = binds.KeyGroup{
-		Keys:    []uint8{106},
-		Pressed: true,
-		Repeat:  true,
+		Keys:     []uint8{106},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
 	}
 	defaultSouthRun2 = binds.KeyGroup{
+		Keys:     []uint8{81},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
+	}
+	defaultSouthRunStop1 = binds.KeyGroup{
+		Keys:    []uint8{106},
+		Pressed: false,
+	}
+	defaultSouthRunStop2 = binds.KeyGroup{
 		Keys:    []uint8{81},
-		Pressed: true,
-		Repeat:  true,
+		Pressed: false,
 	}
 	defaultWest1 = binds.KeyGroup{
 		Keys:    []uint8{104},
@@ -56,14 +80,24 @@ var (
 		Pressed: true,
 	}
 	defaultWestRun1 = binds.KeyGroup{
-		Keys:    []uint8{104},
-		Pressed: true,
-		Repeat:  true,
+		Keys:     []uint8{104},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
 	}
 	defaultWestRun2 = binds.KeyGroup{
+		Keys:     []uint8{80},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
+	}
+	defaultWestRunStop1 = binds.KeyGroup{
+		Keys:    []uint8{104},
+		Pressed: false,
+	}
+	defaultWestRunStop2 = binds.KeyGroup{
 		Keys:    []uint8{80},
-		Pressed: true,
-		Repeat:  true,
+		Pressed: false,
 	}
 	defaultEast1 = binds.KeyGroup{
 		Keys:    []uint8{108},
@@ -74,15 +108,26 @@ var (
 		Pressed: true,
 	}
 	defaultEastRun1 = binds.KeyGroup{
-		Keys:    []uint8{108},
-		Pressed: true,
-		Repeat:  true,
+		Keys:     []uint8{108},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
 	}
 	defaultEastRun2 = binds.KeyGroup{
-		Keys:    []uint8{79},
-		Pressed: true,
-		Repeat:  true,
+		Keys:     []uint8{79},
+		Pressed:  true,
+		Repeat:   true,
+		OnRepeat: 1,
 	}
+	defaultEastRunStop1 = binds.KeyGroup{
+		Keys:    []uint8{108},
+		Pressed: false,
+	}
+	defaultEastRunStop2 = binds.KeyGroup{
+		Keys:    []uint8{79},
+		Pressed: false,
+	}
+
 	defaultFocusChat = binds.KeyGroup{
 		Keys:    []uint8{13},
 		Pressed: true,
@@ -108,8 +153,14 @@ func (s *Game) SetupBinds() {
 		})
 	})
 	s.bindings.SetFunction("north run", func(i ...interface{}) {
-		s.Client.Send(network.CommandCmd{
+		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.North,
+		})
+	})
+	s.bindings.SetFunction("north run stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd:    network.North,
+			Cancel: true,
 		})
 	})
 	s.bindings.SetFunction("south", func(i ...interface{}) {
@@ -118,8 +169,14 @@ func (s *Game) SetupBinds() {
 		})
 	})
 	s.bindings.SetFunction("south run", func(i ...interface{}) {
-		s.Client.Send(network.CommandCmd{
+		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.South,
+		})
+	})
+	s.bindings.SetFunction("south run stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd:    network.South,
+			Cancel: true,
 		})
 	})
 	s.bindings.SetFunction("east", func(i ...interface{}) {
@@ -128,8 +185,14 @@ func (s *Game) SetupBinds() {
 		})
 	})
 	s.bindings.SetFunction("east run", func(i ...interface{}) {
-		s.Client.Send(network.CommandCmd{
+		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.East,
+		})
+	})
+	s.bindings.SetFunction("east run stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd:    network.East,
+			Cancel: true,
 		})
 	})
 	s.bindings.SetFunction("west", func(i ...interface{}) {
@@ -138,12 +201,21 @@ func (s *Game) SetupBinds() {
 		})
 	})
 	s.bindings.SetFunction("west run", func(i ...interface{}) {
-		s.Client.Send(network.CommandCmd{
+		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.West,
+		})
+	})
+	s.bindings.SetFunction("west run stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd:    network.West,
+			Cancel: true,
 		})
 	})
 	s.bindings.SetFunction("quit", func(i ...interface{}) {
 		os.Exit(0)
+	})
+	s.bindings.SetFunction("clear commands", func(i ...interface{}) {
+		s.Client.Send(network.CommandClearCmd{})
 	})
 	s.bindings.SetFunction("disconnect", func(i ...interface{}) {
 		go func() {
@@ -216,6 +288,9 @@ func (s *Game) SetupBinds() {
 		s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
 		s.ChatInput.GetUpdateChannel() <- ui.UpdateValue{Value: "/"}
 	})
+	if !s.bindings.HasKeygroupsForName("clear commands") {
+		s.bindings.AddKeygroup("clear commands", defaultClearCommands)
+	}
 	if !s.bindings.HasKeygroupsForName("north") {
 		s.bindings.AddKeygroup("north", defaultNorth1)
 		s.bindings.AddKeygroup("north", defaultNorth2)
@@ -223,6 +298,10 @@ func (s *Game) SetupBinds() {
 	if !s.bindings.HasKeygroupsForName("north run") {
 		s.bindings.AddKeygroup("north run", defaultNorthRun1)
 		s.bindings.AddKeygroup("north run", defaultNorthRun2)
+	}
+	if !s.bindings.HasKeygroupsForName("north run stop") {
+		s.bindings.AddKeygroup("north run stop", defaultNorthRunStop1)
+		s.bindings.AddKeygroup("north run stop", defaultNorthRunStop2)
 	}
 	if !s.bindings.HasKeygroupsForName("south") {
 		s.bindings.AddKeygroup("south", defaultSouth1)
@@ -232,6 +311,10 @@ func (s *Game) SetupBinds() {
 		s.bindings.AddKeygroup("south run", defaultSouthRun1)
 		s.bindings.AddKeygroup("south run", defaultSouthRun2)
 	}
+	if !s.bindings.HasKeygroupsForName("south run stop") {
+		s.bindings.AddKeygroup("south run stop", defaultSouthRunStop1)
+		s.bindings.AddKeygroup("south run stop", defaultSouthRunStop2)
+	}
 	if !s.bindings.HasKeygroupsForName("west") {
 		s.bindings.AddKeygroup("west", defaultWest1)
 		s.bindings.AddKeygroup("west", defaultWest2)
@@ -240,6 +323,10 @@ func (s *Game) SetupBinds() {
 		s.bindings.AddKeygroup("west run", defaultWestRun1)
 		s.bindings.AddKeygroup("west run", defaultWestRun2)
 	}
+	if !s.bindings.HasKeygroupsForName("west run stop") {
+		s.bindings.AddKeygroup("west run stop", defaultWestRunStop1)
+		s.bindings.AddKeygroup("west run stop", defaultWestRunStop2)
+	}
 	if !s.bindings.HasKeygroupsForName("east") {
 		s.bindings.AddKeygroup("east", defaultEast1)
 		s.bindings.AddKeygroup("east", defaultEast2)
@@ -247,6 +334,10 @@ func (s *Game) SetupBinds() {
 	if !s.bindings.HasKeygroupsForName("east run") {
 		s.bindings.AddKeygroup("east run", defaultEastRun1)
 		s.bindings.AddKeygroup("east run", defaultEastRun2)
+	}
+	if !s.bindings.HasKeygroupsForName("east run stop") {
+		s.bindings.AddKeygroup("east run stop", defaultEastRunStop1)
+		s.bindings.AddKeygroup("east run stop", defaultEastRunStop2)
 	}
 
 	if !s.bindings.HasKeygroupsForName("focus chat") {

@@ -6,6 +6,7 @@ type KeyGroup struct {
 	Modifiers uint16
 	Pressed   bool
 	Repeat    bool
+	OnRepeat  int
 }
 
 // Same returns whether or not the keygroup is the same as another.
@@ -20,6 +21,9 @@ func (k *KeyGroup) Same(o KeyGroup) bool {
 		return false
 	}
 	if k.Repeat != o.Repeat {
+		return false
+	}
+	if k.OnRepeat != o.OnRepeat {
 		return false
 	}
 	for i := 0; i < len(k.Keys); i++ {

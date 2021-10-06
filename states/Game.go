@@ -55,6 +55,7 @@ type Game struct {
 	mapMessages      []MapMessage
 	MessageHistory   []Message
 	bindings         *binds.Bindings
+	repeatingKeys    map[uint8]int
 }
 
 // Init our Game state.
@@ -64,6 +65,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.objectImageIDs = make(map[uint32]data.StringID)
 	s.statuses = make(map[cdata.StatusType]bool)
 	s.statusElements = make(map[cdata.StatusType]ui.ElementI)
+	s.repeatingKeys = make(map[uint8]int)
 	s.SetupBinds()
 	s.CommandMode = CommandModeChat
 	// Initialize our world.
@@ -119,12 +121,19 @@ func (s *Game) Loop() {
 			case ResizeEvent:
 				s.UpdateMessagesWindow()
 			case KeyInput:
+				if !e.pressed {
+					s.repeatingKeys[e.code] = 0
+				}
 				s.bindings.Trigger(binds.KeyGroup{
 					Keys:      []uint8{e.code},
 					Modifiers: e.modifiers,
 					Pressed:   e.pressed,
 					Repeat:    e.repeat,
+					OnRepeat:  s.repeatingKeys[e.code],
 				}, nil)
+				if e.pressed && e.repeat {
+					s.repeatingKeys[e.code]++
+				}
 			case ChatEvent:
 				if s.isChatCommand(e.Body) {
 					s.processChatCommand(e.Body)
