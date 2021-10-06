@@ -148,11 +148,13 @@ func (s *Game) SetupBinds() {
 	s.bindings = &s.Client.DataManager.Config.Game.Bindings
 	s.bindings.Init()
 	s.bindings.SetFunction("north", func(i ...interface{}) {
+		s.runDirection = network.North
 		s.Client.Send(network.CommandCmd{
 			Cmd: network.North,
 		})
 	})
 	s.bindings.SetFunction("north run", func(i ...interface{}) {
+		s.runDirection = network.North
 		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.North,
 		})
@@ -164,11 +166,13 @@ func (s *Game) SetupBinds() {
 		})
 	})
 	s.bindings.SetFunction("south", func(i ...interface{}) {
+		s.runDirection = network.South
 		s.Client.Send(network.CommandCmd{
 			Cmd: network.South,
 		})
 	})
 	s.bindings.SetFunction("south run", func(i ...interface{}) {
+		s.runDirection = network.South
 		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.South,
 		})
@@ -180,11 +184,13 @@ func (s *Game) SetupBinds() {
 		})
 	})
 	s.bindings.SetFunction("east", func(i ...interface{}) {
+		s.runDirection = network.East
 		s.Client.Send(network.CommandCmd{
 			Cmd: network.East,
 		})
 	})
 	s.bindings.SetFunction("east run", func(i ...interface{}) {
+		s.runDirection = network.East
 		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.East,
 		})
@@ -196,11 +202,13 @@ func (s *Game) SetupBinds() {
 		})
 	})
 	s.bindings.SetFunction("west", func(i ...interface{}) {
+		s.runDirection = network.West
 		s.Client.Send(network.CommandCmd{
 			Cmd: network.West,
 		})
 	})
 	s.bindings.SetFunction("west run", func(i ...interface{}) {
+		s.runDirection = network.West
 		s.Client.Send(network.CommandRepeatCmd{
 			Cmd: network.West,
 		})

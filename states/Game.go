@@ -56,6 +56,8 @@ type Game struct {
 	MessageHistory   []Message
 	bindings         *binds.Bindings
 	repeatingKeys    map[uint8]int
+	heldButtons      map[uint8]bool
+	runDirection     int
 }
 
 // Init our Game state.
@@ -66,6 +68,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.statuses = make(map[cdata.StatusType]bool)
 	s.statusElements = make(map[cdata.StatusType]ui.ElementI)
 	s.repeatingKeys = make(map[uint8]int)
+	s.heldButtons = make(map[uint8]bool)
 	s.SetupBinds()
 	s.CommandMode = CommandModeChat
 	// Initialize our world.
@@ -155,6 +158,10 @@ func (s *Game) Loop() {
 				if e.button == 3 {
 					s.MoveWithMouse(e)
 				}
+			case MouseMoveInput:
+				if s.heldButtons[3] {
+					s.RunWithMouse(e.x, e.y)
+				}
 			case ChangeCommandMode:
 				s.CommandMode++
 				if s.CommandMode >= len(CommandModeStrings) {
@@ -214,14 +221,40 @@ func (s *Game) HandleMessageCommand(m network.CommandMessage) {
 	s.UpdateMessagesWindow()
 }
 
-func (s *Game) MoveWithMouse(e MouseInput) {
-	x1 := e.x - s.MapContainer.GetAbsoluteX()
-	y1 := e.y - s.MapContainer.GetAbsoluteY()
+func (s *Game) GetViewToMouseAngle(x, y int32) float64 {
+	x1 := x - s.MapContainer.GetAbsoluteX()
+	y1 := y - s.MapContainer.GetAbsoluteY()
 	x2 := s.MapContainer.GetWidth() / 2
 	y2 := s.MapContainer.GetHeight() / 2
 	dY := y2 - y1
 	dX := x2 - x1
 	dA := (math.Atan2(float64(dY), float64(dX)) * 180 / math.Pi) + 180
+	return dA
+}
+
+func (s *Game) RunWithMouse(x, y int32) {
+	dA := s.GetViewToMouseAngle(x, y)
+	if dA >= 315 || dA <= 45 {
+		if s.runDirection != network.East {
+			s.bindings.RunFunction("east run")
+		}
+	} else if dA > 45 && dA <= 135 {
+		if s.runDirection != network.South {
+			s.bindings.RunFunction("south run")
+		}
+	} else if dA > 135 && dA <= 225 {
+		if s.runDirection != network.West {
+			s.bindings.RunFunction("west run")
+		}
+	} else if dA > 225 && dA <= 315 {
+		if s.runDirection != network.North {
+			s.bindings.RunFunction("north run")
+		}
+	}
+}
+
+func (s *Game) MoveWithMouse(e MouseInput) {
+	dA := s.GetViewToMouseAngle(e.x, e.y)
 	/****
 	    	275
 	  225 		315
@@ -229,7 +262,29 @@ func (s *Game) MoveWithMouse(e MouseInput) {
 	  135 	 	45
 		 		90
 	******/
-	if !e.pressed {
+	if e.held {
+		s.heldButtons[3] = true
+		if dA >= 315 || dA <= 45 {
+			s.bindings.RunFunction("east run")
+		} else if dA > 45 && dA <= 135 {
+			s.bindings.RunFunction("south run")
+		} else if dA > 135 && dA <= 225 {
+			s.bindings.RunFunction("west run")
+		} else if dA > 225 && dA <= 315 {
+			s.bindings.RunFunction("north run")
+		}
+	} else if e.released {
+		s.heldButtons[3] = false
+		if dA >= 315 || dA <= 45 {
+			s.bindings.RunFunction("east run stop")
+		} else if dA > 45 && dA <= 135 {
+			s.bindings.RunFunction("south run stop")
+		} else if dA > 135 && dA <= 225 {
+			s.bindings.RunFunction("west run stop")
+		} else if dA > 225 && dA <= 315 {
+			s.bindings.RunFunction("north run stop")
+		}
+	} else if !e.pressed {
 		if dA >= 315 || dA <= 45 {
 			s.bindings.RunFunction("east")
 		} else if dA > 45 && dA <= 135 {

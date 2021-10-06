@@ -37,9 +37,15 @@ type KeyInput struct {
 
 // MouseInput is the UserInput for mouse events.
 type MouseInput struct {
-	x, y    int32
-	button  uint8
-	pressed bool
+	x, y     int32
+	button   uint8
+	pressed  bool
+	held     bool
+	released bool
+}
+
+type MouseMoveInput struct {
+	x, y int32
 }
 
 // SetupUI sets up all the UI windows.
@@ -90,6 +96,33 @@ func (s *Game) SetupUI() (err error) {
 					pressed: true,
 					x:       x,
 					y:       y,
+				}
+				return true
+			},
+			OnMouseMove: func(x, y int32) bool {
+				s.inputChan <- MouseMoveInput{
+					x: x,
+					y: y,
+				}
+				return true
+			},
+			OnHold: func(buttonID uint8, x, y int32) bool {
+				s.inputChan <- MouseInput{
+					button:  buttonID,
+					pressed: true,
+					held:    true,
+					x:       x,
+					y:       y,
+				}
+				return true
+			},
+			OnUnhold: func(buttonID uint8, x, y int32) bool {
+				s.inputChan <- MouseInput{
+					button:   buttonID,
+					pressed:  true,
+					released: true,
+					x:        x,
+					y:        y,
 				}
 				return true
 			},
