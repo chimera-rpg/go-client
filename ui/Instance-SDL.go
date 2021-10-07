@@ -15,6 +15,7 @@ import (
 // location passed in the call.
 func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
 	instance.ToBeHeldElements = make(map[uint8][]ElementI, 0)
+	instance.MousedownElements = make(map[uint8][]ElementI)
 	instance.HeldElements = make(map[uint8][]ElementI)
 	instance.HeldPendingTimer = make(map[uint8]time.Time)
 	instance.dataManager = dataManager
@@ -202,6 +203,19 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 	}
 	// If any events weren't handled above, we send the event down the tree.
 	instance.IterateEvent(instance.RootWindow.This, event)
+
+	switch t := event.(type) {
+	case *sdl.MouseButtonEvent:
+		if t.State == sdl.RELEASED {
+			for _, e := range instance.MousedownElements[t.Button] {
+				if e.Hit(t.X, t.Y) {
+					e.OnPressed(t.Button, t.X, t.Y)
+				}
+			}
+			instance.MousedownElements[t.Button] = make([]ElementI, 0)
+		}
+	}
+
 }
 
 // IterateEvent handles iterating an event down the entire Element tree
@@ -256,6 +270,7 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 				}
 				instance.ToBeHeldElements[t.Button] = append(instance.ToBeHeldElements[t.Button], e)
 				instance.HeldPendingTimer[t.Button] = time.Now().Add(200 * time.Millisecond)
+				instance.MousedownElements[t.Button] = append(instance.MousedownElements[t.Button], e)
 			} else {
 				if !e.OnMouseButtonUp(t.Button, t.X, t.Y) {
 					return

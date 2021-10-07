@@ -4,17 +4,18 @@ import "time"
 
 // Instance is the managing instance of the entire UI system.
 type Instance struct {
-	dataManager      DataManagerI
-	HeldElement      ElementI
-	FocusedElement   ElementI
-	HoveredElements  []ElementI
-	HeldElements     map[uint8][]ElementI
-	ToBeHeldElements map[uint8][]ElementI
-	HeldPendingTimer map[uint8]time.Time
-	Running          bool
-	RootWindow       Window
-	Context          Context
-	MouseX, MouseY   int32
+	dataManager       DataManagerI
+	HeldElement       ElementI
+	FocusedElement    ElementI
+	HoveredElements   []ElementI
+	MousedownElements map[uint8][]ElementI
+	HeldElements      map[uint8][]ElementI
+	ToBeHeldElements  map[uint8][]ElementI
+	HeldPendingTimer  map[uint8]time.Time
+	Running           bool
+	RootWindow        Window
+	Context           Context
+	MouseX, MouseY    int32
 }
 
 // GlobalInstance is our pointer to the GlobalInstance. Used for Focus/Blur
