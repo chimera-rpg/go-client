@@ -39,6 +39,7 @@ func NewInputElement(c InputElementConfig) ElementI {
 	i.submitOnEnter = c.SubmitOnEnter
 	i.clearOnSubmit = c.ClearOnSubmit
 	i.blurOnSubmit = c.BlurOnSubmit
+	i.keysHeld = make(map[uint8]bool)
 	i.SetupChannels()
 
 	i.OnCreated()
@@ -65,6 +66,7 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool 
 	if !i.Focused {
 		return true
 	}
+	i.keysHeld[key] = true
 	switch key {
 	case 27: // esc
 		//BlurFocusedElement()
@@ -92,16 +94,6 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool 
 		i.cursor = 0
 	case 82: // up
 		i.cursor = len(i.composition)
-	case 13: // enter
-		if i.submitOnEnter {
-			i.OnTextSubmit(string(i.composition))
-		}
-		if i.clearOnSubmit {
-			i.ClearComposition()
-		}
-		if i.blurOnSubmit {
-			i.Blur()
-		}
 	}
 	i.SyncComposition()
 	if i.Events.OnKeyDown != nil {
@@ -112,6 +104,21 @@ func (i *InputElement) OnKeyDown(key uint8, modifiers uint16, repeat bool) bool 
 
 // OnKeyUp handles base key releases.
 func (i *InputElement) OnKeyUp(key uint8, modifiers uint16) bool {
+	switch key {
+	case 13: // enter
+		if i.keysHeld[key] {
+			if i.submitOnEnter {
+				i.OnTextSubmit(string(i.composition))
+			}
+			if i.clearOnSubmit {
+				i.ClearComposition()
+			}
+			if i.blurOnSubmit {
+				i.Blur()
+			}
+		}
+	}
+	i.keysHeld[key] = false
 	if i.Events.OnKeyUp != nil {
 		return i.Events.OnKeyUp(key, modifiers)
 	}

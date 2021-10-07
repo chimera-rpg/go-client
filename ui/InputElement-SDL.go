@@ -24,6 +24,7 @@ type InputElement struct {
 	submitOnEnter bool
 	clearOnSubmit bool
 	blurOnSubmit  bool
+	keysHeld      map[uint8]bool
 }
 
 // Destroy cleans up the InputElement's resources.
@@ -163,11 +164,13 @@ func (i *InputElement) CalculateStyle() {
 // OnFocus calls sdl.StartTextInput
 func (i *InputElement) OnFocus() bool {
 	sdl.StartTextInput()
+	i.keysHeld = make(map[uint8]bool)
 	return i.BaseElement.OnFocus()
 }
 
 // OnBlur calls sdl.StopTextInput
 func (i *InputElement) OnBlur() bool {
 	sdl.StopTextInput()
+	i.keysHeld = make(map[uint8]bool)
 	return i.BaseElement.OnBlur()
 }
