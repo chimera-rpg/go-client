@@ -224,6 +224,9 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 // IterateEvent handles iterating an event down the entire Element tree
 // starting at the passed element.
 func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
+	if e.IsHidden() {
+		return
+	}
 	switch t := event.(type) {
 	case *sdl.WindowEvent:
 		if t.Event == sdl.WINDOWEVENT_RESIZED {
