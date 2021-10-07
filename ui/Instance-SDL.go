@@ -82,7 +82,7 @@ func (instance *Instance) Loop() {
 					}
 				}
 				instance.HeldElements[k] = append(instance.HeldElements[k], instance.ToBeHeldElements[k]...)
-				instance.ToBeHeldElements = make(map[uint8][]ElementI)
+				instance.ToBeHeldElements[k] = make([]ElementI, 0)
 			}
 		}
 
@@ -167,8 +167,8 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 					break
 				}
 			}
-			instance.HeldElements = make(map[uint8][]ElementI)
-			instance.ToBeHeldElements = make(map[uint8][]ElementI, 0)
+			instance.HeldElements[t.Button] = make([]ElementI, 0)
+			instance.ToBeHeldElements[t.Button] = make([]ElementI, 0)
 		}
 	case *sdl.KeyboardEvent:
 		if instance.FocusedElement != nil {
@@ -206,6 +206,9 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 
 	switch t := event.(type) {
 	case *sdl.MouseButtonEvent:
+		if t.State == sdl.PRESSED {
+			instance.HeldPendingTimer[t.Button] = time.Now().Add(200 * time.Millisecond)
+		}
 		if t.State == sdl.RELEASED {
 			for _, e := range instance.MousedownElements[t.Button] {
 				if e.Hit(t.X, t.Y) {
@@ -269,7 +272,6 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 					return
 				}
 				instance.ToBeHeldElements[t.Button] = append(instance.ToBeHeldElements[t.Button], e)
-				instance.HeldPendingTimer[t.Button] = time.Now().Add(200 * time.Millisecond)
 				instance.MousedownElements[t.Button] = append(instance.MousedownElements[t.Button], e)
 			} else {
 				if !e.OnMouseButtonUp(t.Button, t.X, t.Y) {
