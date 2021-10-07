@@ -174,7 +174,7 @@ func (b *BaseElement) GetStyle() *Style {
 
 // Hit detects if the passed x and y arguments fall within the element's absolute box
 func (b *BaseElement) Hit(x int32, y int32) bool {
-	if b.Hidden {
+	if b.IsHidden() {
 		return false
 	}
 	if x >= b.ax && y >= b.ay && x <= b.ax+b.w && y <= b.ay+b.h {
@@ -186,7 +186,7 @@ func (b *BaseElement) Hit(x int32, y int32) bool {
 // CalculateStyle is a heavy method for updating and caching various properties
 // for rendering.
 func (b *BaseElement) CalculateStyle() {
-	if b.Hidden {
+	if b.IsHidden() {
 		return
 	}
 	var x, y, ax, ay, w, minw, maxw, h, minh, maxh, pt, pb, pl, pr, mt, mb, ml, mr, sl, st int32 = b.x, b.y, b.ax, b.ay, b.w, 0, 0, b.h, 0, 0, b.pt, b.pb, b.pl, b.pr, b.mt, b.mb, b.ml, b.mr, b.sl, b.st
@@ -504,6 +504,11 @@ func (b *BaseElement) SetHidden(v bool) {
 
 // IsHidden returns if the element is hidden.
 func (b *BaseElement) IsHidden() bool {
+	if b.GetParent() != nil {
+		if b.GetParent().IsHidden() {
+			return true
+		}
+	}
 	return b.Hidden
 }
 
@@ -579,6 +584,14 @@ func (b *BaseElement) OnMouseOut(x int32, y int32) bool {
 func (b *BaseElement) OnMouseButtonUp(buttonID uint8, x int32, y int32) bool {
 	if b.Events.OnMouseButtonUp != nil {
 		return b.Events.OnMouseButtonUp(buttonID, x, y)
+	}
+	return true
+}
+
+// OnPressed handles when a mouse's button is released.
+func (b *BaseElement) OnPressed(buttonID uint8, x int32, y int32) bool {
+	if b.Events.OnPressed != nil {
+		return b.Events.OnPressed(buttonID, x, y)
 	}
 	return true
 }
