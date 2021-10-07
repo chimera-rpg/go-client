@@ -46,13 +46,12 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 			Margin 5%
 			W 60%
 		`,
-		Value:       s.Client.DataManager.Config.LastServer,
-		Placeholder: "host:port",
+		Value:         s.Client.DataManager.Config.LastServer,
+		Placeholder:   "host:port",
+		SubmitOnEnter: true,
 		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
-				if char == 13 { // Enter
-					elConnect.OnPressed(1, 0, 0)
-				}
+			OnTextSubmit: func(str string) bool {
+				elConnect.OnPressed(1, 0, 0)
 				return true
 			},
 		},
