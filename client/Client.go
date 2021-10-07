@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 
+	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -15,6 +16,7 @@ type Client struct {
 	network.Connection
 	CurrentServer    string
 	DataManager      *data.Manager
+	Flags            config.Flags
 	RootWindow       *ui.Window
 	LogHistory       []string
 	States           []StateI
@@ -37,6 +39,8 @@ func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, l *logrus.L
 
 	c.RenderChannel = make(chan struct{})
 	c.StateChannel = make(chan StateMessage)
+
+	c.Flags.Parse()
 
 	c.isRunning = true
 	return

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"runtime/debug"
 
 	"github.com/sirupsen/logrus"
@@ -52,14 +51,9 @@ func main() {
 	// Start the clientInstance's channel listening loop as a coroutine
 	go clientInstance.ChannelLoop()
 
-	flag.String("username", "", "username")
-	flag.String("password", "", "password")
-	flag.String("character", "", "name of character")
-	netPtr := flag.String("connect", "", "SERVER:PORT")
-	flag.Parse()
 	// Automatically attempt to connect if the server flag was passed
-	if len(*netPtr) > 0 {
-		clientInstance.StateChannel <- client.StateMessage{State: &list.Handshake{}, Args: *netPtr}
+	if len(clientInstance.Flags.Connect) > 0 {
+		clientInstance.StateChannel <- client.StateMessage{State: &list.Handshake{}, Args: clientInstance.Flags.Connect}
 	} else {
 		clientInstance.StateChannel <- client.StateMessage{State: &list.List{}, Args: nil}
 	}
