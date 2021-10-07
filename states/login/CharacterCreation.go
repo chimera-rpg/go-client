@@ -1,10 +1,11 @@
-package states
+package login
 
 import (
 	"flag"
 	"fmt"
 
 	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/states/game"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
 )
@@ -55,7 +56,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
-					elCreate.OnMouseButtonUp(1, 0, 0)
+					elCreate.OnPressed(1, 0, 0)
 				}
 				return true
 			},
@@ -72,7 +73,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 		`,
 		Value: "Create Character",
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+			OnPressed: func(button uint8, x int32, y int32) bool {
 				s.Client.Send(network.Command(network.CommandCharacter{
 					Type:       network.CreateCharacter,
 					Characters: []string{elName.GetValue()},
@@ -110,7 +111,6 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 	isFocused := false
 	if name == s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character {
 		isFocused = true
-		fmt.Println("should fcous it", name)
 	}
 
 	elChar := ui.NewButtonElement(ui.ButtonElementConfig{
@@ -123,7 +123,7 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 		`, 10+offset*10),
 		Value: name,
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+			OnPressed: func(button uint8, x int32, y int32) bool {
 				s.Client.Log.Printf("Logging in with character %s", name)
 				s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character = name
 				s.Client.Send(network.Command(network.CommandCharacter{
@@ -145,6 +145,14 @@ func (s *CharacterCreation) Close() {
 	s.SelectionContainer.DestroyChannel <- true
 }
 
+func (s *CharacterCreation) Leave() {
+	s.SelectionContainer.GetUpdateChannel() <- ui.UpdateHidden(true)
+}
+
+func (s *CharacterCreation) Enter(args ...interface{}) {
+	s.SelectionContainer.GetUpdateChannel() <- ui.UpdateHidden(false)
+}
+
 // Loop is our loop for managing network activity and beyond.
 func (s *CharacterCreation) Loop() {
 	// Attempt to use provided character.
@@ -157,6 +165,9 @@ func (s *CharacterCreation) Loop() {
 	}
 
 	for {
+		if !s.Running {
+			continue
+		}
 		select {
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
@@ -165,7 +176,7 @@ func (s *CharacterCreation) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+			s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 			return
 		}
 	}
@@ -183,7 +194,7 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 			if err := s.Client.DataManager.Config.Write(); err != nil {
 				s.Client.Log.Errorln(err)
 			}
-			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
+			s.Client.StateChannel <- client.StateMessage{Push: true, State: &game.Game{}, Args: nil}
 			return true
 		}
 	case network.CommandCharacter:
@@ -195,7 +206,7 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 			}
 		} else if t.Type == network.ChooseCharacter {
 			// ChooseCharacter is how the server lets us know we're logging in as a character.
-			s.Client.StateChannel <- client.StateMessage{State: &Game{}, Args: nil}
+			s.Client.StateChannel <- client.StateMessage{Push: true, State: &game.Game{}, Args: nil}
 			// Might as well save the configuration now.
 			if err := s.Client.DataManager.Config.Write(); err != nil {
 				s.Client.Log.Errorln(err)
@@ -206,7 +217,7 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 		}
 	default:
 		s.Client.Log.Printf("Server sent non CommandBasic\n")
-		s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 		return true
 	}
 	return false

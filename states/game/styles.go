@@ -1,4 +1,4 @@
-package states
+package game
 
 var GameContainerStyle string = `
 	W 100%

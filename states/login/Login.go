@@ -1,4 +1,4 @@
-package states
+package login
 
 import (
 	"flag"
@@ -22,7 +22,7 @@ type Login struct {
 	pendingLogin           bool
 }
 
-// LoginStateID represents the current sub state of the Login state.
+// StateID represents the current sub state of the Login state.
 type LoginStateID int
 
 const (
@@ -86,7 +86,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 			},
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
-					elLogin.OnMouseButtonUp(1, 0, 0)
+					elLogin.OnPressed(1, 0, 0)
 				}
 				return true
 			},
@@ -111,7 +111,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
-					elLogin.OnMouseButtonUp(1, 0, 0)
+					elLogin.OnPressed(1, 0, 0)
 				}
 				return true
 			},
@@ -135,7 +135,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		`,
 		Value: remember,
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x, y int32) bool {
+			OnPressed: func(button uint8, x, y int32) bool {
 				s.rememberPassword = !s.rememberPassword
 				if s.rememberPassword {
 					s.rememberPasswordEl.GetUpdateChannel() <- ui.UpdateValue{Value: "remember: yes"}
@@ -157,7 +157,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		`,
 		Value: "DISCONNECT",
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+			OnPressed: func(button uint8, x int32, y int32) bool {
 				s.Client.Close()
 				return false
 			},
@@ -175,8 +175,8 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		`,
 		Value: "REGISTER",
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
-				s.Client.StateChannel <- client.StateMessage{State: &Register{}}
+			OnPressed: func(button uint8, x int32, y int32) bool {
+				s.Client.StateChannel <- client.StateMessage{State: &Register{}, Args: nil}
 				return false
 			},
 		},
@@ -191,7 +191,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		`,
 		Value: "LOGIN",
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x int32, y int32) bool {
+			OnPressed: func(button uint8, x int32, y int32) bool {
 				if !s.pendingLogin {
 					s.pendingLogin = true
 					s.Client.Send(network.Command(network.CommandLogin{
@@ -234,6 +234,14 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	return
 }
 
+func (s *Login) Leave() {
+	s.LoginContainer.GetUpdateChannel() <- ui.UpdateHidden(true)
+}
+
+func (s *Login) Enter(args ...interface{}) {
+	s.LoginContainer.GetUpdateChannel() <- ui.UpdateHidden(false)
+}
+
 // Close our Login state.
 func (s *Login) Close() {
 	s.LoginContainer.GetDestroyChannel() <- true
@@ -252,6 +260,9 @@ func (s *Login) Loop() {
 		}))
 	}
 	for {
+		if !s.Running {
+			continue
+		}
 		select {
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
@@ -260,7 +271,7 @@ func (s *Login) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+			s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 			return
 		case <-s.CloseChan:
 			return
@@ -297,13 +308,13 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 				s.Client.DataManager.Config.Servers[serverName].Password = ""
 			}
 			s.Client.DataManager.Config.Servers[serverName].RememberPassword = s.rememberPassword
-			s.Client.StateChannel <- client.StateMessage{State: &CharacterCreation{}, Args: msg}
+			s.Client.StateChannel <- client.StateMessage{Push: true, State: &CharacterCreation{}, Args: msg}
 			return true
 		}
 	default:
 		msg := fmt.Sprintf("Server sent non CommandBasic")
 		s.Client.Log.Print(msg)
-		s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: msg}
+		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: msg}
 		return true
 	}
 	return false

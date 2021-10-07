@@ -11,11 +11,14 @@ The functions of a state are defined through the State interface known as StateI
 StateI provides the base interface for all Client States.
 */
 type StateI interface {
-	Init(v interface{}) (state StateI, nextArgs interface{}, err error)
+	Init(v interface{}) (state StateI, nextArgs interface{}, err error) // Init is when the state is created.
 	CreateChannels()
 	GetCloseChannel() chan bool
-	Close()
+	Close() // Close is when the state is to be destroyed.
 	SetClient(*Client)
+	Enter(args ...interface{}) // Enter is when the state is entered via the next state being popped.
+	Leave()                    // Leave is when the state is left via a new push, but is not replaced or popped.
+	SetRunning(bool)
 }
 
 /*
@@ -33,11 +36,16 @@ ex.:
 type State struct {
 	Client    *Client
 	CloseChan chan bool
+	Running   bool
 }
 
 // SetClient sets the state's Client pointer to the one provided.
 func (s *State) SetClient(c *Client) {
 	s.Client = c
+}
+
+func (s *State) SetRunning(b bool) {
+	s.Running = b
 }
 
 // CreateChannels creates any channels needed by the State.
@@ -57,4 +65,10 @@ func (s *State) Init(t interface{}) (next StateI, nextArgs interface{}, err erro
 
 // Close cleans up the State.
 func (s *State) Close() {
+}
+
+func (s *State) Enter(args ...interface{}) {
+}
+
+func (s *State) Leave() {
 }

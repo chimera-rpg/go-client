@@ -1,4 +1,4 @@
-package states
+package login
 
 import (
 	"fmt"
@@ -233,7 +233,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		`,
 		Value: "Confirm",
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x, y int32) bool {
+			OnPressed: func(button uint8, x, y int32) bool {
 				if !s.verifyAll() {
 					s.OutputText.SetValue("Fix errors in registration form.")
 				} else {
@@ -260,8 +260,8 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		`,
 		Value: "Back",
 		Events: ui.Events{
-			OnMouseButtonUp: func(button uint8, x, y int32) bool {
-				s.Client.StateChannel <- client.StateMessage{State: &Login{}}
+			OnPressed: func(button uint8, x, y int32) bool {
+				s.Client.StateChannel <- client.StateMessage{Pop: true, Args: nil}
 				return true
 			},
 		},
@@ -362,7 +362,7 @@ func (s *Register) Loop() {
 		case cmd := <-s.Client.CmdChan:
 			s.HandleNet(cmd)
 		case <-s.Client.ClosedChan:
-			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+			s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 			return
 		}
 	}
@@ -381,7 +381,7 @@ func (s *Register) HandleNet(cmd network.Command) bool {
 	default:
 		msg := fmt.Sprintf("Server sent non CommandBasic")
 		s.Client.Log.Print(msg)
-		s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: msg}
+		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: msg}
 		return true
 	}
 	return false

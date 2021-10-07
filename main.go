@@ -8,7 +8,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/data"
-	"github.com/chimera-rpg/go-client/states"
+	"github.com/chimera-rpg/go-client/states/list"
 	"github.com/chimera-rpg/go-client/ui"
 )
 
@@ -59,9 +59,9 @@ func main() {
 	flag.Parse()
 	// Automatically attempt to connect if the server flag was passed
 	if len(*netPtr) > 0 {
-		clientInstance.StateChannel <- client.StateMessage{State: &states.Handshake{}, Args: *netPtr}
+		clientInstance.StateChannel <- client.StateMessage{State: &list.Handshake{}, Args: *netPtr}
 	} else {
-		clientInstance.StateChannel <- client.StateMessage{State: &states.List{}, Args: nil}
+		clientInstance.StateChannel <- client.StateMessage{State: &list.List{}, Args: nil}
 	}
 
 	// Start our UI Loop.

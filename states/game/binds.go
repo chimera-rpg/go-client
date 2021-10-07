@@ -1,4 +1,4 @@
-package states
+package game
 
 import (
 	"os"

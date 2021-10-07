@@ -1,4 +1,4 @@
-package states
+package list
 
 import (
 	"github.com/chimera-rpg/go-client/client"
@@ -51,7 +51,7 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				if char == 13 { // Enter
-					elConnect.OnMouseButtonUp(1, 0, 0)
+					elConnect.OnPressed(1, 0, 0)
 				}
 				return true
 			},
@@ -69,10 +69,10 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		`,
 		Value: "CONNECT",
 		Events: ui.Events{
-			OnMouseButtonUp: func(which uint8, x int32, y int32) bool {
+			OnPressed: func(which uint8, x int32, y int32) bool {
 				s.Client.DataManager.Config.LastServer = elHost.GetValue()
 				s.Client.CurrentServer = elHost.GetValue()
-				s.Client.StateChannel <- client.StateMessage{State: &Handshake{}, Args: elHost.GetValue()}
+				s.Client.StateChannel <- client.StateMessage{Push: true, State: &Handshake{}, Args: elHost.GetValue()}
 				return false
 			},
 		},
@@ -136,4 +136,12 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 // Close our state.
 func (s *List) Close() {
 	s.ServersContainer.GetDestroyChannel() <- true
+}
+
+func (s *List) Leave() {
+	s.ServersContainer.GetUpdateChannel() <- ui.UpdateHidden(true)
+}
+
+func (s *List) Enter(args ...interface{}) {
+	s.ServersContainer.GetUpdateChannel() <- ui.UpdateHidden(false)
 }

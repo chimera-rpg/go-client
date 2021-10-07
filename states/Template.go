@@ -2,18 +2,19 @@ package states
 
 import (
 	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/states/list"
 	"github.com/chimera-rpg/go-client/ui"
 )
 
 // Template is a template state.
 type Template struct {
 	client.State
-    TemplateWindow ui.Window
+	TemplateWindow ui.Window
 }
 
 // Init our Template state.
 func (s *Template) Init(v interface{}) (next client.StateI, nextArgs interface{}, err error) {
-    var elButton ui.ElementI
+	var elButton ui.ElementI
 
 	err = s.TemplateWindow.Setup(ui.WindowConfig{
 		Value: "Selection",
@@ -41,7 +42,7 @@ func (s *Template) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		},
 	})
 
-    s.TemplateWindow.AdoptChild(elButton)
+	s.TemplateWindow.AdoptChild(elButton)
 
 	go s.Loop()
 
@@ -60,7 +61,7 @@ func (s *Template) Loop() {
 		case cmd := <-s.Client.CmdChan:
 			s.Client.Log.Printf("%v\n", cmd)
 		case <-s.Client.ClosedChan:
-			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+			s.Client.StateChannel <- client.StateMessage{State: &list.State{}, Args: nil}
 			return
 		case <-s.CloseChan:
 			return

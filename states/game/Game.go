@@ -1,4 +1,4 @@
-package states
+package game
 
 import (
 	"math"
@@ -117,7 +117,7 @@ func (s *Game) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
-			s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+			s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 			return
 		case inp := <-s.inputChan:
 			switch e := inp.(type) {
@@ -170,7 +170,7 @@ func (s *Game) Loop() {
 				s.ChatType.GetUpdateChannel() <- ui.UpdateValue{Value: CommandModeStrings[s.CommandMode]}
 			case DisconnectEvent:
 				s.Client.Log.Print("Disconnected from server.")
-				s.Client.StateChannel <- client.StateMessage{State: &List{}, Args: nil}
+				s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 				return
 			}
 		case <-cleanupChan:
