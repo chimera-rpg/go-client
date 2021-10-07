@@ -26,7 +26,7 @@ func (s *Game) HandleRender() {
 
 	if o := s.world.GetViewObject(); o != nil {
 		renderX, renderY, _ := s.GetRenderPosition(m, o.Y, o.X, o.Z)
-		scale := 4
+		scale := *s.objectsScale
 		tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 		tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 
@@ -38,12 +38,12 @@ func (s *Game) HandleRender() {
 			offsetY += int(adjust.Y)
 		}
 
-		x := float64(renderX + offsetX*scale)
-		y := float64(renderY + offsetY*scale)
+		x := float64(renderX) + float64(offsetX)*scale
+		y := float64(renderY) + float64(offsetY)*scale
 
 		// Adjust for centering based on target's sizing.
-		x += float64(int(o.W)*tileWidth*scale) / 2
-		y += float64((int(o.H)*int(s.Client.AnimationsConfig.YStep.Y)+(int(o.H)*tileHeight))*scale) / 2
+		x += (float64(int(o.W)*tileWidth) * scale) / 2
+		y += (float64((int(o.H)*int(s.Client.AnimationsConfig.YStep.Y) + (int(o.H) * tileHeight))) * scale) / 2
 		// Center within the map container.
 		x -= float64(s.MapContainer.GetWidth()) / 2
 		y -= float64(s.MapContainer.GetHeight()) / 2
@@ -77,7 +77,7 @@ func (s *Game) HandleRender() {
 
 // GetRenderPosition gets world to pixel coordinate positions for a given tile location.
 func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, targetY, targetZ int) {
-	scale := 4
+	scale := *s.objectsScale
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 
@@ -95,14 +95,14 @@ func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, 
 	targetZ = (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX)
 
 	// Calculate our scaled pixel position at which to render.
-	targetX = (originX)*scale + 100
-	targetY = (originY)*scale + 100
+	targetX = int(float64(originX)*scale) + 100
+	targetY = int(float64(originY)*scale) + 100
 	return
 }
 
 // RenderObject renders a given Object within a DynamicMap.
 func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
-	scale := 4
+	scale := *s.objectsScale
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 	// If the object is currently missing, hide it. FIXME: It'd be better to keep it on screen, but grayscale, if it is outside of player view. If in player view, then it should be hidden.
@@ -138,21 +138,21 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	offsetY += int(frames[0].Y)
 
 	// Adjust our target position.
-	x += offsetX * scale
-	y += offsetY * scale
+	x += int(float64(offsetX) * scale)
+	y += int(float64(offsetY) * scale)
 
 	// Calculate our scaled pixel position at which to render.
-	w := tileWidth * scale
-	h := tileHeight * scale
+	w := int(float64(tileWidth) * scale)
+	h := int(float64(tileHeight) * scale)
 
 	img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
 	if _, ok := s.objectImages[o.ID]; !ok {
 		if img != nil {
 			bounds := img.Bounds()
-			w = bounds.Max.X * scale
-			h = bounds.Max.Y * scale
+			w = int(float64(bounds.Max.X) * scale)
+			h = int(float64(bounds.Max.Y) * scale)
 			if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
-				y -= h - (tileHeight * scale)
+				y -= h - int(float64(tileHeight)*scale)
 			}
 			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
@@ -182,21 +182,21 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		if img != nil {
 			if o.Changed {
 				bounds := img.Bounds()
-				w = bounds.Max.X * scale
-				h = bounds.Max.Y * scale
+				w = int(float64(bounds.Max.X) * scale)
+				h = int(float64(bounds.Max.Y) * scale)
 
 				var sw, sh float64
 				sw = float64(w)
 				sh = float64(h)
 				if o.Squeezing {
-					sw = math.Max(float64(w-w/4), float64(tileWidth*scale))
+					sw = math.Max(float64(w-w/4), float64(tileWidth)*scale)
 				}
 				if o.Crouching {
-					sh = math.Max(float64(h-h/3), float64(tileHeight*scale))
+					sh = math.Max(float64(h-h/3), float64(tileHeight)*scale)
 				}
 
 				if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
-					y -= int(sh) - (tileHeight * scale)
+					y -= int(sh) - int(float64(tileHeight)*scale)
 				}
 				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
 					X: ui.Number{Value: float64(x)},

@@ -50,6 +50,11 @@ type MouseMoveInput struct {
 
 // SetupUI sets up all the UI windows.
 func (s *Game) SetupUI() (err error) {
+	if s.Client.DataManager.Config.Game.Graphics.ObjectScale == 0 {
+		s.Client.DataManager.Config.Game.Graphics.ObjectScale = 4
+	}
+	s.objectsScale = &s.Client.DataManager.Config.Game.Graphics.ObjectScale
+	fmt.Println("objectsScale", *s.objectsScale)
 	// Main Container
 	err = s.GameContainer.Setup(ui.ContainerConfig{
 		Value: "Game",

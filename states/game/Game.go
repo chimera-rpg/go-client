@@ -58,6 +58,7 @@ type Game struct {
 	repeatingKeys    map[uint8]int
 	heldButtons      map[uint8]bool
 	runDirection     int
+	objectsScale     *float64 // Pointer to config graphics.
 }
 
 // Init our Game state.

@@ -10,6 +10,7 @@ import (
 
 // Config represents our global configuration.
 type Config struct {
+	Window     WindowConfig
 	Game       GameConfig
 	Servers    map[string]*ServerConfig
 	LastServer string // Last server accessed by the client.
@@ -51,8 +52,14 @@ func (c *Config) Write() error {
 
 // GameConfig is the configuration for the game state.
 type GameConfig struct {
+	Graphics      GameGraphicsConfig
 	CommandPrefix string
 	Bindings      binds.Bindings
+}
+
+// GameGraphicsConfig is the configuration for the game's graphics.
+type GameGraphicsConfig struct {
+	ObjectScale float64
 }
 
 // ServerConfig is the configuration for per-server settings.
@@ -61,4 +68,11 @@ type ServerConfig struct {
 	Password         string
 	Character        string
 	RememberPassword bool
+}
+
+// WindowConfig is the configuration of the window's sizes.
+type WindowConfig struct {
+	Width, Height int
+	X, Y          int
+	Fullscreen    bool
 }
