@@ -61,7 +61,7 @@ func (b *ButtonElement) OnKeyUp(key uint8, modifiers uint16) bool {
 	case 13: // Activate button when enter is released
 		if b.CanHold() {
 			b.SetHeld(false)
-			b.OnMouseButtonUp(1, 0, 0)
+			b.OnPressed(1, 0, 0)
 		}
 	}
 	return false
