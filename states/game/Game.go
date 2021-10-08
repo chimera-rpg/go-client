@@ -1,6 +1,7 @@
 package game
 
 import (
+	"image/color"
 	"math"
 	"time"
 
@@ -207,6 +208,12 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		}
 		s.statuses[c.Type] = c.Active
 		s.UpdateStateWindow()
+	case network.CommandSound:
+		// FIXME: Retool and Move
+		if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+c.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
+			s.mapMessages = append(s.mapMessages, m)
+			s.MapContainer.GetAdoptChannel() <- m.el
+		}
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}

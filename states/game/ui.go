@@ -302,7 +302,7 @@ func (s *Game) UpdateMessagesWindow() {
 							text = m.Message.Body
 						}
 					}
-					mapMessage, err := s.createMapMessage(m.Message.FromObjectID, text, col)
+					mapMessage, err := s.createMapObjectMessage(m.Message.FromObjectID, text, col)
 					if err != nil {
 						// TODO: Print some sort of error.
 					}
