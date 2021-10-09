@@ -33,33 +33,34 @@ var CommandModeStrings = []string{
 // and joined as a player character.
 type Game struct {
 	client.State
-	CommandMode      CommandMode
-	GameContainer    ui.Container
-	MessagesWindow   ui.Container
-	ChatType         ui.ElementI
-	ChatInput        ui.ElementI
-	ChatWindow       ui.Container
-	messageElements  []ui.ElementI
-	CommandContainer ui.ElementI
-	MapContainer     ui.Container
-	InventoryWindow  ui.Container
-	GroundWindow     ui.Container
-	StatsWindow      ui.Container
-	StateWindow      ui.Container
-	statusElements   map[cdata.StatusType]ui.ElementI
-	statuses         map[cdata.StatusType]bool
-	world            world.World
-	keyBinds         []uint8
-	inputChan        chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
-	objectImages     map[uint32]ui.ElementI
-	objectImageIDs   map[uint32]data.StringID
-	mapMessages      []MapMessage
-	MessageHistory   []Message
-	bindings         *binds.Bindings
-	repeatingKeys    map[uint8]int
-	heldButtons      map[uint8]bool
-	runDirection     int
-	objectsScale     *float64 // Pointer to config graphics.
+	CommandMode          CommandMode
+	GameContainer        ui.Container
+	MessagesWindow       ui.Container
+	ChatType             ui.ElementI
+	ChatInput            ui.ElementI
+	ChatWindow           ui.Container
+	messageElements      []ui.ElementI
+	CommandContainer     ui.ElementI
+	MapContainer         ui.Container
+	InventoryWindow      ui.Container
+	GroundWindow         ui.Container
+	StatsWindow          ui.Container
+	StateWindow          ui.Container
+	statusElements       map[cdata.StatusType]ui.ElementI
+	statuses             map[cdata.StatusType]bool
+	world                world.World
+	keyBinds             []uint8
+	inputChan            chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
+	objectImages         map[uint32]ui.ElementI
+	objectImageIDs       map[uint32]data.StringID
+	mapMessages          []MapMessage
+	MessageHistory       []Message
+	bindings             *binds.Bindings
+	repeatingKeys        map[uint8]int
+	heldButtons          map[uint8]bool
+	runDirection         int
+	objectsScale         *float64               // Pointer to config graphics.
+	pendingNoiseCommands []network.CommandNoise // Pending noises, for sounds that have not loaded yet.
 }
 
 // Init our Game state.
@@ -75,6 +76,19 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.CommandMode = CommandModeChat
 	// Initialize our world.
 	s.world.Init(s.Client.DataManager, s.Client.Log)
+
+	// This is lazy(tm), but we're just resending all pendingNoiseCommands on receipt of a sound or audio network command.
+	s.Client.DataManager.SetHandleCallback(func(netID int, cmd network.Command) {
+		if netID == network.TypeSound || netID == network.TypeAudio {
+			if len(s.pendingNoiseCommands) > 0 {
+				pending := s.pendingNoiseCommands
+				s.pendingNoiseCommands = make([]network.CommandNoise, 0)
+				for _, c := range pending {
+					s.HandleNet(c)
+				}
+			}
+		}
+	})
 
 	s.Client.Log.Print("Game State")
 
@@ -188,6 +202,10 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.Client.DataManager.HandleGraphicsCommand(c)
 	case network.CommandAnimation:
 		s.Client.DataManager.HandleAnimationCommand(c)
+	case network.CommandSound:
+		s.Client.DataManager.HandleSoundCommand(c)
+	case network.CommandAudio:
+		s.Client.DataManager.HandleAudioCommand(c)
 	case network.CommandMap:
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:
@@ -208,11 +226,17 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		}
 		s.statuses[c.Type] = c.Active
 		s.UpdateStateWindow()
-	case network.CommandSound:
-		// FIXME: Retool and Move
-		if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+c.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
-			s.mapMessages = append(s.mapMessages, m)
-			s.MapContainer.GetAdoptChannel() <- m.el
+	case network.CommandNoise:
+		s.world.HandleNoiseCommand(c)
+		snd, ok := s.Client.DataManager.GetAudioSound(c.AudioID, c.SoundID, 0)
+		if !ok {
+			s.pendingNoiseCommands = append(s.pendingNoiseCommands, c)
+		} else {
+			// TODO: Play sound!
+			if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
+				s.mapMessages = append(s.mapMessages, m)
+				s.MapContainer.GetAdoptChannel() <- m.el
+			}
 		}
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)

@@ -164,3 +164,9 @@ func (w *World) GetViewObject() *Object {
 func (w *World) GetCurrentMap() *DynamicMap {
 	return w.maps[w.currentMap]
 }
+
+// HandleNoiseCommand handles CommandNoise.
+func (w *World) HandleNoiseCommand(cmd network.CommandNoise) error {
+	w.dataManager.EnsureAudio(cmd.AudioID)
+	return nil
+}
