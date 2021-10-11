@@ -235,7 +235,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		} else {
 			s.Client.Audio.CommandChannel <- audio.CommandPlaySound{
 				ID:     snd.SoundID,
-				Volume: 1,
+				Volume: c.Volume,
 			}
 			// TODO: Play sound!
 			if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
