@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/chimera-rpg/go-client/audio"
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/data"
@@ -232,6 +233,10 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		if !ok {
 			s.pendingNoiseCommands = append(s.pendingNoiseCommands, c)
 		} else {
+			s.Client.Audio.CommandChannel <- audio.CommandPlaySound{
+				ID:     snd.SoundID,
+				Volume: 1,
+			}
 			// TODO: Play sound!
 			if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
 				s.mapMessages = append(s.mapMessages, m)

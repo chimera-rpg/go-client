@@ -5,6 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/chimera-rpg/go-client/audio"
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/states/list"
@@ -19,6 +20,7 @@ func main() {
 	var dataManager data.Manager
 	var clientInstance client.Client
 	var uiInstance ui.Instance
+	var audioInstance audio.Instance
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -42,8 +44,24 @@ func main() {
 
 	ui.GlobalInstance = &uiInstance
 
+	// Setup our Audio
+	if err = audioInstance.Setup(log); err != nil {
+		ui.ShowError("%s", err)
+	} else {
+		go audioInstance.Loop()
+		defer audioInstance.Quit()
+		audio.GlobalInstance = &audioInstance
+		// FIXME: This isn't the right place for this.
+		for k, v := range dataManager.Sounds() {
+			audioInstance.CommandChannel <- audio.CommandNewSound{
+				ID:    k,
+				Bytes: v.Bytes,
+			}
+		}
+	}
+
 	// Setup our Client
-	if err = clientInstance.Setup(&dataManager, &uiInstance, log); err != nil {
+	if err = clientInstance.Setup(&dataManager, &uiInstance, &audioInstance, log); err != nil {
 		ui.ShowError("%s", err)
 		return
 	}

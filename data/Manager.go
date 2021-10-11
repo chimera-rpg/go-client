@@ -146,6 +146,11 @@ func (m *Manager) acquireDataPath() (err error) {
 	return
 }
 
+// Sounds returns the manager's sounds
+func (m *Manager) Sounds() map[uint32]SoundEntry {
+	return m.sounds
+}
+
 // collectCachedImages reads the cache directory for images to load.
 func (m *Manager) collectCachedImages() (err error) {
 	imagesPath := path.Join(m.CachePath, "images")

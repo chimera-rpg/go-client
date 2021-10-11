@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 
+	"github.com/chimera-rpg/go-client/audio"
 	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
@@ -18,6 +19,7 @@ type Client struct {
 	DataManager      *data.Manager
 	Flags            config.Flags
 	RootWindow       *ui.Window
+	Audio            *audio.Instance
 	LogHistory       []string
 	States           []StateI
 	Log              *logrus.Logger
@@ -28,10 +30,11 @@ type Client struct {
 }
 
 // Setup sets up a Client's base data structures for use.
-func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, l *logrus.Logger) (err error) {
+func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, aud *audio.Instance, l *logrus.Logger) (err error) {
 	c.Log = l
 
 	c.RootWindow = &inst.RootWindow
+	c.Audio = aud
 	c.DataManager = dataManager
 	c.DataManager.Conn = &c.Connection
 
