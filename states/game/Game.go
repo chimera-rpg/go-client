@@ -345,7 +345,7 @@ func (s *Game) focusObject(e uint32) {
 		el.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
 	}
 	if el, ok := s.objectImages[e]; ok {
-		el.GetUpdateChannel() <- ui.UpdateOutlineColor{255, 255, 0, 200}
+		el.GetUpdateChannel() <- ui.UpdateOutlineColor{255, 255, 0, 128}
 		/*switch img := el.(type) {
 		case *ui.ImageElement:
 			s.focusedImage.GetUpdateChannel() <- img.Image
