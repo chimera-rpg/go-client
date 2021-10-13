@@ -201,11 +201,6 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 						if button != 1 {
 							return true
 						}
-						/*s.focusedImage.GetUpdateChannel() <- ui.UpdateDimensions{
-							X: ui.Number{Value: float64(x)}, Y: ui.Number{Value: float64(y)}, W: ui.Number{Value: float64(w)}, H: ui.Number{Value: float64(h)},
-						}
-						s.focusedImage.GetUpdateChannel() <- img
-						fmt.Println("Updating s.focusedImage")*/
 						if s.objectImages[o.ID].PixelHit(x, y) {
 							s.inputChan <- FocusObject(o.ID)
 							return false

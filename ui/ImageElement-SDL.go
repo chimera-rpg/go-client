@@ -145,15 +145,17 @@ func (i *ImageElement) SetImage(img image.Image) {
 }
 
 func (i *ImageElement) createOutline() error {
-	_, _, width, height, err := i.SDLTexture.Query()
+	/*_, _, width, height, err := i.SDLTexture.Query()
 	if err != nil {
 		return err
 	}
 	// Add 2 pixels for guaranteed pixel borders.
 	texWidth := width + 2
-	texHeight := height + 2
+	texHeight := height + 2*/
+	texWidth := i.w + 2
+	texHeight := i.h + 2
 
-	tex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, texWidth, texHeight)
+	tex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, i.w, i.h)
 	if err != nil {
 		return err
 	}
@@ -163,7 +165,7 @@ func (i *ImageElement) createOutline() error {
 	i.Context.Renderer.SetRenderTarget(tex)
 	i.Context.Renderer.SetDrawColor(0, 0, 0, 0)
 	i.Context.Renderer.Clear()
-	err = i.Context.Renderer.Copy(i.SDLTexture, nil, &sdl.Rect{X: 1, Y: 1, W: width, H: height})
+	err = i.Context.Renderer.Copy(i.SDLTexture, nil, &sdl.Rect{X: 1, Y: 1, W: i.w, H: i.h})
 	if err != nil {
 		return err
 	}
@@ -254,6 +256,7 @@ func (i *ImageElement) RenderPost() {
 }
 
 func (i *ImageElement) PixelHit(x, y int32) bool {
+	// FIXME: We have i.Image, so we should just use that for detecting pixel hits.
 	texWidth := i.w
 	texHeight := i.h
 
