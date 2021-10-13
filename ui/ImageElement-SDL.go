@@ -252,3 +252,40 @@ func (i *ImageElement) RenderPost() {
 	}
 	i.BaseElement.RenderPost()
 }
+
+func (i *ImageElement) PixelHit(x, y int32) bool {
+	texWidth := i.w
+	texHeight := i.h
+
+	tex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, texWidth, texHeight)
+	if err != nil {
+		return false
+	}
+	defer tex.Destroy()
+
+	prevRenderTarget := i.Context.Renderer.GetRenderTarget()
+	defer i.Context.Renderer.SetRenderTarget(prevRenderTarget)
+
+	i.Context.Renderer.SetRenderTarget(tex)
+	i.Context.Renderer.SetDrawColor(0, 0, 0, 0)
+	i.Context.Renderer.Clear()
+	err = i.Context.Renderer.Copy(i.SDLTexture, nil, nil)
+	if err != nil {
+		return false
+	}
+
+	realPixels := make([]byte, texWidth*texHeight*4)
+	err = i.Context.Renderer.ReadPixels(nil, uint32(sdl.PIXELFORMAT_RGBA32), unsafe.Pointer(&realPixels[0]), int(texWidth)*4)
+	if err != nil {
+		return false
+	}
+
+	x -= i.GetAbsoluteX()
+	y -= i.GetAbsoluteY()
+
+	t := (y*i.w + x) * 4
+	if realPixels[t+3] > 0 {
+		return true
+	}
+	return false
+}

@@ -54,6 +54,7 @@ type ElementI interface {
 	IsHidden() bool
 	//
 	Hit(x int32, y int32) bool
+	PixelHit(x int32, y int32) bool
 	// Events
 	SetEvents(e Events)
 	OnCreated()

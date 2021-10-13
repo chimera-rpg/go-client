@@ -176,8 +176,11 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 							H: ui.Number{Value: float64(s.objectImages[o.ID].GetHeight())},
 						}
 						s.focusedImage.GetUpdateChannel() <- img*/
-						s.inputChan <- FocusObject(o.ID)
-						return false
+						if s.objectImages[o.ID].PixelHit(x, y) {
+							s.inputChan <- FocusObject(o.ID)
+							return false
+						}
+						return true
 					},
 				},
 			})
@@ -203,8 +206,11 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 						}
 						s.focusedImage.GetUpdateChannel() <- img
 						fmt.Println("Updating s.focusedImage")*/
-						s.inputChan <- FocusObject(o.ID)
-						return false
+						if s.objectImages[o.ID].PixelHit(x, y) {
+							s.inputChan <- FocusObject(o.ID)
+							return false
+						}
+						return true
 					},
 				},
 			})
