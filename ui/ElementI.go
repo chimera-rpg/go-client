@@ -6,6 +6,7 @@ type ElementI interface {
 	// Handlers
 	Destroy()
 	Render()
+	RenderPost()
 	//
 	GetAdoptChannel() chan ElementI
 	GetDisownChannel() chan ElementI

@@ -96,7 +96,12 @@ func (b *BaseElement) Render() {
 	for _, child := range b.Children {
 		child.Render()
 	}
+	b.RenderPost()
 	b.Dirty = false
+}
+
+// RenderPost is a special rendering that is called after all the elements in a container have been rendered.
+func (b *BaseElement) RenderPost() {
 }
 
 // SetX gets the cached x value.

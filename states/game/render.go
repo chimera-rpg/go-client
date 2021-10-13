@@ -162,7 +162,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				Image: img,
+				Image:       img,
+				PostOutline: true,
 				Events: ui.Events{
 					OnPressed: func(button uint8, x, y int32) bool {
 						if button != 1 {
@@ -190,7 +191,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				Image: img,
+				Image:       img,
+				PostOutline: true,
 				Events: ui.Events{
 					OnPressed: func(button uint8, x, y int32) bool {
 						if button != 1 {

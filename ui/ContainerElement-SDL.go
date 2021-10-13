@@ -62,6 +62,9 @@ func (w *Container) Render() {
 	w.Context.Renderer.Clear()
 
 	w.BaseElement.Render()
+	for _, child := range w.Children {
+		child.RenderPost()
+	}
 	if w.Parent != nil {
 		w.Context.Renderer.SetRenderTarget(oldTexture)
 		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{X: w.x, Y: w.y, W: w.w, H: w.h})

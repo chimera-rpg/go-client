@@ -6,10 +6,11 @@ import (
 
 // ImageElementConfig is the configuration for construction.
 type ImageElementConfig struct {
-	Image     image.Image
-	Style     string
-	Events    Events
-	HideImage bool
+	Image       image.Image
+	Style       string
+	Events      Events
+	HideImage   bool
+	PostOutline bool
 }
 
 // ImageElementStyle is our default style for ImageElement.
@@ -27,6 +28,7 @@ func NewImageElement(c ImageElementConfig) ElementI {
 		i.Image = c.Image
 	}
 	i.hideImage = c.HideImage
+	i.postOutline = c.PostOutline
 	i.Events = c.Events
 	i.SetupChannels()
 

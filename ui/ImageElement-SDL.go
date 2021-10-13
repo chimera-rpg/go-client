@@ -17,6 +17,7 @@ type ImageElement struct {
 	OutlineTexture *sdl.Texture
 	Image          image.Image
 	hideImage      bool
+	postOutline    bool
 	tw             int32 // Texture width
 	th             int32 // Texture height
 }
@@ -61,7 +62,7 @@ func (i *ImageElement) Render() {
 		i.Context.Renderer.Copy(i.SDLTexture, nil, &dst)
 	}
 	// Render outline.
-	if i.OutlineTexture != nil {
+	if !i.postOutline && i.OutlineTexture != nil {
 		dst.X--
 		dst.Y--
 		dst.W += 2
@@ -209,10 +210,10 @@ func (i *ImageElement) createOutline() error {
 					}
 				}
 				if hasNonAlphaNeighbor {
-					targetPixels[t] = 255
-					targetPixels[t+1] = 255
-					targetPixels[t+2] = 0
-					targetPixels[t+3] = 255
+					targetPixels[t] = i.Style.OutlineColor.R
+					targetPixels[t+1] = i.Style.OutlineColor.G
+					targetPixels[t+2] = i.Style.OutlineColor.B
+					targetPixels[t+3] = i.Style.OutlineColor.A
 				}
 			}
 		}
@@ -235,4 +236,19 @@ func (i *ImageElement) UpdateOutline() {
 		i.OutlineTexture.Destroy()
 		i.OutlineTexture = nil
 	}
+}
+
+func (i *ImageElement) RenderPost() {
+	// Render outline.
+	if i.postOutline && i.OutlineTexture != nil {
+		dst := sdl.Rect{
+			X: i.x + i.pl - 1,
+			Y: i.y + i.pt - 1,
+			W: i.w + 2,
+			H: i.h + 2,
+		}
+
+		i.Context.Renderer.Copy(i.OutlineTexture, nil, &dst)
+	}
+	i.BaseElement.RenderPost()
 }
