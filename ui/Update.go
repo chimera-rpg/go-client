@@ -1,5 +1,7 @@
 package ui
 
+import "image/color"
+
 // UpdateI is the interface for our element Update messages.
 type UpdateI interface {
 }
@@ -53,6 +55,12 @@ type UpdateScrollTop struct {
 type UpdateZIndex struct {
 	Number
 }
+
+// UpdateOutlineColor represents an update to the outline color of the element.
+type UpdateOutlineColor = color.NRGBA
+
+// UpdateHideImage is for hiding the rendering of an image element.
+type UpdateHideImage = bool
 
 // UpdateStyle represents an update to the Style of an element.
 type UpdateStyle = string

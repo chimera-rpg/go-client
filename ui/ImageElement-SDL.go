@@ -1,3 +1,4 @@
+//go:build !mobile
 // +build !mobile
 
 package ui
@@ -12,16 +13,21 @@ import (
 // ImageElement is the element responsible for rendering an image.
 type ImageElement struct {
 	BaseElement
-	SDLTexture *sdl.Texture
-	Image      image.Image
-	tw         int32 // Texture width
-	th         int32 // Texture height
+	SDLTexture     *sdl.Texture
+	OutlineTexture *sdl.Texture
+	Image          image.Image
+	hideImage      bool
+	tw             int32 // Texture width
+	th             int32 // Texture height
 }
 
 // Destroy destroys the underlying ImageElement.
 func (i *ImageElement) Destroy() {
 	if i.SDLTexture != nil {
 		i.SDLTexture.Destroy()
+	}
+	if i.OutlineTexture != nil {
+		i.OutlineTexture.Destroy()
 	}
 	i.BaseElement.Destroy()
 }
@@ -51,7 +57,17 @@ func (i *ImageElement) Render() {
 		W: i.w,
 		H: i.h,
 	}
-	i.Context.Renderer.Copy(i.SDLTexture, nil, &dst)
+	if !i.hideImage && i.SDLTexture != nil {
+		i.Context.Renderer.Copy(i.SDLTexture, nil, &dst)
+	}
+	// Render outline.
+	if i.OutlineTexture != nil {
+		dst.X--
+		dst.Y--
+		dst.W += 2
+		dst.H += 2
+		i.Context.Renderer.Copy(i.OutlineTexture, nil, &dst)
+	}
 	i.BaseElement.Render()
 }
 
@@ -60,6 +76,7 @@ func (i *ImageElement) SetImage(img image.Image) {
 	if i.Context == nil || img == nil {
 		return
 	}
+	i.Image = img
 
 	var err error
 	var surface *sdl.Surface
@@ -116,5 +133,106 @@ func (i *ImageElement) SetImage(img image.Image) {
 		i.Style.W.Set(float64(surface.W))
 		i.Style.H.Set(float64(surface.H))
 	}
+	// (re)create our outline if we should.
+	if i.OutlineTexture != nil {
+		i.OutlineTexture.Destroy()
+		i.OutlineTexture = nil
+	}
+	i.UpdateOutline()
+
 	i.Dirty = true
+}
+
+func (i *ImageElement) createOutline() error {
+	_, _, width, height, err := i.SDLTexture.Query()
+	if err != nil {
+		return err
+	}
+	// Add 2 pixels for guaranteed pixel borders.
+	texWidth := width + 2
+	texHeight := height + 2
+
+	tex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, texWidth, texHeight)
+	if err != nil {
+		return err
+	}
+	defer tex.Destroy()
+	prevRenderTarget := i.Context.Renderer.GetRenderTarget()
+	defer i.Context.Renderer.SetRenderTarget(prevRenderTarget)
+	i.Context.Renderer.SetRenderTarget(tex)
+	i.Context.Renderer.SetDrawColor(0, 0, 0, 0)
+	i.Context.Renderer.Clear()
+	err = i.Context.Renderer.Copy(i.SDLTexture, nil, &sdl.Rect{X: 1, Y: 1, W: width, H: height})
+	if err != nil {
+		return err
+	}
+
+	realPixels := make([]byte, texWidth*texHeight*4)
+	err = i.Context.Renderer.ReadPixels(nil, uint32(sdl.PIXELFORMAT_RGBA32), unsafe.Pointer(&realPixels[0]), int(texWidth)*4)
+	if err != nil {
+		return err
+	}
+
+	// Create our final texture for outline rendering.
+	realTex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_STATIC, texWidth, texHeight)
+	realTex.SetBlendMode(sdl.BLENDMODE_BLEND)
+	if err != nil {
+		return err
+	}
+	targetPixels := make([]byte, texWidth*texHeight*4)
+
+	for x := 0; x < int(texWidth); x++ {
+		for y := 0; y < int(texHeight); y++ {
+			t := (y*int(texWidth) + x) * 4
+			if realPixels[t+3] == 0 { // Fully alpha
+				hasNonAlphaNeighbor := false
+				i2 := ((y+1)*int(texWidth) + x) * 4
+				if i2 < len(realPixels) && realPixels[i2+3] > 0 {
+					hasNonAlphaNeighbor = true
+				}
+				if !hasNonAlphaNeighbor {
+					i2 = ((y-1)*int(texWidth) + x) * 4
+					if i2 >= 0 && i2 < len(realPixels) && realPixels[i2+3] > 0 {
+						hasNonAlphaNeighbor = true
+					}
+				}
+				if !hasNonAlphaNeighbor {
+					i2 = (y*int(texWidth) + x + 1) * 4
+					if i2 < len(realPixels) && realPixels[i2+3] > 0 {
+						hasNonAlphaNeighbor = true
+					}
+				}
+				if !hasNonAlphaNeighbor {
+					i2 = (y*int(texWidth) + x - 1) * 4
+					if i2 >= 0 && i2 < len(realPixels) && realPixels[i2+3] > 0 {
+						hasNonAlphaNeighbor = true
+					}
+				}
+				if hasNonAlphaNeighbor {
+					targetPixels[t] = 255
+					targetPixels[t+1] = 255
+					targetPixels[t+2] = 0
+					targetPixels[t+3] = 255
+				}
+			}
+		}
+	}
+
+	err = realTex.Update(nil, targetPixels, int(texWidth)*4)
+	if err != nil {
+		realTex.Destroy()
+		return err
+	}
+	i.OutlineTexture = realTex
+
+	return nil
+}
+
+func (i *ImageElement) UpdateOutline() {
+	if i.Style.OutlineColor.A > 0 {
+		i.createOutline()
+	} else if i.OutlineTexture != nil {
+		i.OutlineTexture.Destroy()
+		i.OutlineTexture = nil
+	}
 }

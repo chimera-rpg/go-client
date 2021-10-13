@@ -795,6 +795,8 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Style.ScrollTop = u.Number
 	case UpdateZIndex:
 		b.Style.ZIndex = u.Number
+	case UpdateOutlineColor:
+		b.Style.OutlineColor = u
 	case UpdateDirt:
 		dirty = u
 	case UpdateFocus:

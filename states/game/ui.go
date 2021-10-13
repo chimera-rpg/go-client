@@ -16,6 +16,9 @@ type UserInput interface {
 // ChangeCommandMode notifies the UI to change the command mode.
 type ChangeCommandMode struct{}
 
+// FocusObject
+type FocusObject = uint32
+
 // ResizeEvent is used to notify the UI of a resize change.
 type ResizeEvent struct{}
 
@@ -233,6 +236,31 @@ func (s *Game) SetupUI() (err error) {
 		Style: StateWindowStyle,
 	})
 	s.GameContainer.AdoptChannel <- s.StateWindow.This
+
+	s.focusedImage = ui.NewImageElement(ui.ImageElementConfig{
+		HideImage: true,
+		Style: `
+			X 0
+			Y 0
+			W 0
+			H 0
+			ZIndex 999999
+			OutlineColor 255 255 0 200
+		`,
+		Events: ui.Events{
+			OnChange: func() bool {
+				if o, ok := s.objectImages[s.focusedObjectID]; ok {
+					s.focusedImage.GetStyle().X = o.GetStyle().X
+					s.focusedImage.GetStyle().Y = o.GetStyle().Y
+					s.focusedImage.GetStyle().W = o.GetStyle().W
+					s.focusedImage.GetStyle().H = o.GetStyle().H
+					s.focusedImage.SetDirty(true)
+				}
+				return true
+			},
+		},
+	})
+	s.MapContainer.AdoptChannel <- s.focusedImage
 
 	return err
 }

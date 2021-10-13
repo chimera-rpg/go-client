@@ -62,6 +62,8 @@ type Game struct {
 	runDirection         int
 	objectsScale         *float64               // Pointer to config graphics.
 	pendingNoiseCommands []network.CommandNoise // Pending noises, for sounds that have not loaded yet.
+	focusedObjectID      uint32
+	focusedImage         ui.ElementI
 }
 
 // Init our Game state.
@@ -179,6 +181,8 @@ func (s *Game) Loop() {
 				if s.heldButtons[3] {
 					s.RunWithMouse(e.x, e.y)
 				}
+			case FocusObject:
+				s.focusObject(e)
 			case ChangeCommandMode:
 				s.CommandMode++
 				if s.CommandMode >= len(CommandModeStrings) {
@@ -246,6 +250,8 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
+	// Eh... update outline on any of these changes.
+	s.focusObject(s.focusedObjectID)
 	return false
 }
 
@@ -332,4 +338,18 @@ func (s *Game) MoveWithMouse(e MouseInput) {
 			s.bindings.RunFunction("north")
 		}
 	}
+}
+
+func (s *Game) focusObject(e uint32) {
+	if el, ok := s.objectImages[s.focusedObjectID]; ok {
+		el.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
+	}
+	if el, ok := s.objectImages[e]; ok {
+		el.GetUpdateChannel() <- ui.UpdateOutlineColor{255, 255, 0, 200}
+		/*switch img := el.(type) {
+		case *ui.ImageElement:
+			s.focusedImage.GetUpdateChannel() <- img.Image
+		}*/
+	}
+	s.focusedObjectID = e
 }

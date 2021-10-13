@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -210,9 +211,15 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 			instance.HeldPendingTimer[t.Button] = time.Now().Add(200 * time.Millisecond)
 		}
 		if t.State == sdl.RELEASED {
+			sort.Slice(instance.MousedownElements[t.Button], func(i, j int) bool {
+				return instance.MousedownElements[t.Button][i].GetZIndex() > instance.MousedownElements[t.Button][j].GetZIndex()
+			})
 			for _, e := range instance.MousedownElements[t.Button] {
+
 				if e.Hit(t.X, t.Y) {
-					e.OnPressed(t.Button, t.X, t.Y)
+					if !e.OnPressed(t.Button, t.X, t.Y) {
+						break
+					}
 				}
 			}
 			instance.MousedownElements[t.Button] = make([]ElementI, 0)
@@ -223,9 +230,9 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 
 // IterateEvent handles iterating an event down the entire Element tree
 // starting at the passed element.
-func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
+func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) bool {
 	if e.IsHidden() {
-		return
+		return true
 	}
 	switch t := event.(type) {
 	case *sdl.WindowEvent:
@@ -248,7 +255,7 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 			}
 			// OnMouseMove
 			if !e.OnMouseMove(t.X, t.Y) {
-				return
+				return false
 			}
 		} else {
 			// OnMouseOut
@@ -272,13 +279,13 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 					e.SetHeld(true)
 				}
 				if !e.OnMouseButtonDown(t.Button, t.X, t.Y) {
-					return
+					return false
 				}
 				instance.ToBeHeldElements[t.Button] = append(instance.ToBeHeldElements[t.Button], e)
 				instance.MousedownElements[t.Button] = append(instance.MousedownElements[t.Button], e)
 			} else {
 				if !e.OnMouseButtonUp(t.Button, t.X, t.Y) {
-					return
+					return false
 				}
 			}
 		} else {
@@ -289,17 +296,20 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) {
 	case *sdl.KeyboardEvent:
 		if t.State == sdl.PRESSED {
 			if !e.OnKeyDown(uint8(t.Keysym.Sym), t.Keysym.Mod, t.Repeat > 0) {
-				return
+				return false
 			}
 		} else {
 			if !e.OnKeyUp(uint8(t.Keysym.Sym), t.Keysym.Mod) {
-				return
+				return false
 			}
 		}
 	}
 	for _, child := range e.GetChildren() {
-		instance.IterateEvent(child, event)
+		if !instance.IterateEvent(child, event) {
+			return false
+		}
 	}
+	return true
 }
 
 func showWindow(flags uint32, format string, a ...interface{}) {

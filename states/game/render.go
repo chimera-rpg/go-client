@@ -163,6 +163,22 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 							ZIndex %d
 						`, x, y, w, h, zIndex),
 				Image: img,
+				Events: ui.Events{
+					OnPressed: func(button uint8, x, y int32) bool {
+						if button != 1 {
+							return true
+						}
+						/*s.focusedImage.GetUpdateChannel() <- ui.UpdateDimensions{
+							X: ui.Number{Value: float64(s.objectImages[o.ID].GetX())},
+							Y: ui.Number{Value: float64(s.objectImages[o.ID].GetY())},
+							W: ui.Number{Value: float64(s.objectImages[o.ID].GetWidth())},
+							H: ui.Number{Value: float64(s.objectImages[o.ID].GetHeight())},
+						}
+						s.focusedImage.GetUpdateChannel() <- img*/
+						s.inputChan <- FocusObject(o.ID)
+						return false
+					},
+				},
 			})
 			s.objectImageIDs[o.ID] = frames[0].ImageID
 		} else {
@@ -175,6 +191,20 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 							ZIndex %d
 						`, x, y, w, h, zIndex),
 				Image: img,
+				Events: ui.Events{
+					OnPressed: func(button uint8, x, y int32) bool {
+						if button != 1 {
+							return true
+						}
+						/*s.focusedImage.GetUpdateChannel() <- ui.UpdateDimensions{
+							X: ui.Number{Value: float64(x)}, Y: ui.Number{Value: float64(y)}, W: ui.Number{Value: float64(w)}, H: ui.Number{Value: float64(h)},
+						}
+						s.focusedImage.GetUpdateChannel() <- img
+						fmt.Println("Updating s.focusedImage")*/
+						s.inputChan <- FocusObject(o.ID)
+						return false
+					},
+				},
 			})
 		}
 		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
