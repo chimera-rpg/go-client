@@ -7,6 +7,7 @@ import (
 	"image"
 	"unsafe"
 
+	"github.com/nfnt/resize"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -256,8 +257,8 @@ func (i *ImageElement) RenderPost() {
 }
 
 func (i *ImageElement) PixelHit(x, y int32) bool {
-	// FIXME: We have i.Image, so we should just use that for detecting pixel hits.
-	texWidth := i.w
+	// Pure SDL texture method. Instable, probably have to lock pixels.
+	/*texWidth := i.w
 	texHeight := i.h
 
 	tex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, texWidth, texHeight)
@@ -289,6 +290,17 @@ func (i *ImageElement) PixelHit(x, y int32) bool {
 	t := (y*i.w + x) * 4
 	if realPixels[t+3] > 0 {
 		return true
+	}*/
+	// Resize-based method.
+	x -= i.GetAbsoluteX()
+	y -= i.GetAbsoluteY()
+
+	resizedImage := resize.Resize(uint(i.w), uint(i.h), i.Image, resize.NearestNeighbor)
+	_, _, _, a := resizedImage.At(int(x), int(y)).RGBA()
+
+	if a > 0 {
+		return true
 	}
+
 	return false
 }

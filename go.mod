@@ -15,6 +15,7 @@ require (
 	github.com/icza/bitio v1.0.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/mewkiz/pkg v0.0.0-20190919212034-518ade7978e2 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/onsi/gomega v1.16.0 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
