@@ -1,7 +1,7 @@
 module github.com/chimera-rpg/go-client
 
 require (
-	github.com/chimera-rpg/go-common v0.0.0-20211011060606-a36a471afc6c
+	github.com/chimera-rpg/go-common v0.0.0-20211014122722-1daea3b104ad
 	github.com/eczarny/lexer v0.0.0-20141213044152-5fcb9a5b73e7
 	github.com/kettek/apng v0.0.0-20190523045756-e5135b1219f5
 	github.com/mewkiz/flac v1.0.7
@@ -13,6 +13,8 @@ require (
 
 require (
 	github.com/icza/bitio v1.0.0 // indirect
+	github.com/jfreymuth/oggvorbis v1.0.3 // indirect
+	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/mewkiz/pkg v0.0.0-20190919212034-518ade7978e2 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
