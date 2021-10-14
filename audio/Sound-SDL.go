@@ -9,6 +9,7 @@ import (
 	"io"
 	"unsafe"
 
+	"github.com/jfreymuth/oggvorbis"
 	"github.com/mewkiz/flac"
 	"github.com/veandco/go-sdl2/mix"
 	"github.com/veandco/go-sdl2/sdl"
@@ -70,25 +71,36 @@ func (s *Sound) fromBytes(data []byte) error {
 			data = audioCvt.BufAsSlice()
 			audioCvt.FreeBuf()
 		}
-	} else {
-		return fmt.Errorf("unsupported format")
-	}
 
-	s.bytes = make([]byte, len(data))
-	copy(s.bytes, data)
-	chunk, err := mix.QuickLoadRAW((*uint8)(unsafe.Pointer(&s.bytes[0])), uint32(len(s.bytes)))
-	if err != nil {
-		return err
+		s.bytes = make([]byte, len(data))
+		copy(s.bytes, data)
+		chunk, err := mix.QuickLoadRAW((*uint8)(unsafe.Pointer(&s.bytes[0])), uint32(len(s.bytes)))
+		if err != nil {
+			return err
+		}
+		s.chunk = chunk
+		return nil
+	} else if string(data[:4]) == "OggS" { // Music
+		// This is terrible, but we decode ogg into PCM and store it in RAM. This is due to the idiocy that is SDL_mixer's single music track limitation. TODO: Keep track of when music was last played back and unload it beyond a certain time.
+		reader := bytes.NewReader(data)
+		r, err := oggvorbis.NewReader(reader)
+		if err != nil {
+			return err
+		}
+		fmt.Println("ogg stuff", r.SampleRate(), r.Channels(), r.Length())
+
+		return nil
 	}
-	s.chunk = chunk
-	return nil
+	return fmt.Errorf("unsupported format")
 }
 
 func (s *Sound) play(volume float32) {
-	if s.chunk == nil {
-		return
+	if s.chunk != nil {
+		v := int(volume * 255)
+		s.chunk.Volume(v)
+		s.chunk.Play(-1, 0)
 	}
-	v := int(volume * 255)
-	s.chunk.Volume(v)
-	s.chunk.Play(-1, 0)
+}
+
+func (s *Sound) playLoop(volume float32, loop int) {
 }

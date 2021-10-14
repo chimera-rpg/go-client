@@ -46,6 +46,8 @@ func (instance *Instance) Loop() {
 					instance.log.Errorf("[Audio] missing sound %d", c.ID)
 				}
 			case CommandStopSound:
+			case CommandPlayMusic:
+			case CommandStopMusic:
 			}
 		}
 	}

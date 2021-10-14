@@ -21,3 +21,16 @@ type CommandPlaySound struct {
 type CommandStopSound struct {
 	ID uint32
 }
+
+// CommandPlayMusic starts playing music matching the given ID.
+type CommandPlayMusic struct {
+	ID             uint32
+	PlaybackID     uint32
+	Volume         float32    // 0-1
+	ChannelVolumes [8]float64 // I have no idea about this.
+}
+
+// CommandStopMusic stops playing music matching the given ID.
+type CommandStopMusic struct {
+	PlaybackID uint32
+}
