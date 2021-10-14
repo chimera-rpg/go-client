@@ -15,6 +15,10 @@ var (
 		Keys:    []uint8{96}, // ~
 		Pressed: true,
 	}
+	defaultClearFocus = binds.KeyGroup{
+		Keys:    []uint8{27}, // esc
+		Pressed: false,
+	}
 	defaultNorth1 = binds.KeyGroup{
 		Keys:    []uint8{107},
 		Pressed: true,
@@ -289,6 +293,10 @@ func (s *Game) SetupBinds() {
 		})
 	})
 
+	s.bindings.SetFunction("clear focus", func(i ...interface{}) {
+		s.focusObject(0)
+	})
+
 	s.bindings.SetFunction("focus chat", func(i ...interface{}) {
 		s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
 	})
@@ -346,6 +354,10 @@ func (s *Game) SetupBinds() {
 	if !s.bindings.HasKeygroupsForName("east run stop") {
 		s.bindings.AddKeygroup("east run stop", defaultEastRunStop1)
 		s.bindings.AddKeygroup("east run stop", defaultEastRunStop2)
+	}
+
+	if !s.bindings.HasKeygroupsForName("clear focus") {
+		s.bindings.AddKeygroup("clear focus", defaultClearFocus)
 	}
 
 	if !s.bindings.HasKeygroupsForName("focus chat") {
