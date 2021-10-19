@@ -14,13 +14,15 @@ import (
 // ImageElement is the element responsible for rendering an image.
 type ImageElement struct {
 	BaseElement
-	SDLTexture     *sdl.Texture
-	OutlineTexture *sdl.Texture
-	Image          image.Image
-	hideImage      bool
-	postOutline    bool
-	tw             int32 // Texture width
-	th             int32 // Texture height
+	SDLTexture       *sdl.Texture
+	GrayscaleTexture *sdl.Texture
+	OutlineTexture   *sdl.Texture
+	Image            image.Image
+	hideImage        bool
+	postOutline      bool
+	grayscale        bool
+	tw               int32 // Texture width
+	th               int32 // Texture height
 }
 
 // Destroy destroys the underlying ImageElement.
@@ -30,6 +32,9 @@ func (i *ImageElement) Destroy() {
 	}
 	if i.OutlineTexture != nil {
 		i.OutlineTexture.Destroy()
+	}
+	if i.GrayscaleTexture != nil {
+		i.GrayscaleTexture.Destroy()
 	}
 	i.BaseElement.Destroy()
 }
@@ -59,8 +64,18 @@ func (i *ImageElement) Render() {
 		W: i.w,
 		H: i.h,
 	}
-	if !i.hideImage && i.SDLTexture != nil {
-		i.Context.Renderer.Copy(i.SDLTexture, nil, &dst)
+	if !i.hideImage {
+		var texture *sdl.Texture
+		if i.grayscale {
+			texture = i.GrayscaleTexture
+		} else {
+			texture = i.SDLTexture
+		}
+		if texture != nil {
+			i.SDLTexture.SetAlphaMod(uint8(i.Style.Alpha.Value * 255))
+			i.Context.Renderer.Copy(texture, nil, &dst)
+			i.SDLTexture.SetAlphaMod(255)
+		}
 	}
 	// Render outline.
 	if !i.postOutline && i.OutlineTexture != nil {
@@ -141,8 +156,67 @@ func (i *ImageElement) SetImage(img image.Image) {
 		i.OutlineTexture = nil
 	}
 	i.UpdateOutline()
+	i.UpdateGrayscale()
 
 	i.Dirty = true
+}
+
+func (i *ImageElement) createGrayscale() error {
+	texWidth := i.w
+	texHeight := i.h
+
+	tex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, i.w, i.h)
+	if err != nil {
+		return err
+	}
+	defer tex.Destroy()
+	prevRenderTarget := i.Context.Renderer.GetRenderTarget()
+	defer i.Context.Renderer.SetRenderTarget(prevRenderTarget)
+	i.Context.Renderer.SetRenderTarget(tex)
+	i.Context.Renderer.SetDrawColor(0, 0, 0, 0)
+	i.Context.Renderer.Clear()
+	err = i.Context.Renderer.Copy(i.SDLTexture, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	realPixels := make([]byte, texWidth*texHeight*4)
+	err = i.Context.Renderer.ReadPixels(nil, uint32(sdl.PIXELFORMAT_RGBA32), unsafe.Pointer(&realPixels[0]), int(texWidth)*4)
+	if err != nil {
+		return err
+	}
+
+	// Create our final texture for outline rendering.
+	realTex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_STATIC, texWidth, texHeight)
+	realTex.SetBlendMode(sdl.BLENDMODE_BLEND)
+	if err != nil {
+		return err
+	}
+	targetPixels := make([]byte, texWidth*texHeight*4)
+
+	for x := 0; x < int(texWidth); x++ {
+		for y := 0; y < int(texHeight); y++ {
+			t := (y*int(texWidth) + x) * 4
+			r := realPixels[t]
+			g := realPixels[t+1]
+			b := realPixels[t+2]
+			v := (r + g + b) / 3
+			targetPixels[t] = v
+			targetPixels[t+1] = v
+			targetPixels[t+2] = v
+			targetPixels[t+3] = realPixels[t+3]
+		}
+	}
+
+	err = realTex.Update(nil, targetPixels, int(texWidth)*4)
+	if err != nil {
+		realTex.Destroy()
+		return err
+	}
+	i.GrayscaleTexture = realTex
+
+	return nil
+
 }
 
 func (i *ImageElement) createOutline() error {
@@ -230,6 +304,15 @@ func (i *ImageElement) createOutline() error {
 	i.OutlineTexture = realTex
 
 	return nil
+}
+
+func (i *ImageElement) UpdateGrayscale() {
+	if i.grayscale {
+		i.createGrayscale()
+	} else if i.GrayscaleTexture != nil {
+		i.GrayscaleTexture.Destroy()
+		i.GrayscaleTexture = nil
+	}
 }
 
 func (i *ImageElement) UpdateOutline() {

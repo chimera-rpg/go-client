@@ -73,3 +73,9 @@ type UpdateFocus struct{}
 
 // UpdateHidden as a message that marks the element to be hidden or not.
 type UpdateHidden bool
+
+// UpdateAlpha is a message that sets the element's alpha. Not applicable for all elements.
+type UpdateAlpha = float64
+
+// UpdateGrayscale is a message that sets the element's grayscale rendering. Not applicable for all elements.
+type UpdateGrayscale bool
