@@ -128,6 +128,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			H:           p.Height,
 			W:           p.Width,
 			D:           p.Depth,
+			Opaque:      p.Opaque,
 		}
 	}
 	return nil

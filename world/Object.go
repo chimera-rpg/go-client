@@ -13,6 +13,7 @@ type Object struct {
 	Changed     bool // Represents if the object's position has been changed. Cleared by Game.RenderObject
 	Squeezing   bool // Represents if the object is squeezing. Causes the rendered image to be lightly squashed in the X axis.
 	Crouching   bool // Represents if the object is crouching. Causes the rendered image to be lightly squashed in the Y axis.
+	Opaque      bool // Represents if the object is considered to block vision.
 }
 
 // ObjectsFilter returns a new slice containing all Objects in the slice that satisfy the predicate f.
