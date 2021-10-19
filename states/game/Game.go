@@ -62,6 +62,7 @@ type Game struct {
 	runDirection         int
 	objectsScale         *float64               // Pointer to config graphics.
 	pendingNoiseCommands []network.CommandNoise // Pending noises, for sounds that have not loaded yet.
+	pendingMusicCommands []network.CommandMusic // Pending music, for sounds that have not loaded yet.
 	focusedObjectID      uint32
 	focusedImage         ui.ElementI
 }
@@ -86,6 +87,13 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			if len(s.pendingNoiseCommands) > 0 {
 				pending := s.pendingNoiseCommands
 				s.pendingNoiseCommands = make([]network.CommandNoise, 0)
+				for _, c := range pending {
+					s.HandleNet(c)
+				}
+			}
+			if len(s.pendingMusicCommands) > 0 {
+				pending := s.pendingMusicCommands
+				s.pendingMusicCommands = make([]network.CommandMusic, 0)
 				for _, c := range pending {
 					s.HandleNet(c)
 				}
@@ -241,11 +249,28 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 				ID:     snd.SoundID,
 				Volume: c.Volume,
 			}
-			// TODO: Play sound!
 			if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
 				s.mapMessages = append(s.mapMessages, m)
 				s.MapContainer.GetAdoptChannel() <- m.el
 			}
+		}
+	case network.CommandMusic:
+		s.Client.DataManager.EnsureAudio(c.AudioID)
+		snd, ok := s.Client.DataManager.GetAudioSound(c.AudioID, c.SoundID, 0)
+		if !ok {
+			s.pendingMusicCommands = append(s.pendingMusicCommands, c)
+		} else {
+			s.Client.Audio.CommandChannel <- audio.CommandPlayMusic{
+				ID:         snd.SoundID,
+				PlaybackID: c.ObjectID,
+				Volume:     c.Volume,
+				Loop:       c.Loop,
+			}
+			// TODO: Some sort of "you hear music..." then add some credits?
+			/*if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
+				s.mapMessages = append(s.mapMessages, m)
+				s.MapContainer.GetAdoptChannel() <- m.el
+			}*/
 		}
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
