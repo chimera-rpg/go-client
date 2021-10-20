@@ -213,6 +213,15 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 	} else {
 		if img != nil {
+			if o.VisibilityChange {
+				if o.Visible {
+					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateGrayscale(false)
+				} else {
+					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateGrayscale(true)
+				}
+				o.VisibilityChange = false
+			}
+			//
 			if o.Changed {
 				bounds := img.Bounds()
 				w = int(float64(bounds.Max.X) * scale)
