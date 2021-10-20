@@ -16,6 +16,8 @@ type Object struct {
 	Opaque           bool // Represents if the object is considered to block vision.
 	Visible          bool // Represents if the object is visible.
 	VisibilityChange bool // Used to record if the visibility of the object has changed since last render.
+	Unblocked        bool // Represents if the object is unblocked (should be alpha).
+	UnblockedChange  bool // Used to record if the unblocked state of the object has changed since last render.
 }
 
 // ObjectsFilter returns a new slice containing all Objects in the slice that satisfy the predicate f.

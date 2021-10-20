@@ -11,13 +11,14 @@ import (
 
 // World is a collection of all the current known client representations of the game world.
 type World struct {
-	dataManager  *data.Manager
-	maps         map[data.StringID]*DynamicMap
-	currentMap   data.StringID
-	objects      map[uint32]*Object
-	viewObjectID uint32
-	visibleTiles map[TileKey]struct{}
-	Log          *logrus.Logger
+	dataManager    *data.Manager
+	maps           map[data.StringID]*DynamicMap
+	currentMap     data.StringID
+	objects        map[uint32]*Object
+	viewObjectID   uint32
+	visibleTiles   map[TileKey]struct{}
+	unblockedTiles map[TileKey]struct{}
+	Log            *logrus.Logger
 }
 
 // Init initializes the given world object with the passed client.
@@ -28,6 +29,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.maps = make(map[data.StringID]*DynamicMap)
 	w.objects = make(map[uint32]*Object)
 	w.visibleTiles = make(map[TileKey]struct{})
+	w.unblockedTiles = make(map[TileKey]struct{})
 	w.currentMap = 0
 }
 
@@ -100,6 +102,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	// Update our visible tiles if the view object moved.
 	if viewChanged {
 		w.updateVisibleTiles()
+		w.updateVisionUnblocking()
 	}
 	return nil
 }
@@ -115,6 +118,7 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	case network.CommandObjectPayloadViewTarget:
 		w.viewObjectID = cmd.ObjectID
 		w.updateVisibleTiles()
+		w.updateVisionUnblocking()
 	default:
 		w.Log.WithFields(logrus.Fields{
 			"payload": p,
@@ -185,7 +189,7 @@ func (w *World) HandleNoiseCommand(cmd network.CommandNoise) error {
 	return nil
 }
 
-func (w *World) getVisibilitySphere(radius float64) (targets [][3]float64) {
+func (w *World) getSphereRays(yi, xi, zi int, radius float64) (targets [][2][3]float64) {
 	stackCount := 20
 	sliceCount := 20
 	for stack := 0; stack < stackCount-1; stack++ {
@@ -195,86 +199,32 @@ func (w *World) getVisibilitySphere(radius float64) (targets [][3]float64) {
 			y := math.Cos(phi)
 			x := math.Sin(phi) * math.Cos(theta)
 			z := math.Sin(phi) * math.Sin(theta)
-			targets = append(targets, [3]float64{y * radius, x * radius, z * radius})
+			targets = append(targets, [2][3]float64{{float64(yi), float64(xi), float64(zi)}, {float64(yi) + y*radius, float64(xi) + x*radius, float64(zi) + z*radius}})
 		}
 	}
 	return targets
 }
 
-func (w *World) getVisibilityCube(yi, xi, zi int, height, width, depth int) (c [][3]float64) {
-	vhh := height / 2
-	vwh := width / 2
-	vdh := depth / 2
-
-	m := w.GetCurrentMap()
-	// TODO: Use target object's statistics for vision range.
-
-	ymin := yi - vhh
-	if ymin < 0 {
-		ymin = 0
-	}
-	ymax := yi + vhh
-	if ymax > int(m.GetHeight()) {
-		ymax = int(m.GetHeight()) - 1
-	}
-
-	xmin := xi - vwh
-	if xmin < 0 {
-		xmin = 0
-	}
-	xmax := xi + vwh
-	if xmax > int(m.GetWidth()) {
-		xmax = int(m.GetWidth()) - 1
-	}
-
-	zmin := zi - vdh
-	if zmin < 0 {
-		zmin = 0
-	}
-	zmax := zi + vdh
-	if zmax > int(m.GetDepth()) {
-		zmax = int(m.GetDepth()) - 1
-	}
-
-	// massive cube
-	for y := ymin; y < ymax; y++ {
-		for x := xmin; x < xmax; x++ {
-			for z := zmin; z < zmax; z++ {
-				c = append(c, [3]float64{float64(y), float64(x), float64(z)})
+func (w *World) getCubeRays(originY, originX, originZ, minY, minX, minZ, maxY, maxX, maxZ int) (c [][2][3]float64) {
+	for y := minY; y < maxX; y++ {
+		for x := minX; x < maxX; x++ {
+			for z := minZ; z < maxZ; z++ {
+				c = append(c, [2][3]float64{{float64(originY), float64(originX), float64(originZ)}, {float64(y), float64(x), float64(z)}})
 			}
 		}
 	}
-
 	return c
 }
 
-// Line of sight stuff
-func (w *World) updateVisibleTiles() {
-	visibleTiles := make(map[TileKey]struct{})
-	// Collect our box for rays
-	o := w.GetViewObject()
-	if o == nil {
-		return
-	}
-
-	rayEnds := w.getVisibilityCube(int(o.Y)+int(o.H), int(o.X), int(o.Z), 16, 32, 32)
-
-	//rayEnds := w.getVisibilitySphere(20)
-
-	// Now let's shoot some rays via Amanatides & Woo.
-	m := w.GetCurrentMap()
-	y1 := float64(int(o.Y) + int(o.H))
-	if y1 >= float64(m.GetHeight()) {
-		y1 = float64(m.GetHeight() - 1)
-	}
-	x1 := float64(o.X)
-	z1 := float64(o.Z + 1)
-
-	for _, v := range rayEnds {
+func (w *World) rayCasts(rays [][2][3]float64, maxY, maxX, maxZ float64, hit func(y, x, z int) bool) {
+	for _, v := range rays {
 		var tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY, tDeltaZ float64
-		y2 := v[0]
-		x2 := v[1]
-		z2 := v[2]
+		y1 := v[0][0]
+		x1 := v[0][1]
+		z1 := v[0][2]
+		y2 := v[1][0]
+		x2 := v[1][1]
+		z2 := v[1][2]
 		var dy, dx, dz int
 		var y, x, z float64
 
@@ -353,28 +303,86 @@ func (w *World) updateVisibleTiles() {
 			if tMaxY > 1 && tMaxX > 1 && tMaxZ > 1 {
 				break
 			}
-			if y < 0 || x < 0 || z < 0 || y >= float64(m.GetHeight()) || x >= float64(m.GetWidth()) || z >= float64(m.GetDepth()) {
+			if y < 0 || x < 0 || z < 0 || y >= maxY || x >= maxX || z >= maxZ {
 				continue
 			}
-			tile := m.GetTile(uint32(y), uint32(x), uint32(z))
-			opaque := false
-			for _, oID := range tile.GetObjects() {
-				o := w.GetObject(oID)
-				if o == nil {
-					continue
-				}
-				if o.Opaque {
-					opaque = true
-					break
-				}
-			}
-			visibleTiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}] = struct{}{}
 
-			if opaque {
+			if hit(int(y), int(x), int(z)) {
 				break
 			}
 		}
 	}
+}
+
+// Line of sight stuff
+func (w *World) updateVisibleTiles() {
+	o := w.GetViewObject()
+	if o == nil {
+		return
+	}
+
+	// 1. Collect our rays
+	m := w.GetCurrentMap()
+	y1 := float64(int(o.Y) + int(o.H))
+	if y1 >= float64(m.GetHeight()) {
+		y1 = float64(m.GetHeight() - 1)
+	}
+	x1 := float64(o.X)
+	z1 := float64(o.Z + 1)
+
+	// Acquire our box dimensions
+	vhh := float64(16 / 2)
+	vwh := float64(32 / 2)
+	vdh := float64(32 / 2)
+
+	ymin := y1 - vhh
+	if ymin < 0 {
+		ymin = 0
+	}
+	ymax := y1 + vhh
+	if ymax > float64(m.GetHeight()) {
+		ymax = float64(m.GetHeight()) - 1
+	}
+
+	xmin := x1 - vwh
+	if xmin < 0 {
+		xmin = 0
+	}
+	xmax := x1 + vwh
+	if xmax > float64(m.GetWidth()) {
+		xmax = float64(m.GetWidth()) - 1
+	}
+
+	zmin := z1 - vdh
+	if zmin < 0 {
+		zmin = 0
+	}
+	zmax := z1 + vdh
+	if zmax > float64(m.GetDepth()) {
+		zmax = float64(m.GetDepth()) - 1
+	}
+
+	rays := w.getCubeRays(int(y1), int(x1), int(z1), int(ymin), int(xmin), int(zmin), int(ymax), int(xmax), int(zmax))
+
+	visibleTiles := make(map[TileKey]struct{})
+
+	// Now let's shoot some rays via Amanatides & Woo.
+	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
+		visibleTiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}] = struct{}{}
+
+		tile := m.GetTile(uint32(y), uint32(x), uint32(z))
+
+		for _, oID := range tile.GetObjects() {
+			o := w.GetObject(oID)
+			if o == nil {
+				continue
+			}
+			if o.Opaque {
+				return true
+			}
+		}
+		return false
+	})
 
 	// Set objects no longer visible
 	for tk := range w.visibleTiles {
@@ -391,6 +399,7 @@ func (w *World) updateVisibleTiles() {
 		}
 	}
 
+	// Set objects that are now visible
 	for tk := range visibleTiles {
 		if tiles, ok := m.tiles[tk]; ok {
 			for _, oID := range tiles.objectIDs {
@@ -405,4 +414,81 @@ func (w *World) updateVisibleTiles() {
 	}
 
 	w.visibleTiles = visibleTiles
+}
+
+func (w *World) updateVisionUnblocking() {
+	o := w.GetViewObject()
+	if o == nil {
+		return
+	}
+	m := w.GetCurrentMap()
+
+	// Collect our end-points for rays
+	oY := int(o.Y) + int(o.H)/2
+	oX := int(o.X) + int(o.W)/2
+	oZ := int(o.Z)
+
+	minY := oY + 6
+	maxY := minY + int(o.H) + 8
+	minX := oX - 4
+	maxX := minX + int(o.W) + 6
+	minZ := oZ + 3
+	maxZ := minZ + int(o.D) + 8
+
+	rays := w.getCubeRays(oY, oX, oZ, minY, minX, minZ, maxY, maxX, maxZ)
+	// TODO: We actually need to use an angled cone, originating from the near view target origin to whatever area we deem as the "camera" area
+	// TODO: Or, we could have 2 "cubes" -- basically 2 flat cubes that create a "right angle bracket"
+
+	unblockedTiles := make(map[TileKey]struct{})
+
+	// Now let's shoot some rays via Amanatides & Woo.
+	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
+		t := m.GetTile(uint32(y), uint32(x), uint32(z))
+		opaque := false
+		for _, oID := range t.objectIDs {
+			o := w.GetObject(oID)
+			if o == nil {
+				continue
+			}
+			if o.Opaque {
+				opaque = true
+			}
+		}
+		if opaque {
+			unblockedTiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}] = struct{}{}
+		}
+		return false
+	})
+
+	// Set objects no longer visible
+	for tk := range w.unblockedTiles {
+		_, isUnblocked := unblockedTiles[tk]
+		if tiles, ok := m.tiles[tk]; ok {
+			for _, oID := range tiles.objectIDs {
+				if o, ok := w.objects[oID]; ok {
+					if !isUnblocked && o.Unblocked {
+						o.Unblocked = false
+						o.UnblockedChange = true
+					}
+				}
+			}
+		}
+	}
+
+	// Set objects that are now visible
+	for tk := range unblockedTiles {
+		if tiles, ok := m.tiles[tk]; ok {
+			for _, oID := range tiles.objectIDs {
+				if o, ok := w.objects[oID]; ok {
+					if !o.Unblocked {
+						o.Unblocked = true
+						o.UnblockedChange = true
+					}
+				}
+			}
+		}
+	}
+
+	w.unblockedTiles = unblockedTiles
+
 }

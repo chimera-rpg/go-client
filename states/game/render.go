@@ -213,6 +213,14 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
 	} else {
 		if img != nil {
+			if o.UnblockedChange {
+				if o.Unblocked {
+					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateAlpha(0.2)
+				} else {
+					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateAlpha(1.0)
+				}
+				o.UnblockedChange = false
+			}
 			if o.VisibilityChange {
 				if o.Visible {
 					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateGrayscale(false)
