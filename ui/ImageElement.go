@@ -59,3 +59,7 @@ func (i *ImageElement) HandleUpdate(update UpdateI) {
 		i.BaseElement.HandleUpdate(update)
 	}
 }
+
+func (i *ImageElement) IsGrayscale() bool {
+	return i.grayscale
+}

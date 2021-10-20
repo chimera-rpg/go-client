@@ -84,4 +84,6 @@ type ElementI interface {
 	Blur()
 	OnBlur() bool
 	OnWindowResized(w, h int32)
+	//
+	IsGrayscale() bool
 }

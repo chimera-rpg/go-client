@@ -5,6 +5,7 @@ package ui
 
 import (
 	"image"
+	"math"
 	"unsafe"
 
 	"github.com/nfnt/resize"
@@ -156,7 +157,11 @@ func (i *ImageElement) SetImage(img image.Image) {
 		i.OutlineTexture = nil
 	}
 	i.UpdateOutline()
-	i.UpdateGrayscale()
+	if i.GrayscaleTexture != nil {
+		i.GrayscaleTexture.Destroy()
+		i.GrayscaleTexture = nil
+		i.UpdateGrayscale()
+	}
 
 	i.Dirty = true
 }
@@ -200,7 +205,21 @@ func (i *ImageElement) createGrayscale() error {
 			r := realPixels[t]
 			g := realPixels[t+1]
 			b := realPixels[t+2]
-			v := (r + g + b) / 3
+			var v byte
+			// Average
+			// v = (r + g + b) / 3
+			// Desaturation
+			{
+				v = byte((math.Max(float64(b), math.Max(float64(r), float64(g))) + math.Min(float64(b), math.Min(float64(r), float64(g)))) / 2)
+			}
+			// Minimum decomposition
+			{
+				//v = byte(math.Min(float64(b), math.Min(float64(r), float64(g))))
+			}
+			// Maximum decomposition
+			/*{
+				v = byte(math.Max(float64(b), math.Max(float64(r), float64(g))))
+			}*/
 			targetPixels[t] = v
 			targetPixels[t+1] = v
 			targetPixels[t+2] = v
@@ -307,11 +326,11 @@ func (i *ImageElement) createOutline() error {
 }
 
 func (i *ImageElement) UpdateGrayscale() {
-	if i.grayscale {
+	if i.grayscale && i.GrayscaleTexture == nil {
 		i.createGrayscale()
 	} else if i.GrayscaleTexture != nil {
-		i.GrayscaleTexture.Destroy()
-		i.GrayscaleTexture = nil
+		//i.GrayscaleTexture.Destroy()
+		//i.GrayscaleTexture = nil
 	}
 }
 

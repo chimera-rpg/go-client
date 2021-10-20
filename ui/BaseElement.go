@@ -819,3 +819,7 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 	b.CalculateStyle()
 	b.SetDirty(dirty)
 }
+
+func (b *BaseElement) IsGrayscale() bool {
+	return false
+}
