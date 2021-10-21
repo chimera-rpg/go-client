@@ -205,11 +205,11 @@ func (w *World) getSphereRays(yi, xi, zi int, radius float64) (targets [][2][3]f
 	return targets
 }
 
-func (w *World) getCubeRays(originY, originX, originZ, minY, minX, minZ, maxY, maxX, maxZ int) (c [][2][3]float64) {
+func (w *World) getCubeRays(originY, originX, originZ float64, minY, minX, minZ, maxY, maxX, maxZ int) (c [][2][3]float64) {
 	for y := minY; y < maxX; y++ {
 		for x := minX; x < maxX; x++ {
 			for z := minZ; z < maxZ; z++ {
-				c = append(c, [2][3]float64{{float64(originY), float64(originX), float64(originZ)}, {float64(y), float64(x), float64(z)}})
+				c = append(c, [2][3]float64{{originY, originX, originZ}, {float64(y), float64(x), float64(z)}})
 			}
 		}
 	}
@@ -362,12 +362,11 @@ func (w *World) updateVisibleTiles() {
 		zmax = float64(m.GetDepth()) - 1
 	}
 
-	rays := w.getCubeRays(int(y1), int(x1), int(z1), int(ymin), int(xmin), int(zmin), int(ymax), int(xmax), int(zmax))
+	rays := w.getCubeRays(y1, x1, z1, int(ymin), int(xmin), int(zmin), int(ymax), int(xmax), int(zmax))
 
 	visibleTiles := make(map[TileKey]struct{})
 
-	// Now let's shoot some rays via Amanatides & Woo.
-	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
+	markTiles := func(y, x, z int) bool {
 		visibleTiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}] = struct{}{}
 
 		tile := m.GetTile(uint32(y), uint32(x), uint32(z))
@@ -382,8 +381,18 @@ func (w *World) updateVisibleTiles() {
 			}
 		}
 		return false
-	})
+	}
 
+	// This feels wrong, but we duplicate the rays and offset the origin to ensure we can see over vertical edges on character's sides.
+	for _, r := range rays {
+		rays = append(rays, [2][3]float64{
+			{r[0][0], r[0][1] + float64(o.W), r[0][2] + float64(o.D) + 1},
+			{r[1][0], r[1][1], r[1][2]},
+		})
+	}
+
+	// Now let's shoot some rays via Amanatides & Woo.
+	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), markTiles)
 	// Set objects no longer visible
 	for tk := range w.visibleTiles {
 		_, isVisible := visibleTiles[tk]
@@ -424,15 +433,15 @@ func (w *World) updateVisionUnblocking() {
 	m := w.GetCurrentMap()
 
 	// Collect our end-points for rays
-	oY := int(o.Y) + int(o.H)/2
-	oX := int(o.X) + int(o.W)/2
-	oZ := int(o.Z)
+	oY := float64(o.Y) + float64(o.H)/2
+	oX := float64(o.X) + float64(o.W)/2
+	oZ := float64(o.Z)
 
-	minY := oY + 6
+	minY := int(oY) + 6
 	maxY := minY + int(o.H) + 8
-	minX := oX - 4
+	minX := int(oX) - 4
 	maxX := minX + int(o.W) + 6
-	minZ := oZ + 3
+	minZ := int(oZ) + 3
 	maxZ := minZ + int(o.D) + 8
 
 	rays := w.getCubeRays(oY, oX, oZ, minY, minX, minZ, maxY, maxX, maxZ)
