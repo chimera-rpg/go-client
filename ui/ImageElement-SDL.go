@@ -73,9 +73,9 @@ func (i *ImageElement) Render() {
 			texture = i.SDLTexture
 		}
 		if texture != nil {
-			i.SDLTexture.SetAlphaMod(uint8(i.Style.Alpha.Value * 255))
+			texture.SetAlphaMod(uint8(i.Style.Alpha.Value * 255))
 			i.Context.Renderer.Copy(texture, nil, &dst)
-			i.SDLTexture.SetAlphaMod(255)
+			texture.SetAlphaMod(255)
 		}
 	}
 	// Render outline.
