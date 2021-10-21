@@ -328,10 +328,10 @@ func (w *World) updateVisibleTiles() {
 		y1 = float64(m.GetHeight() - 1)
 	}
 	x1 := float64(o.X)
-	z1 := float64(o.Z + 1)
+	z1 := float64(o.Z)
 
 	// Acquire our box dimensions
-	vhh := float64(16 / 2)
+	vhh := float64(32 / 2)
 	vwh := float64(32 / 2)
 	vdh := float64(32 / 2)
 
