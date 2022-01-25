@@ -16,8 +16,8 @@ type World struct {
 	currentMap     data.StringID
 	objects        map[uint32]*Object
 	viewObjectID   uint32
-	visibleTiles   map[TileKey]struct{}
-	unblockedTiles map[TileKey]struct{}
+	visibleTiles   [][][]bool
+	unblockedTiles [][][]bool
 	Log            *logrus.Logger
 }
 
@@ -28,8 +28,8 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 
 	w.maps = make(map[data.StringID]*DynamicMap)
 	w.objects = make(map[uint32]*Object)
-	w.visibleTiles = make(map[TileKey]struct{})
-	w.unblockedTiles = make(map[TileKey]struct{})
+	w.visibleTiles = make([][][]bool, 0)
+	w.unblockedTiles = make([][][]bool, 0)
 	w.currentMap = 0
 }
 
@@ -364,10 +364,16 @@ func (w *World) updateVisibleTiles() {
 
 	rays := w.getCubeRays(y1, x1, z1, int(ymin), int(xmin), int(zmin), int(ymax), int(xmax), int(zmax))
 
-	visibleTiles := make(map[TileKey]struct{})
+	visibleTiles := make([][][]bool, m.GetHeight())
+	for i := range visibleTiles {
+		visibleTiles[i] = make([][]bool, m.GetWidth())
+		for j := range visibleTiles[i] {
+			visibleTiles[i][j] = make([]bool, m.GetDepth())
+		}
+	}
 
 	markTiles := func(y, x, z int) bool {
-		visibleTiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}] = struct{}{}
+		visibleTiles[y][x][z] = true
 
 		tile := m.GetTile(uint32(y), uint32(x), uint32(z))
 
@@ -394,14 +400,25 @@ func (w *World) updateVisibleTiles() {
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), markTiles)
 	// Set objects no longer visible
-	for tk := range w.visibleTiles {
-		_, isVisible := visibleTiles[tk]
-		if tiles, ok := m.tiles[tk]; ok {
-			for _, oID := range tiles.objectIDs {
-				if o, ok := w.objects[oID]; ok {
-					if !isVisible && o.Visible {
-						o.Visible = false
-						o.VisibilityChange = true
+	for y := range w.visibleTiles {
+		for x := range w.visibleTiles[y] {
+			for z := range w.visibleTiles[y][x] {
+				var isVisible bool
+				if y < len(visibleTiles) {
+					if x < len(visibleTiles[0]) {
+						if z < len(visibleTiles[0][0]) {
+							isVisible = visibleTiles[y][x][z]
+						}
+					}
+				}
+				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
+					for _, oID := range tiles.objectIDs {
+						if o, ok := w.objects[oID]; ok {
+							if !isVisible && o.Visible {
+								o.Visible = false
+								o.VisibilityChange = true
+							}
+						}
 					}
 				}
 			}
@@ -409,13 +426,17 @@ func (w *World) updateVisibleTiles() {
 	}
 
 	// Set objects that are now visible
-	for tk := range visibleTiles {
-		if tiles, ok := m.tiles[tk]; ok {
-			for _, oID := range tiles.objectIDs {
-				if o, ok := w.objects[oID]; ok {
-					if !o.Visible {
-						o.Visible = true
-						o.VisibilityChange = true
+	for y := range visibleTiles {
+		for x := range visibleTiles[y] {
+			for z := range visibleTiles[y][x] {
+				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
+					for _, oID := range tiles.objectIDs {
+						if o, ok := w.objects[oID]; ok {
+							if !o.Visible {
+								o.Visible = true
+								o.VisibilityChange = true
+							}
+						}
 					}
 				}
 			}
@@ -448,7 +469,13 @@ func (w *World) updateVisionUnblocking() {
 	// TODO: We actually need to use an angled cone, originating from the near view target origin to whatever area we deem as the "camera" area
 	// TODO: Or, we could have 2 "cubes" -- basically 2 flat cubes that create a "right angle bracket"
 
-	unblockedTiles := make(map[TileKey]struct{})
+	unblockedTiles := make([][][]bool, m.GetHeight())
+	for i := range unblockedTiles {
+		unblockedTiles[i] = make([][]bool, m.GetWidth())
+		for j := range unblockedTiles[i] {
+			unblockedTiles[i][j] = make([]bool, m.GetDepth())
+		}
+	}
 
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
@@ -464,34 +491,49 @@ func (w *World) updateVisionUnblocking() {
 			}
 		}
 		if opaque {
-			unblockedTiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}] = struct{}{}
+			unblockedTiles[y][x][z] = true
 		}
 		return false
 	})
 
-	// Set objects no longer visible
-	for tk := range w.unblockedTiles {
-		_, isUnblocked := unblockedTiles[tk]
-		if tiles, ok := m.tiles[tk]; ok {
-			for _, oID := range tiles.objectIDs {
-				if o, ok := w.objects[oID]; ok {
-					if !isUnblocked && o.Unblocked {
-						o.Unblocked = false
-						o.UnblockedChange = true
+	// Set objects no longer Unblocked
+	for y := range w.unblockedTiles {
+		for x := range w.unblockedTiles[y] {
+			for z := range w.unblockedTiles[y][x] {
+				var isUnblocked bool
+				if y < len(unblockedTiles) {
+					if x < len(unblockedTiles[0]) {
+						if z < len(unblockedTiles[0][0]) {
+							isUnblocked = unblockedTiles[y][x][z]
+						}
+					}
+				}
+				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
+					for _, oID := range tiles.objectIDs {
+						if o, ok := w.objects[oID]; ok {
+							if !isUnblocked && o.Unblocked {
+								o.Unblocked = false
+								o.UnblockedChange = true
+							}
+						}
 					}
 				}
 			}
 		}
 	}
 
-	// Set objects that are now visible
-	for tk := range unblockedTiles {
-		if tiles, ok := m.tiles[tk]; ok {
-			for _, oID := range tiles.objectIDs {
-				if o, ok := w.objects[oID]; ok {
-					if !o.Unblocked {
-						o.Unblocked = true
-						o.UnblockedChange = true
+	// Set objects that are now unblocked
+	for y := range unblockedTiles {
+		for x := range unblockedTiles[y] {
+			for z := range unblockedTiles[y][x] {
+				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
+					for _, oID := range tiles.objectIDs {
+						if o, ok := w.objects[oID]; ok {
+							if !o.Visible {
+								o.Unblocked = true
+								o.UnblockedChange = true
+							}
+						}
 					}
 				}
 			}
