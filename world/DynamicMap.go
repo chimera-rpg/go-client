@@ -1,10 +1,5 @@
 package world
 
-// TileKey is a key for our dynamic map hash.
-type TileKey struct {
-	Y, X, Z uint32
-}
-
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
 	tiles                [][][]DynamicMapTile
