@@ -7,7 +7,7 @@ type TileKey struct {
 
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
-	tiles                map[TileKey]DynamicMapTile
+	tiles                [][][]DynamicMapTile
 	height, width, depth uint32
 	cameraX              uint32
 	cameraY              uint32
@@ -19,12 +19,22 @@ type DynamicMap struct {
 
 // Init initializes the DynamicMap.
 func (d *DynamicMap) Init() {
-	d.tiles = make(map[TileKey]DynamicMapTile)
+	d.tiles = make([][][]DynamicMapTile, d.height)
+	for i := range d.tiles {
+		d.tiles[i] = make([][]DynamicMapTile, d.width)
+		for j := range d.tiles[i] {
+			d.tiles[i][j] = make([]DynamicMapTile, d.depth)
+		}
+	}
+
 }
 
 // SetTile sets the tile at y, x, z
 func (d *DynamicMap) SetTile(y, x, z uint32, objectIDs []uint32) {
-	d.tiles[TileKey{y, x, z}] = DynamicMapTile{objectIDs}
+	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
+		return
+	}
+	d.tiles[y][x][z] = DynamicMapTile{objectIDs}
 }
 
 // SetCamera sets the current camera position to y, x, z
@@ -42,7 +52,7 @@ func (d *DynamicMap) GetCameraView() [][][]DynamicMapTile {
 		for y := -d.cameraD / 2; y < d.cameraD/2; y++ {
 			tile[d.cameraX+x][d.cameraY+y] = make([]DynamicMapTile, d.cameraH)
 			for z := -d.cameraH / 2; z < d.cameraH/2; z++ {
-				tile[d.cameraX+x][d.cameraY+y][d.cameraZ+z] = d.GetTile(y, x, z)
+				tile[d.cameraX+x][d.cameraY+y][d.cameraZ+z] = d.GetTile(int(y), int(x), int(z))
 			}
 		}
 	}
@@ -50,11 +60,11 @@ func (d *DynamicMap) GetCameraView() [][][]DynamicMapTile {
 }
 
 // GetTile gets the tile stack at Y, X, Z.
-func (d *DynamicMap) GetTile(y, x, z uint32) (tiles DynamicMapTile) {
-	if darray, ok := d.tiles[TileKey{y, x, z}]; ok {
-		return darray
+func (d *DynamicMap) GetTile(y, x, z int) (tiles DynamicMapTile) {
+	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
+		return
 	}
-	return
+	return d.tiles[y][x][z]
 }
 
 // GetHeight gets height.

@@ -78,7 +78,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		}
 	}
 	// See if we need to invalidate any objects that no longer are contained in the given tile.
-	for _, oID := range w.maps[w.currentMap].GetTile(cmd.Y, cmd.X, cmd.Z).objectIDs {
+	for _, oID := range w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z)).objectIDs {
 		if _, ok := w.objects[oID]; !ok {
 			continue
 		}
@@ -375,7 +375,7 @@ func (w *World) updateVisibleTiles() {
 	markTiles := func(y, x, z int) bool {
 		visibleTiles[y][x][z] = true
 
-		tile := m.GetTile(uint32(y), uint32(x), uint32(z))
+		tile := m.GetTile(y, x, z)
 
 		for _, oID := range tile.GetObjects() {
 			o := w.GetObject(oID)
@@ -400,42 +400,19 @@ func (w *World) updateVisibleTiles() {
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), markTiles)
 	// Set objects no longer visible
-	for y := range w.visibleTiles {
-		for x := range w.visibleTiles[y] {
-			for z := range w.visibleTiles[y][x] {
-				var isVisible bool
-				if y < len(visibleTiles) {
-					if x < len(visibleTiles[0]) {
-						if z < len(visibleTiles[0][0]) {
-							isVisible = visibleTiles[y][x][z]
-						}
-					}
-				}
-				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
-					for _, oID := range tiles.objectIDs {
-						if o, ok := w.objects[oID]; ok {
-							if !isVisible && o.Visible {
-								o.Visible = false
-								o.VisibilityChange = true
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Set objects that are now visible
 	for y := range visibleTiles {
 		for x := range visibleTiles[y] {
 			for z := range visibleTiles[y][x] {
-				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
-					for _, oID := range tiles.objectIDs {
-						if o, ok := w.objects[oID]; ok {
-							if !o.Visible {
-								o.Visible = true
-								o.VisibilityChange = true
-							}
+				isVisible := visibleTiles[y][x][z]
+				tiles := m.GetTile(y, x, z)
+				for _, oID := range tiles.objectIDs {
+					if o, ok := w.objects[oID]; ok {
+						if !isVisible && o.Visible {
+							o.Visible = false
+							o.VisibilityChange = true
+						} else if isVisible && !o.Visible {
+							o.Visible = true
+							o.VisibilityChange = true
 						}
 					}
 				}
@@ -479,7 +456,7 @@ func (w *World) updateVisionUnblocking() {
 
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
-		t := m.GetTile(uint32(y), uint32(x), uint32(z))
+		t := m.GetTile(y, x, z)
 		opaque := false
 		for _, oID := range t.objectIDs {
 			o := w.GetObject(oID)
@@ -497,42 +474,19 @@ func (w *World) updateVisionUnblocking() {
 	})
 
 	// Set objects no longer Unblocked
-	for y := range w.unblockedTiles {
-		for x := range w.unblockedTiles[y] {
-			for z := range w.unblockedTiles[y][x] {
-				var isUnblocked bool
-				if y < len(unblockedTiles) {
-					if x < len(unblockedTiles[0]) {
-						if z < len(unblockedTiles[0][0]) {
-							isUnblocked = unblockedTiles[y][x][z]
-						}
-					}
-				}
-				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
-					for _, oID := range tiles.objectIDs {
-						if o, ok := w.objects[oID]; ok {
-							if !isUnblocked && o.Unblocked {
-								o.Unblocked = false
-								o.UnblockedChange = true
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Set objects that are now unblocked
 	for y := range unblockedTiles {
 		for x := range unblockedTiles[y] {
 			for z := range unblockedTiles[y][x] {
-				if tiles, ok := m.tiles[TileKey{Y: uint32(y), X: uint32(x), Z: uint32(z)}]; ok {
-					for _, oID := range tiles.objectIDs {
-						if o, ok := w.objects[oID]; ok {
-							if !o.Visible {
-								o.Unblocked = true
-								o.UnblockedChange = true
-							}
+				isUnblocked := unblockedTiles[y][x][z]
+				tiles := m.GetTile(y, x, z)
+				for _, oID := range tiles.objectIDs {
+					if o, ok := w.objects[oID]; ok {
+						if !isUnblocked && o.Unblocked {
+							o.Unblocked = false
+							o.UnblockedChange = true
+						} else if isUnblocked && !o.Unblocked {
+							o.Unblocked = true
+							o.UnblockedChange = true
 						}
 					}
 				}
@@ -541,5 +495,4 @@ func (w *World) updateVisionUnblocking() {
 	}
 
 	w.unblockedTiles = unblockedTiles
-
 }
