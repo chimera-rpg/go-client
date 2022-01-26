@@ -139,6 +139,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 				o.FrameIndex = 0
 			}
 			frame = frames[o.FrameIndex]
+			ft = time.Duration(frame.Time) * time.Millisecond
 		}
 	}
 
