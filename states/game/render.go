@@ -132,7 +132,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 
 	if len(frames) > 1 && frame.Time > 0 {
 		o.FrameElapsed += dt
-		for ft := time.Duration(frame.Time) * time.Millisecond; ft >= o.FrameElapsed; {
+		for ft := time.Duration(frame.Time) * time.Millisecond; o.FrameElapsed >= ft; {
 			o.FrameElapsed -= ft
 			o.FrameIndex++
 			if o.FrameIndex >= len(frames) {
