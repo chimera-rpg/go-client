@@ -169,7 +169,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 
 	// Get/create our shadow position, if we should.
 	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
-	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() {
+	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
 		sy, sx, sz := s.world.GetObjectShadowPosition(o)
 
 		x, y, zIndex := s.GetRenderPosition(m, uint32(sy), uint32(sx), uint32(sz))
@@ -182,6 +182,19 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 
 		w = w * int(o.W)
 		h = h * int(o.D)
+
+		// Reduce shadow by 1/4th if it is an item
+		if o.Type == cdata.ArchetypeItem.AsUint8() {
+
+			rw := w / 4
+			rh := h / 4
+
+			w -= rw
+			h -= rh
+
+			x += rw / 2
+			y += rh / 2
+		}
 
 		if _, ok := s.objectShadows[o.ID]; !ok {
 			s.objectShadows[o.ID] = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
