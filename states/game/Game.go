@@ -13,6 +13,7 @@ import (
 	"github.com/chimera-rpg/go-client/world"
 	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 type CommandMode = int
@@ -154,9 +155,10 @@ func (s *Game) Loop() {
 				if !e.pressed {
 					s.repeatingKeys[e.code] = 0
 				}
+				// Remove
 				s.bindings.Trigger(binds.KeyGroup{
 					Keys:      []uint8{e.code},
-					Modifiers: e.modifiers,
+					Modifiers: e.modifiers &^ sdl.KMOD_NUM, // Remove numlock as a modifier
 					Pressed:   e.pressed,
 					Repeat:    e.repeat,
 					OnRepeat:  s.repeatingKeys[e.code],
