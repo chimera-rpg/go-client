@@ -55,6 +55,7 @@ type Game struct {
 	inputChan            chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
 	objectImages         map[uint32]ui.ElementI
 	objectImageIDs       map[uint32]data.StringID
+	objectShadows        map[uint32]ui.ElementI
 	mapMessages          []MapMessage
 	MessageHistory       []Message
 	bindings             *binds.Bindings
@@ -73,6 +74,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.inputChan = make(chan UserInput)
 	s.objectImages = make(map[uint32]ui.ElementI)
 	s.objectImageIDs = make(map[uint32]data.StringID)
+	s.objectShadows = make(map[uint32]ui.ElementI)
 	s.statuses = make(map[cdata.StatusType]bool)
 	s.statusElements = make(map[cdata.StatusType]ui.ElementI)
 	s.repeatingKeys = make(map[uint8]int)
@@ -266,7 +268,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 				ID:         snd.SoundID,
 				PlaybackID: c.ObjectID,
 				Volume:     c.Volume,
-				Loop:       c.Loop,
+				//Loop:       c.Loop,
 			}
 			// TODO: Some sort of "you hear music..." then add some credits?
 			/*if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {

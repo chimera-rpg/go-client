@@ -23,6 +23,14 @@ func (s *Game) HandleRender() {
 			delete(s.objectImages, oID)
 		}
 	}
+	for oID, t := range s.objectShadows {
+		o := s.world.GetObject(oID)
+		if o == nil {
+			fmt.Println("Destroying shadow for ", oID)
+			t.GetDestroyChannel() <- true
+			delete(s.objectShadows, oID)
+		}
+	}
 
 	if o := s.world.GetViewObject(); o != nil {
 		renderX, renderY, _ := s.GetRenderPosition(m, o.Y, o.X, o.Z)
@@ -144,6 +152,48 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	// Calculate our scaled pixel position at which to render.
 	w := int(float64(tileWidth) * scale)
 	h := int(float64(tileHeight) * scale)
+
+	// Get/create our shadow position, if we should.
+	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
+	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() {
+		sy, sx, sz := s.world.GetObjectShadowPosition(o)
+
+		x, y, zIndex := s.GetRenderPosition(m, uint32(sy), uint32(sx), uint32(sz))
+		// TODO: Fix shadows so they have a higher zIndex than z+1, but only for y of the same.
+		zIndex--
+
+		// Adjust our target position.
+		x += int(float64(offsetX) * scale)
+		y += int((float64(offsetY) + float64(o.D)) * scale)
+
+		w = w * int(o.W)
+		h = h * int(o.D)
+
+		if _, ok := s.objectShadows[o.ID]; !ok {
+			s.objectShadows[o.ID] = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
+				Shape: ui.EllipseShape,
+				Style: fmt.Sprintf(`
+							X %d
+							Y %d
+							W %d
+							H %d
+							ZIndex %d
+							BackgroundColor 0 0 0 96
+						`, x, y, w, h, zIndex),
+			})
+			s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
+		} else {
+			if o.Changed {
+				s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
+					X: ui.Number{Value: float64(x)},
+					Y: ui.Number{Value: float64(y)},
+					W: ui.Number{Value: float64(w)},
+					H: ui.Number{Value: float64(h)},
+				}
+				s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
+			}
+		}
+	}
 
 	img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
 	if _, ok := s.objectImages[o.ID]; !ok {

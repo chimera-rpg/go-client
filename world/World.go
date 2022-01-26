@@ -496,3 +496,22 @@ func (w *World) updateVisionUnblocking() {
 
 	w.unblockedTiles = unblockedTiles
 }
+
+// GetObjectShadowPosition returns the shadow position for the given object. This is calculated from the object's position downward (-Y) until an opaque block is eached.
+func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
+	y = int(o.Y)
+	x = int(o.X)
+	z = int(o.Z)
+
+	for i := y; i > 0; i-- {
+		for _, oID := range w.maps[w.currentMap].GetTile(i, x, z).objectIDs {
+			o2 := w.GetObject(oID)
+			if o2.Opaque {
+				y = i + 1
+				return
+			}
+		}
+	}
+
+	return
+}
