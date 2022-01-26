@@ -51,8 +51,8 @@ func (p *PrimitiveElement) Render() {
 		if p.Style.BackgroundColor.A > 0 {
 			gfx.FilledEllipseRGBA(
 				p.Context.Renderer,
-				p.x,
-				p.y,
+				p.x+p.w/2,
+				p.y+p.h/2,
 				p.w/2,
 				p.h/2,
 				p.Style.BackgroundColor.R,
@@ -65,8 +65,8 @@ func (p *PrimitiveElement) Render() {
 		if p.Style.OutlineColor.A > 0 {
 			gfx.EllipseRGBA(
 				p.Context.Renderer,
-				p.x,
-				p.y,
+				p.x+p.w/2,
+				p.y+p.h/2,
 				p.w/2,
 				p.h/2,
 				p.Style.OutlineColor.R,
