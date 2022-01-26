@@ -1,9 +1,13 @@
 package main
 
 import (
+	"runtime"
 	"runtime/debug"
 
 	"github.com/sirupsen/logrus"
+
+	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/chimera-rpg/go-client/audio"
 	"github.com/chimera-rpg/go-client/client"
@@ -68,6 +72,14 @@ func main() {
 	defer clientInstance.Destroy()
 	// Start the clientInstance's channel listening loop as a coroutine
 	go clientInstance.ChannelLoop()
+
+	if clientInstance.Flags.Profile {
+		log.Print("Starting profiling on port 6060")
+		go func() {
+			runtime.SetBlockProfileRate(1)
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
 
 	// Automatically attempt to connect if the server flag was passed
 	if len(clientInstance.Flags.Connect) > 0 {

@@ -9,6 +9,7 @@ type Flags struct {
 	Connect            string
 	Fullscreen         bool
 	GraphicsScale      float64
+	Profile            bool
 }
 
 // Parse calls flag.Parse() on its fields.
@@ -19,5 +20,6 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.Connect, "connect", "", "SERVER:PORT")
 	flag.Float64Var(&f.GraphicsScale, "scale", 4, "graphics scaling")
 	flag.BoolVar(&f.Fullscreen, "fullscreen", false, "fullscreen")
+	flag.BoolVar(&f.Profile, "profile", false, "run pprof profiling on :6060")
 	flag.Parse()
 }
