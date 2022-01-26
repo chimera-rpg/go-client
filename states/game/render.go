@@ -11,7 +11,7 @@ import (
 )
 
 // HandleRender handles the rendering of our Game state.
-func (s *Game) HandleRender() {
+func (s *Game) HandleRender(delta time.Duration) {
 	// FIXME: This is _very_ rough and is just for testing!
 	m := s.world.GetCurrentMap()
 	objects := s.world.GetObjects()
@@ -64,7 +64,7 @@ func (s *Game) HandleRender() {
 
 	// Iterate over world objects.
 	for _, o := range objects {
-		s.RenderObject(o, m)
+		s.RenderObject(o, m, delta)
 	}
 
 	// Iterate over world messages.
@@ -109,7 +109,7 @@ func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, 
 }
 
 // RenderObject renders a given Object within a DynamicMap.
-func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
+func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Duration) {
 	scale := *s.objectsScale
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
@@ -128,6 +128,19 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	if len(frames) == 0 {
 		return
 	}
+	frame := frames[o.FrameIndex]
+
+	if len(frames) > 1 && frame.Time > 0 {
+		o.FrameElapsed += dt
+		for ft := time.Duration(frame.Time) * time.Millisecond; ft >= o.FrameElapsed; {
+			o.FrameElapsed -= ft
+			o.FrameIndex++
+			if o.FrameIndex >= len(frames) {
+				o.FrameIndex = 0
+			}
+			frame = frames[o.FrameIndex]
+		}
+	}
 
 	// Get our render position.
 	x, y, zIndex := s.GetRenderPosition(m, o.Y, o.X, o.Z)
@@ -142,8 +155,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 	}
 
 	// Set animation frame offsets.
-	offsetX += int(frames[0].X)
-	offsetY += int(frames[0].Y)
+	offsetX += int(frame.X)
+	offsetY += int(frame.Y)
 
 	// Adjust our target position.
 	x += int(float64(offsetX) * scale)
@@ -195,7 +208,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 		}
 	}
 
-	img := s.Client.DataManager.GetCachedImage(frames[0].ImageID)
+	img := s.Client.DataManager.GetCachedImage(frame.ImageID)
 	if _, ok := s.objectImages[o.ID]; !ok {
 		if img != nil {
 			bounds := img.Bounds()
@@ -234,7 +247,7 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 					},
 				},
 			})
-			s.objectImageIDs[o.ID] = frames[0].ImageID
+			s.objectImageIDs[o.ID] = frame.ImageID
 		} else {
 			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
@@ -308,8 +321,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap) {
 				o.Changed = false
 			}
 			// Only update the image if the image ID has changed.
-			if s.objectImageIDs[o.ID] != frames[0].ImageID {
-				s.objectImageIDs[o.ID] = frames[0].ImageID
+			if s.objectImageIDs[o.ID] != frame.ImageID {
+				s.objectImageIDs[o.ID] = frame.ImageID
 				s.objectImages[o.ID].GetUpdateChannel() <- img
 			}
 		}

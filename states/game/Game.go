@@ -131,14 +131,18 @@ func (s *Game) Loop() {
 				return
 			default:
 				cleanupChan <- struct{}{}
-				time.Sleep(time.Second * 1)
+				// NOTE: This controls automatic re-rendering
+				time.Sleep(time.Millisecond * 100)
 			}
 		}
 	}()
 	defer func() {
 		cleanupChanQuit <- struct{}{}
 	}()
+	lastTs := time.Now()
 	for {
+		ts := time.Now()
+		delta := ts.Sub(lastTs)
 		select {
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
@@ -208,7 +212,8 @@ func (s *Game) Loop() {
 			}
 		case <-cleanupChan:
 		}
-		s.HandleRender()
+		s.HandleRender(delta)
+		lastTs = ts
 	}
 }
 
