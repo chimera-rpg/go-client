@@ -29,5 +29,8 @@ func NewPrimitiveElement(c PrimitiveElementConfig) ElementI {
 	p.Style.Parse(c.Style)
 	p.Shape = c.Shape
 	p.Events = c.Events
+	p.SetupChannels()
+	p.OnCreated()
+
 	return ElementI(&p)
 }
