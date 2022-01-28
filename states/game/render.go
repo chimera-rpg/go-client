@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -168,59 +169,17 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 	h := int(float64(tileHeight) * scale)
 
 	// Get/create our shadow position, if we should.
-	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
 	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
-		sy, sx, sz := s.world.GetObjectShadowPosition(o)
-
-		x, y, zIndex := s.GetRenderPosition(m, uint32(sy), uint32(sx), uint32(sz))
-		// TODO: Fix shadows so they have a higher zIndex than z+1, but only for y of the same.
-		zIndex--
-
-		// Adjust our target position.
-		x += int(float64(offsetX) * scale)
-		y += int((float64(offsetY) + float64(o.D)) * scale)
-
-		w = w * int(o.W)
-		h = h * int(o.D)
-
-		// Reduce shadow by 1/4th if it is an item
-		if o.Type == cdata.ArchetypeItem.AsUint8() {
-
-			rw := w / 4
-			rh := h / 4
-
-			w -= rw
-			h -= rh
-
-			x += rw / 2
-			y += rh / 2
-		}
-
-		if _, ok := s.objectShadows[o.ID]; !ok {
-			s.objectShadows[o.ID] = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
-				Shape: ui.EllipseShape,
-				Style: fmt.Sprintf(`
-							X %d
-							Y %d
-							W %d
-							H %d
-							ZIndex %d
-							BackgroundColor 0 0 0 96
-						`, x, y, w, h, zIndex),
-			})
-			s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
-		} else {
-			if o.Changed {
-				s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
-					X: ui.Number{Value: float64(x)},
-					Y: ui.Number{Value: float64(y)},
-					W: ui.Number{Value: float64(w)},
-					H: ui.Number{Value: float64(h)},
-				}
-				s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
-			}
-		}
+		s.RenderObjectShadows(o, m, offsetX, offsetY, w, h)
 	}
+
+	s.RenderObjectImage(o, m, frame, x, y, zIndex, w, h)
+}
+
+func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int) {
+	scale := *s.objectsScale
+	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
+	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 
 	img := s.Client.DataManager.GetCachedImage(frame.ImageID)
 	if _, ok := s.objectImages[o.ID]; !ok {
@@ -339,6 +298,62 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 				s.objectImageIDs[o.ID] = frame.ImageID
 				s.objectImages[o.ID].GetUpdateChannel() <- img
 			}
+		}
+	}
+
+}
+
+func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX, offsetY, w, h int) {
+	scale := *s.objectsScale
+	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
+	sy, sx, sz := s.world.GetObjectShadowPosition(o)
+
+	x, y, zIndex := s.GetRenderPosition(m, uint32(sy), uint32(sx), uint32(sz))
+	// TODO: Fix shadows so they have a higher zIndex than z+1, but only for y of the same.
+	zIndex--
+
+	// Adjust our target position.
+	x += int(float64(offsetX) * scale)
+	y += int((float64(offsetY) + float64(o.D)) * scale)
+
+	w = w * int(o.W)
+	h = h * int(o.D)
+
+	// Reduce shadow by 1/4th if it is an item
+	if o.Type == cdata.ArchetypeItem.AsUint8() {
+
+		rw := w / 4
+		rh := h / 4
+
+		w -= rw
+		h -= rh
+
+		x += rw / 2
+		y += rh / 2
+	}
+
+	if _, ok := s.objectShadows[o.ID]; !ok {
+		s.objectShadows[o.ID] = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
+			Shape: ui.EllipseShape,
+			Style: fmt.Sprintf(`
+							X %d
+							Y %d
+							W %d
+							H %d
+							ZIndex %d
+							BackgroundColor 0 0 0 96
+						`, x, y, w, h, zIndex),
+		})
+		s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
+	} else {
+		if o.Changed {
+			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
+				X: ui.Number{Value: float64(x)},
+				Y: ui.Number{Value: float64(y)},
+				W: ui.Number{Value: float64(w)},
+				H: ui.Number{Value: float64(h)},
+			}
+			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
 		}
 	}
 }
