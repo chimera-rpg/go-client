@@ -189,22 +189,28 @@ func (m *Manager) collectCachedSounds() (err error) {
 			return err
 		}
 		if !info.IsDir() {
+			var dataType uint8
+			knownType := false
+			shortpath := filepath[len(soundsPath)+1:]
 			if strings.HasSuffix(filepath, ".flac") {
-				shortpath := filepath[len(soundsPath)+1:]
 				shortpath = shortpath[:len(shortpath)-len(".flac")]
+				dataType = network.SoundFlac
+				knownType = true
+			} else if strings.HasSuffix(filepath, ".ogg") {
+				shortpath = shortpath[:len(shortpath)-len(".ogg")]
+				dataType = network.SoundOgg
+				knownType = true
+			}
+			if knownType {
 				ui64, err := strconv.ParseUint(shortpath, 10, 32)
 				if err != nil {
 					m.Log.Warn("[Manager] ", err)
 					return nil
 				}
 				i := uint32(ui64)
-				bytes, err := m.GetBytes(filepath)
-				if err != nil {
-					m.Log.Warn("[Manager] ", err)
-					return nil
-				}
 				m.sounds[i] = SoundEntry{
-					Bytes: bytes,
+					Filepath: filepath,
+					Type:     dataType,
 				}
 			}
 		}
@@ -536,15 +542,22 @@ func (m *Manager) HandleSoundCommand(cmd network.CommandSound) error {
 			Pending: false,
 		}
 	} else if cmd.Type == network.Set {
-		if cmd.DataType == network.SoundFlac {
-			// TODO: Decode Flac into RAW? Or PCM?
-			m.sounds[cmd.SoundID] = SoundEntry{
-				Bytes:   cmd.Data,
-				Pending: false,
-			}
-			// Also write the sound to disk for future use.
+		if cmd.DataType == network.SoundFlac || cmd.DataType == network.SoundOgg {
+			// Write the sound to disk for future use.
 			if err := m.WriteSound(cmd.SoundID, cmd.DataType, cmd.Data); err != nil {
 				m.Log.Warn("[Manager] ", err)
+			}
+
+			// Acquire file path and get our reader. This is a rough duplicate of our initial caching code.
+			targetPath := path.Join(m.CachePath, "sounds", strconv.FormatUint(uint64(cmd.SoundID), 10))
+			if cmd.DataType == network.SoundFlac {
+				targetPath = targetPath + ".flac"
+			} else if cmd.DataType == network.SoundOgg {
+				targetPath = targetPath + ".ogg"
+			}
+			m.sounds[cmd.SoundID] = SoundEntry{
+				Filepath: targetPath,
+				Type:     cmd.DataType,
 			}
 		} else {
 			m.Log.Warn("[Manager] Unhandled Sound Type")

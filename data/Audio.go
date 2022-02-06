@@ -16,6 +16,8 @@ type Sound struct {
 
 // SoundEntry provides something.
 type SoundEntry struct {
-	Bytes   []byte // The underlying byte data for the sound.
-	Pending bool   // If the sound has been received yet.
+	//Bytes   []byte // The underlying byte data for the sound.
+	Filepath string // Path to the file on distk.
+	Type     uint8  // See network sound command type
+	Pending  bool   // If the sound has been received yet.
 }

@@ -58,8 +58,9 @@ func main() {
 		// FIXME: This isn't the right place for this.
 		for k, v := range dataManager.Sounds() {
 			audioInstance.CommandChannel <- audio.CommandNewSound{
-				ID:    k,
-				Bytes: v.Bytes,
+				ID:       k,
+				Type:     v.Type,
+				Filepath: v.Filepath,
 			}
 		}
 	}

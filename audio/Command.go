@@ -6,8 +6,9 @@ type CommandI interface {
 
 // CommandNewSound adds a sound from bytes matching the given ID.
 type CommandNewSound struct {
-	ID    uint32
-	Bytes []byte
+	ID       uint32
+	Type     uint8 // See network sound command type
+	Filepath string
 }
 
 // CommandPlaySound starts playing sounds matching the given ID.
