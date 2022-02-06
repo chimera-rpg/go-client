@@ -2,7 +2,6 @@ package audio
 
 import (
 	"errors"
-	"log"
 	"os"
 
 	"github.com/chimera-rpg/go-common/network"
@@ -53,13 +52,13 @@ func (s *Sound) decode() (beep.StreamSeekCloser, beep.Format, error) {
 	if s.soundType == network.SoundFlac {
 		streamer, format, err := flac.Decode(f)
 		if err != nil {
-			log.Fatal(err)
+			return nil, beep.Format{}, err
 		}
 		return streamer, format, nil
 	} else if s.soundType == network.SoundOgg {
 		streamer, format, err := vorbis.Decode(f)
 		if err != nil {
-			log.Fatal(err)
+			return nil, beep.Format{}, err
 		}
 		return streamer, format, nil
 	}
