@@ -35,3 +35,7 @@ type CommandPlayMusic struct {
 type CommandStopMusic struct {
 	PlaybackID uint32
 }
+
+// CommandStopAllMusic stops all playing music.
+type CommandStopAllMusic struct {
+}

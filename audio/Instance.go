@@ -56,6 +56,13 @@ func (instance *Instance) Loop() {
 				} else {
 					instance.log.Errorf("[Audio] missing music playback %d", c.PlaybackID)
 				}
+			case CommandStopAllMusic:
+				for playbackID, sndId := range instance.playingMusic {
+					if snd, ok := instance.sounds[sndId]; ok {
+						snd.stopMusic(playbackID)
+					}
+				}
+				instance.playingMusic = make(map[uint32]uint32)
 			}
 		}
 	}

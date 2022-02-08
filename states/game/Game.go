@@ -118,6 +118,7 @@ func (s *Game) Close() {
 		s.Client.Connection.Close()
 	}()
 	s.CleanupUI()
+	s.Client.Audio.CommandChannel <- audio.CommandStopAllMusic{}
 }
 
 // Loop is our loop for managing network activity and beyond.
