@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/chimera-rpg/go-client/data"
+	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
 	"github.com/sirupsen/logrus"
 )
@@ -508,6 +509,10 @@ func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
 			o2 := w.GetObject(oID)
 			if o2.Opaque {
 				y = i + 1
+				// If it's an opaque tile, we treat its shadow position as one lower.
+				if o2.Type == cdata.ArchetypeTile.AsUint8() {
+					y--
+				}
 				return
 			}
 		}
