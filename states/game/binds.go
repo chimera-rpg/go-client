@@ -131,6 +131,74 @@ var (
 		Keys:    []uint8{79},
 		Pressed: false,
 	}
+	defaultUp1 = binds.KeyGroup{
+		Keys:      []uint8{107},
+		Modifiers: 1,
+		Pressed:   true,
+	}
+	defaultUp2 = binds.KeyGroup{
+		Keys:      []uint8{82},
+		Modifiers: 1,
+		Pressed:   true,
+	}
+	defaultUpRun1 = binds.KeyGroup{
+		Keys:      []uint8{107},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultUpRun2 = binds.KeyGroup{
+		Keys:      []uint8{82},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultUpRunStop1 = binds.KeyGroup{
+		Keys:      []uint8{107},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultUpRunStop2 = binds.KeyGroup{
+		Keys:      []uint8{82},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultDown1 = binds.KeyGroup{
+		Keys:      []uint8{106},
+		Modifiers: 1,
+		Pressed:   true,
+	}
+	defaultDown2 = binds.KeyGroup{
+		Keys:      []uint8{81},
+		Modifiers: 1,
+		Pressed:   true,
+	}
+	defaultDownRun1 = binds.KeyGroup{
+		Keys:      []uint8{106},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultDownRun2 = binds.KeyGroup{
+		Keys:      []uint8{81},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultDownRunStop1 = binds.KeyGroup{
+		Keys:      []uint8{106},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultDownRunStop2 = binds.KeyGroup{
+		Keys:      []uint8{81},
+		Modifiers: 1,
+		Pressed:   false,
+	}
 
 	defaultFocusChat = binds.KeyGroup{
 		Keys:    []uint8{13},
@@ -220,6 +288,42 @@ func (s *Game) SetupBinds() {
 	s.bindings.SetFunction("west run stop", func(i ...interface{}) {
 		s.Client.Send(network.CommandRepeatCmd{
 			Cmd:    network.West,
+			Cancel: true,
+		})
+	})
+	s.bindings.SetFunction("up", func(i ...interface{}) {
+		s.runDirection = network.Up
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Up,
+		})
+	})
+	s.bindings.SetFunction("up run", func(i ...interface{}) {
+		s.runDirection = network.Up
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Up,
+		})
+	})
+	s.bindings.SetFunction("up run stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd:    network.Up,
+			Cancel: true,
+		})
+	})
+	s.bindings.SetFunction("down", func(i ...interface{}) {
+		s.runDirection = network.Down
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Down,
+		})
+	})
+	s.bindings.SetFunction("down run", func(i ...interface{}) {
+		s.runDirection = network.Down
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Down,
+		})
+	})
+	s.bindings.SetFunction("down run stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd:    network.Down,
 			Cancel: true,
 		})
 	})
@@ -376,6 +480,30 @@ func (s *Game) SetupBinds() {
 	if !s.bindings.HasKeygroupsForName("east run stop") {
 		s.bindings.AddKeygroup("east run stop", defaultEastRunStop1)
 		s.bindings.AddKeygroup("east run stop", defaultEastRunStop2)
+	}
+	if !s.bindings.HasKeygroupsForName("up") {
+		s.bindings.AddKeygroup("up", defaultUp1)
+		s.bindings.AddKeygroup("up", defaultUp2)
+	}
+	if !s.bindings.HasKeygroupsForName("up run") {
+		s.bindings.AddKeygroup("up run", defaultUpRun1)
+		s.bindings.AddKeygroup("up run", defaultUpRun2)
+	}
+	if !s.bindings.HasKeygroupsForName("up run stop") {
+		s.bindings.AddKeygroup("up run stop", defaultUpRunStop1)
+		s.bindings.AddKeygroup("up run stop", defaultUpRunStop2)
+	}
+	if !s.bindings.HasKeygroupsForName("down") {
+		s.bindings.AddKeygroup("down", defaultDown1)
+		s.bindings.AddKeygroup("down", defaultDown2)
+	}
+	if !s.bindings.HasKeygroupsForName("down run") {
+		s.bindings.AddKeygroup("down run", defaultDownRun1)
+		s.bindings.AddKeygroup("down run", defaultDownRun2)
+	}
+	if !s.bindings.HasKeygroupsForName("down run stop") {
+		s.bindings.AddKeygroup("down run stop", defaultDownRunStop1)
+		s.bindings.AddKeygroup("down run stop", defaultDownRunStop2)
 	}
 
 	if !s.bindings.HasKeygroupsForName("clear focus") {
