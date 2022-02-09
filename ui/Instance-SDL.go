@@ -72,6 +72,36 @@ func (instance *Instance) Loop() {
 			ticker.Stop()
 			return
 		}
+
+		// Process batch updates.
+		for {
+			var batchMessages []BatchMessage
+			valid := false
+			ok := false
+			select {
+			case batchMessages, valid = <-instance.RootWindow.BatchChannel:
+				ok = true
+			default:
+				ok = false
+			}
+			if ok && valid {
+				for _, msg := range batchMessages {
+					switch msg := msg.(type) {
+					case BatchAdoptMessage:
+						msg.Parent.AdoptChild(msg.Target)
+					case BatchDestroyMessage:
+						msg.Target.Destroy()
+					case BatchDisownMessage:
+						msg.Parent.DisownChild(msg.Target)
+					case BatchUpdateMessage:
+						msg.Target.HandleUpdate(msg.Update)
+					}
+				}
+			} else if !ok {
+				break
+			}
+		}
+
 		instance.CheckChannels(instance.RootWindow.This)
 
 		// Handle held elements.

@@ -87,3 +87,24 @@ type ElementI interface {
 	//
 	IsGrayscale() bool
 }
+
+type BatchMessage interface{}
+
+type BatchDestroyMessage struct {
+	Target ElementI
+}
+
+type BatchAdoptMessage struct {
+	Parent ElementI
+	Target ElementI
+}
+
+type BatchDisownMessage struct {
+	Parent ElementI
+	Target ElementI
+}
+
+type BatchUpdateMessage struct {
+	Target ElementI
+	Update UpdateI
+}

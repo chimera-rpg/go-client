@@ -1,3 +1,4 @@
+//go:build !mobile
 // +build !mobile
 
 package ui
@@ -12,7 +13,8 @@ type Window struct {
 	BaseElement
 	SDLWindow *sdl.Window
 
-	RenderFunc RenderFunc
+	RenderFunc   RenderFunc
+	BatchChannel chan []BatchMessage
 }
 
 // Setup our window object according to the passed WindowConfig.
@@ -24,6 +26,7 @@ func (w *Window) Setup(c WindowConfig) (err error) {
 	w.Style.Parse(c.Style)
 	w.Context = c.Context
 	w.Value = c.Value
+	w.BatchChannel = make(chan []BatchMessage, 1000)
 	w.SetDirty(true)
 	w.SDLWindow, err = sdl.CreateWindow(
 		c.Value,
