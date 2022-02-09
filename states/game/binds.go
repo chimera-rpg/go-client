@@ -234,6 +234,28 @@ func (s *Game) SetupBinds() {
 			s.inputChan <- DisconnectEvent{}
 		}()
 	})
+	s.bindings.SetFunction("wizard", func(i ...interface{}) {
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Wizard,
+		})
+	})
+	s.bindings.SetFunction("wiz", func(i ...interface{}) {
+		var str string
+		if len(i) > 0 {
+			for _, v := range i {
+				switch v := v.(type) {
+				case string:
+					str = v
+				case []string:
+					str = strings.Join(v, " ")
+				}
+			}
+		}
+		s.Client.Send(network.CommandExtCmd{
+			Cmd:  "wiz",
+			Args: strings.Split(str, " "),
+		})
+	})
 	s.bindings.SetFunction("say", func(i ...interface{}) {
 		str := ""
 		if len(i) > 0 {
