@@ -130,6 +130,10 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 	if len(frames) == 0 {
 		return
 	}
+	// Check for frameindex oob, as the animation or face might have changed.
+	if o.FrameIndex >= len(frames) {
+		o.FrameIndex = len(frames) - 1
+	}
 	frame := frames[o.FrameIndex]
 
 	if len(frames) > 1 && frame.Time > 0 {
