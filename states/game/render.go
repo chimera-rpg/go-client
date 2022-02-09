@@ -124,7 +124,8 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 			t.GetUpdateChannel() <- ui.UpdateHidden(false)
 		}
 	}
-	frames := s.Client.DataManager.GetFace(o.AnimationID, o.FaceID)
+	animation := s.Client.DataManager.GetAnimation(o.AnimationID)
+	frames := animation.GetFace(o.FaceID)
 	// Bail if there are no frames to render.
 	if len(frames) == 0 {
 		return

@@ -3,6 +3,7 @@ package world
 import (
 	"errors"
 	"math"
+	"math/rand"
 
 	"github.com/chimera-rpg/go-client/data"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -12,14 +13,15 @@ import (
 
 // World is a collection of all the current known client representations of the game world.
 type World struct {
-	dataManager    *data.Manager
-	maps           map[data.StringID]*DynamicMap
-	currentMap     data.StringID
-	objects        map[uint32]*Object
-	viewObjectID   uint32
-	visibleTiles   [][][]bool
-	unblockedTiles [][][]bool
-	Log            *logrus.Logger
+	dataManager             *data.Manager
+	maps                    map[data.StringID]*DynamicMap
+	currentMap              data.StringID
+	objects                 map[uint32]*Object
+	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
+	viewObjectID            uint32
+	visibleTiles            [][][]bool
+	unblockedTiles          [][][]bool
+	Log                     *logrus.Logger
 }
 
 // Init initializes the given world object with the passed client.
@@ -31,6 +33,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.objects = make(map[uint32]*Object)
 	w.visibleTiles = make([][][]bool, 0)
 	w.unblockedTiles = make([][][]bool, 0)
+	w.PendingObjectAnimations = make(map[uint32][]uint32)
 	w.currentMap = 0
 }
 
@@ -147,6 +150,15 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			W:           p.Width,
 			D:           p.Depth,
 			Opaque:      p.Opaque,
+		}
+		// Get randomized frame start if we have the associated animation.
+		if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
+			if anim.RandomFrame {
+				w.objects[oID].FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
+			}
+		} else {
+			// Animation does not yet exist, add it to the pending.
+			w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
 		}
 	}
 	return nil

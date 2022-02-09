@@ -305,6 +305,15 @@ func (m *Manager) GetFace(aID uint32, fID uint32) (f []AnimationFrame) {
 	return face
 }
 
+// GetAnimation returns the underlying animation.
+func (m *Manager) GetAnimation(aID uint32) Animation {
+	anim, animExists := m.animations[aID]
+	if !animExists {
+		return Animation{}
+	}
+	return anim
+}
+
 // GetCachedImage returns the cached image associated with the given ID.
 func (m *Manager) GetCachedImage(iID uint32) (img image.Image) {
 	if img, ok := m.images[iID]; ok {
@@ -346,7 +355,9 @@ func (m *Manager) EnsureAnimation(aID uint32) {
 	// If animation id is not known, add the animation, then send an animation request.
 	if _, animExists := m.animations[aID]; !animExists {
 		m.animations[aID] = Animation{
-			Faces: make(map[uint32][]AnimationFrame),
+			Faces:       make(map[uint32][]AnimationFrame),
+			RandomFrame: false,
+			Ready:       false,
 		}
 		m.Log.WithFields(logrus.Fields{
 			"ID": aID,
@@ -361,11 +372,17 @@ func (m *Manager) EnsureAnimation(aID uint32) {
 
 // HandleAnimationCommand handles received animation commands and incorporates them into the animations map.
 func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
-	if _, exists := m.animations[cmd.AnimationID]; !exists {
+	if anim, exists := m.animations[cmd.AnimationID]; !exists {
 		m.animations[cmd.AnimationID] = Animation{
 			AnimationID: cmd.AnimationID,
+			RandomFrame: cmd.RandomFrame,
+			Ready:       true,
 			Faces:       make(map[uint32][]AnimationFrame),
 		}
+	} else {
+		anim.Ready = true
+		anim.RandomFrame = cmd.RandomFrame
+		m.animations[cmd.AnimationID] = anim
 	}
 	m.Log.WithFields(logrus.Fields{
 		"ID":        cmd.AnimationID,
