@@ -19,6 +19,7 @@ type World struct {
 	objects                 map[uint32]*Object
 	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID            uint32
+	deletedObjects          []uint32 // A list of deleted object IDs. Used and cleared during the render call.
 	visibleTiles            [][][]bool
 	unblockedTiles          [][][]bool
 	Log                     *logrus.Logger
@@ -166,8 +167,38 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 
 // DeleteObject deletes the given object ID from the world's objects field.
 func (w *World) DeleteObject(oID uint32) error {
-	delete(w.objects, oID)
+	if o, ok := w.objects[oID]; ok {
+		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
+			t.RemoveObject(oID)
+		}
+		delete(w.objects, oID)
+	}
+	//w.deletedObjects = append(w.deletedObjects, oID)
 	return nil
+}
+
+// GetDeletedObjects returns the deleted objects list.
+func (w *World) GetDeletedObjects() []uint32 {
+	return w.deletedObjects
+}
+
+// ClearDeleteObjects clears the deleted objects list.
+func (w *World) ClearDeletedObjects() {
+	for _, oID := range w.deletedObjects {
+		// Remove from owning tile.
+		if o := w.GetObject(oID); o != nil {
+			t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z))
+			for i, v := range t.objectIDs {
+				if v == oID {
+					t.objectIDs = append(t.objectIDs[:i], t.objectIDs[i+1:]...)
+					break
+				}
+			}
+		}
+
+		delete(w.objects, oID)
+	}
+	w.deletedObjects = make([]uint32, 0)
 }
 
 // GetObjects returns an array of all objects the client knows about.
@@ -519,6 +550,9 @@ func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
 	for i := y; i > 0; i-- {
 		for _, oID := range w.maps[w.currentMap].GetTile(i, x, z).objectIDs {
 			o2 := w.GetObject(oID)
+			if o2 == nil {
+				return
+			}
 			if o2.Opaque {
 				y = i + 1
 				// If it's an opaque tile, we treat its shadow position as one lower.
