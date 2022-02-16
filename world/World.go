@@ -40,21 +40,44 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 
 // HandleMapCommand handles a map command, creating a new DynamicMap if it does not exist.
 func (w *World) HandleMapCommand(cmd network.CommandMap) error {
-	if _, ok := w.maps[cmd.MapID]; ok {
-		// TODO: ?
-	} else {
-		w.Log.WithFields(logrus.Fields{
-			"ID":   cmd.MapID,
-			"Name": cmd.Name,
-		}).Info("[World] Created map")
-		w.maps[cmd.MapID] = &DynamicMap{
-			height: uint32(cmd.Height),
-			width:  uint32(cmd.Width),
-			depth:  uint32(cmd.Depth),
-		}
-		w.maps[cmd.MapID].Init()
+	// TODO: We have this multiple map code because in the future I wanted to have maps able to be tiled together.
+	/*	if _, ok := w.maps[cmd.MapID]; ok {
+			// TODO: ?
+		} else {
+			w.Log.WithFields(logrus.Fields{
+				"ID":   cmd.MapID,
+				"Name": cmd.Name,
+			}).Info("[World] Created map")
+			w.maps[cmd.MapID] = &DynamicMap{
+				height: uint32(cmd.Height),
+				width:  uint32(cmd.Width),
+				depth:  uint32(cmd.Depth),
+			}
+			w.maps[cmd.MapID].Init()
+		}*/
+	w.maps[cmd.MapID] = &DynamicMap{
+		height: uint32(cmd.Height),
+		width:  uint32(cmd.Width),
+		depth:  uint32(cmd.Depth),
 	}
+	w.maps[cmd.MapID].Init()
+
 	w.currentMap = cmd.MapID
+
+	// Clear out our known objects. This should really be managed differently, somehow.
+	p := w.GetViewObject()
+	for oID, o := range w.objects {
+		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
+			t.RemoveObject(oID)
+		}
+	}
+	w.objects = make(map[uint32]*Object)
+
+	// Restore our known visible object if we have one.
+	if p != nil {
+		w.objects[p.ID] = p
+	}
+
 	return nil
 }
 
@@ -543,6 +566,7 @@ func (w *World) updateVisionUnblocking() {
 
 // GetObjectShadowPosition returns the shadow position for the given object. This is calculated from the object's position downward (-Y) until an opaque block is eached.
 func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
+	return
 	y = int(o.Y)
 	x = int(o.X)
 	z = int(o.Z)
