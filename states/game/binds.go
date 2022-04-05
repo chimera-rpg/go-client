@@ -200,6 +200,152 @@ var (
 		Pressed:   false,
 	}
 
+	// Attack
+	defaultNorthAttackRepeat1 = binds.KeyGroup{
+		Keys:      []uint8{107},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultNorthAttackRepeat2 = binds.KeyGroup{
+		Keys:      []uint8{82},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultNorthAttackStop1 = binds.KeyGroup{
+		Keys:      []uint8{107},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultNorthAttackStop2 = binds.KeyGroup{
+		Keys:      []uint8{82},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultSouthAttackRepeat1 = binds.KeyGroup{
+		Keys:      []uint8{106},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultSouthAttackRepeat2 = binds.KeyGroup{
+		Keys:      []uint8{81},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultSouthAttackStop1 = binds.KeyGroup{
+		Keys:      []uint8{106},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultSouthAttackStop2 = binds.KeyGroup{
+		Keys:      []uint8{81},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultWestAttackRepeat1 = binds.KeyGroup{
+		Keys:      []uint8{104},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultWestAttackRepeat2 = binds.KeyGroup{
+		Keys:      []uint8{80},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultWestAttackStop1 = binds.KeyGroup{
+		Keys:      []uint8{104},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultWestAttackStop2 = binds.KeyGroup{
+		Keys:      []uint8{80},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultEastAttackRepeat1 = binds.KeyGroup{
+		Keys:      []uint8{108},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultEastAttackRepeat2 = binds.KeyGroup{
+		Keys:      []uint8{79},
+		Modifiers: 1,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultEastAttackStop1 = binds.KeyGroup{
+		Keys:      []uint8{108},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultEastAttackStop2 = binds.KeyGroup{
+		Keys:      []uint8{79},
+		Modifiers: 1,
+		Pressed:   false,
+	}
+	defaultUpAttackRepeat1 = binds.KeyGroup{
+		Keys:      []uint8{107},
+		Modifiers: 65,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultUpAttackRepeat2 = binds.KeyGroup{
+		Keys:      []uint8{82},
+		Modifiers: 65,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultUpAttackStop1 = binds.KeyGroup{
+		Keys:      []uint8{107},
+		Modifiers: 65,
+		Pressed:   false,
+	}
+	defaultUpAttackStop2 = binds.KeyGroup{
+		Keys:      []uint8{82},
+		Modifiers: 65,
+		Pressed:   false,
+	}
+	defaultDownAttackRepeat1 = binds.KeyGroup{
+		Keys:      []uint8{106},
+		Modifiers: 65,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultDownAttackRepeat2 = binds.KeyGroup{
+		Keys:      []uint8{81},
+		Modifiers: 65,
+		Pressed:   true,
+		Repeat:    true,
+		OnRepeat:  1,
+	}
+	defaultDownAttackStop1 = binds.KeyGroup{
+		Keys:      []uint8{106},
+		Modifiers: 65,
+		Pressed:   false,
+	}
+	defaultDownAttackStop2 = binds.KeyGroup{
+		Keys:      []uint8{81},
+		Modifiers: 65,
+		Pressed:   false,
+	}
+
 	defaultFocusChat = binds.KeyGroup{
 		Keys:    []uint8{13},
 		Pressed: true,
@@ -219,6 +365,7 @@ func (s *Game) SetupBinds() {
 	// Set up bindings.
 	s.bindings = &s.Client.DataManager.Config.Game.Bindings
 	s.bindings.Init()
+	// Movement
 	s.bindings.SetFunction("north", func(i ...interface{}) {
 		s.runDirection = network.North
 		s.Client.Send(network.CommandCmd{
@@ -327,6 +474,160 @@ func (s *Game) SetupBinds() {
 			Cancel: true,
 		})
 	})
+	// Attack
+	s.bindings.SetFunction("north attack", func(i ...interface{}) {
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.North,
+			},
+		})
+	})
+	s.bindings.SetFunction("north attack repeat", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.North,
+			},
+		})
+	})
+	s.bindings.SetFunction("north run stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.North,
+			},
+			Cancel: true,
+		})
+	})
+	s.bindings.SetFunction("south attack", func(i ...interface{}) {
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.South,
+			},
+		})
+	})
+	s.bindings.SetFunction("south attack repeat", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.South,
+			},
+		})
+	})
+	s.bindings.SetFunction("south attack stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.South,
+			},
+			Cancel: true,
+		})
+	})
+	s.bindings.SetFunction("east attack", func(i ...interface{}) {
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.East,
+			},
+		})
+	})
+	s.bindings.SetFunction("east attack repeat", func(i ...interface{}) {
+		s.runDirection = network.East
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.East,
+			},
+		})
+	})
+	s.bindings.SetFunction("east attack stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.East,
+			},
+			Cancel: true,
+		})
+	})
+	s.bindings.SetFunction("west attack", func(i ...interface{}) {
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.West,
+			},
+		})
+	})
+	s.bindings.SetFunction("west attack repeat", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.West,
+			},
+		})
+	})
+	s.bindings.SetFunction("west attack stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.West,
+			},
+			Cancel: true,
+		})
+	})
+	s.bindings.SetFunction("up attack", func(i ...interface{}) {
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.Up,
+			},
+		})
+	})
+	s.bindings.SetFunction("up attack repeat", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.Up,
+			},
+		})
+	})
+	s.bindings.SetFunction("up attack stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.Up,
+			},
+			Cancel: true,
+		})
+	})
+	s.bindings.SetFunction("down attack", func(i ...interface{}) {
+		s.Client.Send(network.CommandCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.Down,
+			},
+		})
+	})
+	s.bindings.SetFunction("down attack repeat", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.Down,
+			},
+		})
+	})
+	s.bindings.SetFunction("down attack stop", func(i ...interface{}) {
+		s.Client.Send(network.CommandRepeatCmd{
+			Cmd: network.Attack,
+			Data: network.CommandAttack{
+				Direction: network.Down,
+			},
+			Cancel: true,
+		})
+	})
+
+	// Other
 	s.bindings.SetFunction("quit", func(i ...interface{}) {
 		os.Exit(0)
 	})
@@ -504,6 +805,55 @@ func (s *Game) SetupBinds() {
 	if !s.bindings.HasKeygroupsForName("down run stop") {
 		s.bindings.AddKeygroup("down run stop", defaultDownRunStop1)
 		s.bindings.AddKeygroup("down run stop", defaultDownRunStop2)
+	}
+
+	if !s.bindings.HasKeygroupsForName("north attack repeat") {
+		s.bindings.AddKeygroup("north attack repeat", defaultNorthAttackRepeat1)
+		s.bindings.AddKeygroup("north attack repeat", defaultNorthAttackRepeat2)
+	}
+	if !s.bindings.HasKeygroupsForName("north attack stop") {
+		s.bindings.AddKeygroup("north attack stop", defaultNorthAttackStop1)
+		s.bindings.AddKeygroup("north attack stop", defaultNorthAttackStop2)
+	}
+	if !s.bindings.HasKeygroupsForName("south attack repeat") {
+		s.bindings.AddKeygroup("south attack repeat", defaultSouthAttackRepeat1)
+		s.bindings.AddKeygroup("south attack repeat", defaultSouthAttackRepeat2)
+	}
+	if !s.bindings.HasKeygroupsForName("south attack stop") {
+		s.bindings.AddKeygroup("south attack stop", defaultSouthAttackStop1)
+		s.bindings.AddKeygroup("south attack stop", defaultSouthAttackStop2)
+	}
+	if !s.bindings.HasKeygroupsForName("west attack repeat") {
+		s.bindings.AddKeygroup("west attack repeat", defaultWestAttackRepeat1)
+		s.bindings.AddKeygroup("west attack repeat", defaultWestAttackRepeat2)
+	}
+	if !s.bindings.HasKeygroupsForName("west attack stop") {
+		s.bindings.AddKeygroup("west attack stop", defaultWestAttackStop1)
+		s.bindings.AddKeygroup("west attack stop", defaultWestAttackStop2)
+	}
+	if !s.bindings.HasKeygroupsForName("east attack repeat") {
+		s.bindings.AddKeygroup("east attack repeat", defaultEastAttackRepeat1)
+		s.bindings.AddKeygroup("east attack repeat", defaultEastAttackRepeat2)
+	}
+	if !s.bindings.HasKeygroupsForName("east attack stop") {
+		s.bindings.AddKeygroup("east attack stop", defaultEastAttackStop1)
+		s.bindings.AddKeygroup("east attack stop", defaultEastAttackStop2)
+	}
+	if !s.bindings.HasKeygroupsForName("up attack repeat") {
+		s.bindings.AddKeygroup("up attack repeat", defaultUpAttackRepeat1)
+		s.bindings.AddKeygroup("up attack repeat", defaultUpAttackRepeat2)
+	}
+	if !s.bindings.HasKeygroupsForName("up attack stop") {
+		s.bindings.AddKeygroup("up attack stop", defaultUpAttackStop1)
+		s.bindings.AddKeygroup("up attack stop", defaultUpAttackStop2)
+	}
+	if !s.bindings.HasKeygroupsForName("down attack repeat") {
+		s.bindings.AddKeygroup("down attack repeat", defaultDownAttackRepeat1)
+		s.bindings.AddKeygroup("down attack repeat", defaultDownAttackRepeat2)
+	}
+	if !s.bindings.HasKeygroupsForName("down attack stop") {
+		s.bindings.AddKeygroup("down attack stop", defaultDownAttackStop1)
+		s.bindings.AddKeygroup("down attack stop", defaultDownAttackStop2)
 	}
 
 	if !s.bindings.HasKeygroupsForName("clear focus") {
