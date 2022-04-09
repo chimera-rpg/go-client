@@ -150,7 +150,7 @@ func (s *Game) Loop() {
 			default:
 				cleanupChan <- struct{}{}
 				// NOTE: This controls automatic re-rendering
-				time.Sleep(time.Millisecond * 100)
+				time.Sleep(time.Millisecond * 16)
 			}
 		}
 	}()
@@ -306,7 +306,14 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 			totalDamage += d
 		}
 		totalDamage += c.AttributeDamage
-		if m, err := s.createMapObjectMessage(c.Target, fmt.Sprintf("%1.f", totalDamage), color.RGBA{255, 128, 128, 255}); err == nil {
+		if m, err := s.createMapObjectMessage(c.Target, fmt.Sprintf("%1.f", totalDamage), color.RGBA{255, 255, 255, 200}); err == nil {
+			m.floatY = -0.02
+			m.el.GetStyle().OutlineColor = color.NRGBA{
+				R: 255,
+				G: 64,
+				B: 64,
+				A: 200,
+			}
 			s.mapMessages = append(s.mapMessages, m)
 			s.MapContainer.GetAdoptChannel() <- m.el
 		}

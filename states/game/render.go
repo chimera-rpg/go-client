@@ -78,6 +78,12 @@ func (s *Game) HandleRender(delta time.Duration) {
 			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
 		} else {
 			// TODO: Check if msg has associated object and if it has moved.
+			// Move message upwards if need be.
+			if msg.floatY != 0 {
+				msg.el.GetUpdateChannel() <- ui.UpdateY{
+					Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
+				}
+			}
 		}
 	}
 

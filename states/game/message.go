@@ -21,6 +21,7 @@ type MapMessage struct {
 	x, y, z     int
 	el          ui.ElementI
 	destroyTime time.Time
+	floatY      float64
 }
 
 func (s *Game) createMapMessage(y, x, z uint32, body string, col color.RGBA) (MapMessage, error) {
