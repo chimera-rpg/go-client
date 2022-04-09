@@ -299,6 +299,22 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 				s.MapContainer.GetAdoptChannel() <- m.el
 			}*/
 		}
+	case network.CommandDamage:
+		// TODO: Limit damage indicators to _only_ within visible range!
+		var totalDamage float64
+		for _, d := range c.StyleDamage {
+			totalDamage += d
+		}
+		totalDamage += c.AttributeDamage
+		if m, err := s.createMapObjectMessage(c.Target, fmt.Sprintf("%1.f", totalDamage), color.RGBA{255, 128, 128, 255}); err == nil {
+			s.mapMessages = append(s.mapMessages, m)
+			s.MapContainer.GetAdoptChannel() <- m.el
+		}
+		if c.Target == s.world.GetViewObject().ID {
+			// TODO: Show info about us getting hit.
+		} else {
+			// TODO: Print damage value in combat log or some such.
+		}
 	default:
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
