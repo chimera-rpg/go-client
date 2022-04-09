@@ -315,11 +315,11 @@ func (s *Game) UpdateMessagesWindow() {
 				// TODO: It'd be nice if we had a local objectID -> name field we could use.
 				o := s.world.GetObject(m.Message.FromObjectID)
 				if o != nil {
-					col := color.RGBA{255, 255, 255, 200}
+					col := color.RGBA{255, 255, 255, 255}
 					if m.Message.Type == network.NPCMessage {
 						col = color.RGBA{128, 128, 128, 200}
 					} else if o == s.world.GetViewObject() {
-						col = color.RGBA{255, 255, 255, 150}
+						col = color.RGBA{255, 255, 255, 200}
 					}
 					// Prefer using the message's Title for the popup text.
 					text := m.Message.Title
