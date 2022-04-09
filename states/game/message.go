@@ -18,6 +18,7 @@ type Message struct {
 // MapMessage represents a floating message on the map.
 type MapMessage struct {
 	objectID    uint32
+	trackObject bool
 	x, y, z     int
 	el          ui.ElementI
 	destroyTime time.Time
