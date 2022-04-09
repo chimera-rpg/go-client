@@ -72,7 +72,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 	now := time.Now()
 	for i := len(s.mapMessages) - 1; i >= 0; i-- {
 		msg := s.mapMessages[i]
-		if now.After(msg.destroyTime) {
+		if !msg.destroyTime.Equal(time.Time{}) && now.After(msg.destroyTime) {
 			s.MapContainer.GetDisownChannel() <- msg.el
 			msg.el.GetDestroyChannel() <- true
 			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
