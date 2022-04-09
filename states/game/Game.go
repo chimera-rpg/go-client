@@ -308,6 +308,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		totalDamage += c.AttributeDamage
 		if m, err := s.createMapObjectMessage(c.Target, fmt.Sprintf("%1.f", totalDamage), color.RGBA{255, 255, 255, 200}); err == nil {
 			m.floatY = -0.02
+			// TODO: Make some sort of color map for: damage types, as well as if we're the target of the damage.
 			if c.Target == s.world.GetViewObject().ID {
 				m.el.GetStyle().ForegroundColor = color.NRGBA{
 					R: 255,
