@@ -308,12 +308,28 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		totalDamage += c.AttributeDamage
 		if m, err := s.createMapObjectMessage(c.Target, fmt.Sprintf("%1.f", totalDamage), color.RGBA{255, 255, 255, 200}); err == nil {
 			m.floatY = -0.02
-			m.el.GetStyle().OutlineColor = color.NRGBA{
-				R: 255,
-				G: 64,
-				B: 64,
-				A: 200,
+			if c.Target == s.world.GetViewObject().ID {
+				m.el.GetStyle().ForegroundColor = color.NRGBA{
+					R: 255,
+					G: 64,
+					B: 64,
+					A: 200,
+				}
+				m.el.GetStyle().OutlineColor = color.NRGBA{
+					R: 255,
+					G: 255,
+					B: 255,
+					A: 200,
+				}
+			} else {
+				m.el.GetStyle().OutlineColor = color.NRGBA{
+					R: 255,
+					G: 64,
+					B: 64,
+					A: 200,
+				}
 			}
+			m.el.GetStyle().ZIndex.Value = float64(99999 + len(s.mapMessages) + 1)
 			s.mapMessages = append(s.mapMessages, m)
 			s.MapContainer.GetAdoptChannel() <- m.el
 		}
