@@ -291,6 +291,14 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 				}
 				o.VisibilityChange = false
 			}
+			if o.LightingChange {
+				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateColorMod{
+					R: uint8(255 * o.Brightness),
+					G: uint8(255 * o.Brightness),
+					B: uint8(255 * o.Brightness),
+					A: 1}
+				o.LightingChange = false
+			}
 			//
 			if o.Changed {
 				bounds := img.Bounds()

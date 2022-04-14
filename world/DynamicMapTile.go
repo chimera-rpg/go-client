@@ -2,7 +2,8 @@ package world
 
 // DynamicMapTile represents a tile.
 type DynamicMapTile struct {
-	objectIDs []uint32
+	objectIDs  []uint32
+	brightness float32
 }
 
 // GetObjects returns the contained objectIDs in a tile.

@@ -252,6 +252,9 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.world.HandleObjectCommand(c)
 	case network.CommandTile:
 		s.world.HandleTileCommand(c)
+	case network.CommandTileLight:
+		// FIXME: temporarily disabled until we get our render performance under control.
+		//s.world.HandleTileLightCommand(c)
 	case network.CommandMessage:
 		s.HandleMessageCommand(c)
 		s.UpdateMessagesWindow()

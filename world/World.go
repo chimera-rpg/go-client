@@ -135,6 +135,25 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	return nil
 }
 
+func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
+	if _, ok := w.maps[w.currentMap]; !ok {
+		return errors.New("cannot set tile light, as no map exists")
+	}
+	w.maps[w.currentMap].SetTileLight(cmd.Y, cmd.X, cmd.Z, cmd.Brightness)
+	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
+	if t != nil {
+		for _, oID := range t.GetObjects() {
+			o := w.GetObject(oID)
+			if o == nil {
+				continue
+			}
+			o.LightingChange = true
+			o.Brightness = t.brightness
+		}
+	}
+	return nil
+}
+
 // HandleObjectCommand handles an ObjectCommand, creating or deleting depending on the payload.
 func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	switch p := cmd.Payload.(type) {

@@ -23,7 +23,9 @@ func (d *DynamicMap) SetTile(y, x, z uint32, objectIDs []uint32) {
 	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
 		return
 	}
-	d.tiles[y][x][z] = DynamicMapTile{objectIDs}
+	d.tiles[y][x][z] = DynamicMapTile{
+		objectIDs: objectIDs,
+	}
 }
 
 // GetTile gets the tile stack at Y, X, Z.
@@ -32,6 +34,13 @@ func (d *DynamicMap) GetTile(y, x, z int) (tiles *DynamicMapTile) {
 		return
 	}
 	return &d.tiles[y][x][z]
+}
+
+func (d *DynamicMap) SetTileLight(y, x, z uint32, brightness float32) {
+	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
+		return
+	}
+	d.tiles[y][x][z].brightness = brightness
 }
 
 // GetHeight gets height.
