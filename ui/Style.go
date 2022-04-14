@@ -105,6 +105,7 @@ type Style struct {
 	ScrollLeft      Number
 	ScrollTop       Number
 	Alpha           Number
+	ColorMod        color.NRGBA
 	ForegroundColor color.NRGBA
 	BackgroundColor color.NRGBA
 	OutlineColor    color.NRGBA

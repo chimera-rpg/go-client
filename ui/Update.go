@@ -77,5 +77,8 @@ type UpdateHidden bool
 // UpdateAlpha is a message that sets the element's alpha. Not applicable for all elements.
 type UpdateAlpha = float64
 
+// UpdateColorMod is a message that sets the element's color mod. Not applicable for all elements.
+type UpdateColorMod color.NRGBA
+
 // UpdateGrayscale is a message that sets the element's grayscale rendering. Not applicable for all elements.
 type UpdateGrayscale bool

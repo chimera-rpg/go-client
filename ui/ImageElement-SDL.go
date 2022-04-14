@@ -73,6 +73,7 @@ func (i *ImageElement) Render() {
 			texture = i.SDLTexture
 		}
 		if texture != nil {
+			texture.SetColorMod(i.Style.ColorMod.R, i.Style.ColorMod.G, i.Style.ColorMod.B)
 			texture.SetAlphaMod(uint8(i.Style.Alpha.Value * 255))
 			i.Context.Renderer.Copy(texture, nil, &dst)
 			texture.SetAlphaMod(255)

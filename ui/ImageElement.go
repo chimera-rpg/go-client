@@ -24,6 +24,9 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	i := ImageElement{}
 	i.This = ElementI(&i)
 	i.Style.Alpha.Set(1)
+	i.Style.ColorMod.R = 255
+	i.Style.ColorMod.G = 255
+	i.Style.ColorMod.B = 255
 	i.Style.Parse(ImageElementStyle)
 	i.Style.Parse(c.Style)
 	if c.Image != nil {

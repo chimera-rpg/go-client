@@ -140,6 +140,8 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.Direction = parseDirection(s, p.tokenValue())
 	case "Alpha":
 		s.Alpha = parseNumber(p.tokenValue())
+	case "ColorMod":
+		s.ColorMod = parseColor(p.tokenValue())
 	}
 }
 

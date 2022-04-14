@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"image/color"
 	"sort"
 )
 
@@ -815,6 +816,8 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.SetHidden(bool(u))
 	case UpdateAlpha:
 		b.Style.Alpha.Set(u)
+	case UpdateColorMod:
+		b.Style.ColorMod = color.NRGBA{u.R, u.G, u.B, u.A}
 	}
 	b.CalculateStyle()
 	b.SetDirty(dirty)
