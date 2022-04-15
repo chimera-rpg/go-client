@@ -432,9 +432,9 @@ func (b *BaseElement) CalculateStyle() {
 		}
 		b.LastStyle = b.Style
 		b.Dirty = true
-	}
-	for _, child := range b.Children {
-		child.CalculateStyle()
+		for _, child := range b.Children {
+			child.CalculateStyle()
+		}
 	}
 }
 
@@ -515,11 +515,11 @@ func (b *BaseElement) SetHidden(v bool) {
 
 // IsHidden returns if the element is hidden.
 func (b *BaseElement) IsHidden() bool {
-	if b.GetParent() != nil {
+	/*if b.GetParent() != nil {
 		if b.GetParent().IsHidden() {
 			return true
 		}
-	}
+	}*/
 	return b.Hidden
 }
 
@@ -786,24 +786,32 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.SetValue(u.Value)
 	case UpdateX:
 		b.Style.X = u.Number
+		b.CalculateStyle()
 	case UpdateY:
 		b.Style.Y = u.Number
+		b.CalculateStyle()
 	case UpdateW:
 		b.Style.W = u.Number
+		b.CalculateStyle()
 	case UpdateH:
 		b.Style.H = u.Number
+		b.CalculateStyle()
 	case UpdateDimensions:
 		b.Style.X.Value = u.X.Value
 		b.Style.Y.Value = u.Y.Value
 		b.Style.W.Value = u.W.Value
 		b.Style.H.Value = u.H.Value
+		b.CalculateStyle()
 	case UpdateScroll:
 		b.Style.ScrollLeft = u.Left
 		b.Style.ScrollTop = u.Top
+		b.CalculateStyle()
 	case UpdateScrollLeft:
 		b.Style.ScrollLeft = u.Number
+		b.CalculateStyle()
 	case UpdateScrollTop:
 		b.Style.ScrollTop = u.Number
+		b.CalculateStyle()
 	case UpdateZIndex:
 		b.Style.ZIndex = u.Number
 	case UpdateOutlineColor:
@@ -819,7 +827,6 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 	case UpdateColorMod:
 		b.Style.ColorMod = color.NRGBA{u.R, u.G, u.B, u.A}
 	}
-	b.CalculateStyle()
 	b.SetDirty(dirty)
 }
 
