@@ -41,6 +41,8 @@ type ElementI interface {
 	GetStyle() *Style
 	// Calculates the given Element's style. Should be called whenever Style is changed.
 	CalculateStyle()
+	// ShouldRestyle indicates if the Element should have calculate style called on it.
+	ShouldRestyle() bool
 	//
 	// Returns whether or not this container constrains x,y to be relative to itself
 	IsContainer() bool

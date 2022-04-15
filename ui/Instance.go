@@ -1,6 +1,8 @@
 package ui
 
-import "time"
+import (
+	"time"
+)
 
 // Instance is the managing instance of the entire UI system.
 type Instance struct {
@@ -66,6 +68,7 @@ func (instance *Instance) CheckChannels(e ElementI) {
 		}
 	}
 	// Update checking
+	var updates []UpdateI
 	for {
 		var update UpdateI
 		select {
@@ -75,11 +78,18 @@ func (instance *Instance) CheckChannels(e ElementI) {
 			ok = false
 		}
 		if ok && valid {
-			e.HandleUpdate(update)
+			updates = append(updates, update)
 		} else if !ok {
 			break
 		}
 	}
+	for _, update := range updates {
+		e.HandleUpdate(update)
+	}
+	if e.ShouldRestyle() {
+		e.CalculateStyle()
+	}
+
 	for _, child := range e.GetChildren() {
 		instance.CheckChannels(child)
 	}

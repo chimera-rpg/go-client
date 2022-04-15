@@ -25,7 +25,8 @@ type BaseElement struct {
 	DestroyChannel chan bool
 	UpdateChannel  chan UpdateI
 	// Dirty should be set whenever the Element should be re-rendered
-	Dirty bool
+	Dirty   bool
+	Restyle bool
 	//
 	Value     string
 	Hidden    bool
@@ -436,6 +437,7 @@ func (b *BaseElement) CalculateStyle() {
 			child.CalculateStyle()
 		}
 	}
+	b.Restyle = false
 }
 
 // SetDirty sets the element's dirty flag.
@@ -461,6 +463,10 @@ func (b *BaseElement) HasDirt() (dirt bool) {
 		}
 	}
 	return
+}
+
+func (b *BaseElement) ShouldRestyle() bool {
+	return b.Restyle
 }
 
 // GetContext returns the rendering context of the element.
@@ -786,32 +792,32 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.SetValue(u.Value)
 	case UpdateX:
 		b.Style.X = u.Number
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateY:
 		b.Style.Y = u.Number
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateW:
 		b.Style.W = u.Number
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateH:
 		b.Style.H = u.Number
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateDimensions:
 		b.Style.X.Value = u.X.Value
 		b.Style.Y.Value = u.Y.Value
 		b.Style.W.Value = u.W.Value
 		b.Style.H.Value = u.H.Value
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateScroll:
 		b.Style.ScrollLeft = u.Left
 		b.Style.ScrollTop = u.Top
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateScrollLeft:
 		b.Style.ScrollLeft = u.Number
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateScrollTop:
 		b.Style.ScrollTop = u.Number
-		b.CalculateStyle()
+		b.Restyle = true
 	case UpdateZIndex:
 		b.Style.ZIndex = u.Number
 	case UpdateOutlineColor:
