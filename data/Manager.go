@@ -160,6 +160,11 @@ func (m *Manager) Sounds() map[uint32]SoundEntry {
 	return m.sounds
 }
 
+// Images returns the manager's images
+func (m *Manager) Images() []ImageRef {
+	return m.images
+}
+
 // collectCachedImages reads the cache directory for images to load.
 func (m *Manager) collectCachedImages() (err error) {
 	imagesPath := path.Join(m.CachePath, "images")

@@ -12,7 +12,7 @@ import (
 // for rendering.
 type Context struct {
 	Renderer    *sdl.Renderer
-	Manager     DataManagerI
+	Manager     *DataManager
 	Font        *ttf.Font
 	OutlineFont *ttf.Font
 }

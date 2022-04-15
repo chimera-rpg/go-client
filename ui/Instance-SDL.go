@@ -21,6 +21,7 @@ func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
 	instance.HeldElements = make(map[uint8][]ElementI)
 	instance.HeldPendingTimer = make(map[uint8]time.Time)
 	instance.dataManager = dataManager
+	instance.ImageLoadChan = make(chan UpdateImageID, 1000)
 	// Initialize SDL
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		return err
@@ -38,8 +39,9 @@ func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
 	}
 	instance.Context.OutlineFont.SetOutline(2)
 	instance.Context.Manager = &DataManager{
-		imageCache: make(map[uint32]image.Image),
-		manager:    dataManager,
+		imageCache:    make(map[uint32]image.Image),
+		imageTextures: make(map[uint32]*Image),
+		manager:       dataManager,
 	}
 
 	err = instance.RootWindow.Setup(WindowConfig{
@@ -105,6 +107,13 @@ func (instance *Instance) Loop() {
 			} else if !ok {
 				break
 			}
+		}
+
+		select {
+		case id := <-instance.ImageLoadChan:
+			instance.Context.Manager.GetCachedImage(uint32(id))
+		default:
+			break
 		}
 
 		instance.CheckChannels(instance.RootWindow.This)

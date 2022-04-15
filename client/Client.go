@@ -19,6 +19,7 @@ type Client struct {
 	DataManager      *data.Manager
 	Flags            config.Flags
 	RootWindow       *ui.Window
+	UI               *ui.Instance
 	Audio            *audio.Instance
 	LogHistory       []string
 	States           []StateI
@@ -35,6 +36,7 @@ func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, aud *audio.
 
 	c.RootWindow = &inst.RootWindow
 	c.Audio = aud
+	c.UI = inst
 	c.DataManager = dataManager
 	c.DataManager.Conn = &c.Connection
 

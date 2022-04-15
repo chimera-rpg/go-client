@@ -29,15 +29,18 @@ type ImageElement struct {
 
 // Destroy destroys the underlying ImageElement.
 func (i *ImageElement) Destroy() {
-	if i.SDLTexture != nil {
-		i.SDLTexture.Destroy()
+	if i.ImageID == 0 {
+		if i.SDLTexture != nil {
+			i.SDLTexture.Destroy()
+		}
+		if i.GrayscaleTexture != nil {
+			i.GrayscaleTexture.Destroy()
+		}
 	}
 	if i.OutlineTexture != nil {
 		i.OutlineTexture.Destroy()
 	}
-	if i.GrayscaleTexture != nil {
-		i.GrayscaleTexture.Destroy()
-	}
+
 	i.BaseElement.Destroy()
 }
 
@@ -48,7 +51,9 @@ func (i *ImageElement) Render() {
 		return
 	}
 	if i.SDLTexture == nil {
-		i.SetImage(i.Image)
+		if i.ImageID != 0 {
+			i.SetImageID(i.ImageID)
+		}
 	}
 	if i.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
@@ -91,14 +96,91 @@ func (i *ImageElement) Render() {
 	i.BaseElement.Render()
 }
 
+func (i *ImageElement) SetImageID(id uint32) {
+	i.ImageID = id
+	imgTextures := i.Context.Manager.GetImage(id)
+	if imgTextures == nil {
+		img, err := i.Context.Manager.GetCachedImage(id)
+		i.Image = img
+		if err != nil {
+			panic(err)
+		}
+		tex, gray, err := i.createTexture(img)
+		if err != nil {
+			panic(err)
+		}
+		i.Context.Manager.SetRegularTexture(id, tex)
+		i.Context.Manager.SetGrayscaleTexture(id, gray)
+		i.Context.Manager.imageTextures[id].width = int32(img.Bounds().Dx())
+		i.Context.Manager.imageTextures[id].height = int32(img.Bounds().Dy())
+		imgTextures = i.Context.Manager.GetImage(id)
+	}
+	if img, err := i.Context.Manager.GetCachedImage(id); err == nil {
+		i.Image = img
+	}
+
+	i.SDLTexture = imgTextures.regularTexture
+	i.GrayscaleTexture = imgTextures.grayscaleTexture
+
+	i.tw = imgTextures.width
+	i.th = imgTextures.height
+	if i.Style.Resize.Has(TOCONTENT) {
+		i.Style.W.Set(float64(imgTextures.width))
+		i.Style.H.Set(float64(imgTextures.height))
+	}
+	// (re)create our outline if we should.
+	if i.OutlineTexture != nil {
+		i.OutlineTexture.Destroy()
+		i.OutlineTexture = nil
+	}
+	i.UpdateOutline()
+
+	i.Dirty = true
+}
+
 // SetImage sets the underlying texture to the passed go Image.
 func (i *ImageElement) SetImage(img image.Image) {
+	var err error
 	if i.Context == nil || img == nil {
 		return
 	}
+
+	if i.ImageID > 0 {
+		i.SDLTexture = nil
+		i.GrayscaleTexture = nil
+	}
+
+	i.ImageID = 0
 	i.Image = img
 
-	var err error
+	if i.SDLTexture != nil {
+		i.SDLTexture.Destroy()
+	}
+	if i.GrayscaleTexture != nil {
+		i.GrayscaleTexture.Destroy()
+	}
+
+	i.SDLTexture, i.GrayscaleTexture, err = i.createTexture(img)
+	if err != nil {
+		panic(err)
+	}
+	i.tw = int32(img.Bounds().Dx())
+	i.th = int32(img.Bounds().Dy())
+	if i.Style.Resize.Has(TOCONTENT) {
+		i.Style.W.Set(float64(img.Bounds().Dx()))
+		i.Style.H.Set(float64(img.Bounds().Dy()))
+	}
+	// (re)create our outline if we should.
+	if i.OutlineTexture != nil {
+		i.OutlineTexture.Destroy()
+		i.OutlineTexture = nil
+	}
+	i.UpdateOutline()
+
+	i.Dirty = true
+}
+
+func (i *ImageElement) createTexture(img image.Image) (tex *sdl.Texture, gray *sdl.Texture, err error) {
 	var surface *sdl.Surface
 	var bpp int
 	var rmask, gmask, bmask, amask uint32
@@ -143,101 +225,80 @@ func (i *ImageElement) SetImage(img image.Image) {
 	}
 	defer surface.Free()
 
-	i.SDLTexture, err = i.Context.Renderer.CreateTextureFromSurface(surface)
+	tex, err = i.Context.Renderer.CreateTextureFromSurface(surface)
 	if err != nil {
-		panic(err)
-	}
-	i.tw = surface.W
-	i.th = surface.H
-	if i.Style.Resize.Has(TOCONTENT) {
-		i.Style.W.Set(float64(surface.W))
-		i.Style.H.Set(float64(surface.H))
-	}
-	// (re)create our outline if we should.
-	if i.OutlineTexture != nil {
-		i.OutlineTexture.Destroy()
-		i.OutlineTexture = nil
-	}
-	i.UpdateOutline()
-	if i.GrayscaleTexture != nil {
-		i.GrayscaleTexture.Destroy()
-		i.GrayscaleTexture = nil
-		i.UpdateGrayscale()
+		return nil, nil, err
 	}
 
-	i.Dirty = true
-}
-
-func (i *ImageElement) createGrayscale() error {
-	texWidth := i.w
-	texHeight := i.h
-
-	tex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, i.w, i.h)
-	if err != nil {
-		return err
-	}
-	defer tex.Destroy()
-	prevRenderTarget := i.Context.Renderer.GetRenderTarget()
-	defer i.Context.Renderer.SetRenderTarget(prevRenderTarget)
-	i.Context.Renderer.SetRenderTarget(tex)
-	i.Context.Renderer.SetDrawColor(0, 0, 0, 0)
-	i.Context.Renderer.Clear()
-	err = i.Context.Renderer.Copy(i.SDLTexture, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	realPixels := make([]byte, texWidth*texHeight*4)
-	err = i.Context.Renderer.ReadPixels(nil, uint32(sdl.PIXELFORMAT_RGBA32), unsafe.Pointer(&realPixels[0]), int(texWidth)*4)
-	if err != nil {
-		return err
-	}
-
-	// Create our final texture for outline rendering.
-	realTex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_STATIC, texWidth, texHeight)
-	realTex.SetBlendMode(sdl.BLENDMODE_BLEND)
-	if err != nil {
-		return err
-	}
-	targetPixels := make([]byte, texWidth*texHeight*4)
-
-	for x := 0; x < int(texWidth); x++ {
-		for y := 0; y < int(texHeight); y++ {
-			t := (y*int(texWidth) + x) * 4
-			r := realPixels[t]
-			g := realPixels[t+1]
-			b := realPixels[t+2]
-			var v byte
-			// Average
-			// v = (r + g + b) / 3
-			// Desaturation
-			{
-				v = byte((math.Max(float64(b), math.Max(float64(r), float64(g))) + math.Min(float64(b), math.Min(float64(r), float64(g)))) / 2)
-			}
-			// Minimum decomposition
-			{
-				//v = byte(math.Min(float64(b), math.Min(float64(r), float64(g))))
-			}
-			// Maximum decomposition
-			/*{
-				v = byte(math.Max(float64(b), math.Max(float64(r), float64(g))))
-			}*/
-			targetPixels[t] = v
-			targetPixels[t+1] = v
-			targetPixels[t+2] = v
-			targetPixels[t+3] = realPixels[t+3]
+	// Might as well also create the grayscale...
+	{
+		texWidth := int32(img.Bounds().Dx())
+		texHeight := int32(img.Bounds().Dy())
+		tempTex, err := i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_TARGET, texWidth, texHeight)
+		if err != nil {
+			return nil, nil, err
 		}
+		defer tempTex.Destroy()
+		prevRenderTarget := i.Context.Renderer.GetRenderTarget()
+		defer i.Context.Renderer.SetRenderTarget(prevRenderTarget)
+		i.Context.Renderer.SetRenderTarget(tempTex)
+		i.Context.Renderer.SetDrawColor(0, 0, 0, 0)
+		i.Context.Renderer.Clear()
+		err = i.Context.Renderer.Copy(tex, nil, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		realPixels := make([]byte, texWidth*texHeight*4)
+		err = i.Context.Renderer.ReadPixels(nil, uint32(sdl.PIXELFORMAT_RGBA32), unsafe.Pointer(&realPixels[0]), int(texWidth)*4)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Create our final texture for outline rendering.
+		gray, err = i.Context.Renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_STATIC, texWidth, texHeight)
+		gray.SetBlendMode(sdl.BLENDMODE_BLEND)
+		if err != nil {
+			return nil, nil, err
+		}
+		targetPixels := make([]byte, texWidth*texHeight*4)
+
+		for x := 0; x < int(texWidth); x++ {
+			for y := 0; y < int(texHeight); y++ {
+				t := (y*int(texWidth) + x) * 4
+				r := realPixels[t]
+				g := realPixels[t+1]
+				b := realPixels[t+2]
+				var v byte
+				// Average
+				// v = (r + g + b) / 3
+				// Desaturation
+				{
+					v = byte((math.Max(float64(b), math.Max(float64(r), float64(g))) + math.Min(float64(b), math.Min(float64(r), float64(g)))) / 2)
+				}
+				// Minimum decomposition
+				{
+					//v = byte(math.Min(float64(b), math.Min(float64(r), float64(g))))
+				}
+				// Maximum decomposition
+				/*{
+					v = byte(math.Max(float64(b), math.Max(float64(r), float64(g))))
+				}*/
+				targetPixels[t] = v
+				targetPixels[t+1] = v
+				targetPixels[t+2] = v
+				targetPixels[t+3] = realPixels[t+3]
+			}
+		}
+		err = gray.Update(nil, targetPixels, int(texWidth)*4)
+		if err != nil {
+			gray.Destroy()
+			return nil, nil, err
+		}
+
 	}
 
-	err = realTex.Update(nil, targetPixels, int(texWidth)*4)
-	if err != nil {
-		realTex.Destroy()
-		return err
-	}
-	i.GrayscaleTexture = realTex
-
-	return nil
-
+	return tex, gray, nil
 }
 
 func (i *ImageElement) createOutline() error {
@@ -325,15 +386,6 @@ func (i *ImageElement) createOutline() error {
 	i.OutlineTexture = realTex
 
 	return nil
-}
-
-func (i *ImageElement) UpdateGrayscale() {
-	if i.grayscale && i.GrayscaleTexture == nil {
-		i.createGrayscale()
-	} else if i.GrayscaleTexture != nil {
-		//i.GrayscaleTexture.Destroy()
-		//i.GrayscaleTexture = nil
-	}
 }
 
 func (i *ImageElement) UpdateOutline() {

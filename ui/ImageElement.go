@@ -33,9 +33,7 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	if c.Image != nil {
 		i.Image = c.Image
 	}
-	if c.ImageID > 0 {
-		i.ImageID = c.ImageID
-	}
+	i.ImageID = c.ImageID
 	i.hideImage = c.HideImage
 	i.postOutline = c.PostOutline
 	i.grayscale = c.Grayscale
@@ -51,8 +49,7 @@ func NewImageElement(c ImageElementConfig) ElementI {
 func (i *ImageElement) HandleUpdate(update UpdateI) {
 	switch u := update.(type) {
 	case UpdateImageID:
-		img, _ := i.Context.Manager.GetCachedImage(uint32(u))
-		i.SetImage(img)
+		i.SetImageID(uint32(u))
 		i.OnChange()
 	case image.Image:
 		i.SetImage(u)
@@ -65,7 +62,6 @@ func (i *ImageElement) HandleUpdate(update UpdateI) {
 		i.hideImage = u
 	case UpdateGrayscale:
 		i.grayscale = bool(u)
-		i.UpdateGrayscale()
 	default:
 		i.BaseElement.HandleUpdate(update)
 	}

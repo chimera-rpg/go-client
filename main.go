@@ -65,6 +65,11 @@ func main() {
 		}
 	}
 
+	// Preload our graphics. FIXME: This isn't the right place for this either.
+	for _, v := range dataManager.Images() {
+		uiInstance.ImageLoadChan <- ui.UpdateImageID(v.ID)
+	}
+
 	// Setup our Client
 	if err = clientInstance.Setup(&dataManager, &uiInstance, &audioInstance, log); err != nil {
 		ui.ShowError("%s", err)

@@ -1,21 +1,16 @@
 package ui
 
 import (
-	"fmt"
+	"errors"
 	"image"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-type ImageTextures struct {
-	grayscale *sdl.Texture
-	regular   *sdl.Texture
-}
-
 // DataManager is a ui-contextualized data manager that is used to indirectly call the main client's data manager and cache as needed.
 type DataManager struct {
 	imageCache    map[uint32]image.Image
-	imageTextures map[uint32]*ImageTextures
+	imageTextures map[uint32]*Image
 	manager       DataManagerI
 }
 
@@ -31,8 +26,53 @@ func (m *DataManager) GetCachedImage(iID uint32) (img image.Image, err error) {
 	}
 	img, err = m.manager.GetCachedImage(iID)
 	if err == nil {
-		fmt.Println("cached local")
 		m.imageCache[iID] = img
 	}
 	return
+}
+
+func (m *DataManager) GetImage(iID uint32) *Image {
+	return m.imageTextures[iID]
+}
+
+func (m *DataManager) SetRegularTexture(iID uint32, tex *sdl.Texture) {
+	if _, ok := m.imageTextures[iID]; !ok {
+		m.imageTextures[iID] = &Image{}
+	}
+	m.imageTextures[iID].regularTexture = tex
+}
+
+func (m *DataManager) GetRegularTexture(iID uint32) (text *sdl.Texture, err error) {
+	if _, ok := m.imageTextures[iID]; ok {
+		return m.imageTextures[iID].regularTexture, nil
+	}
+	return nil, errors.New("missing")
+}
+
+func (m *DataManager) SetGrayscaleTexture(iID uint32, tex *sdl.Texture) {
+	if _, ok := m.imageTextures[iID]; !ok {
+		m.imageTextures[iID] = &Image{}
+	}
+	m.imageTextures[iID].grayscaleTexture = tex
+}
+
+func (m *DataManager) GetGrayscaleTexture(iID uint32) (text *sdl.Texture, err error) {
+	if _, ok := m.imageTextures[iID]; ok {
+		return m.imageTextures[iID].grayscaleTexture, nil
+	}
+	return nil, errors.New("missing")
+}
+
+func (m *DataManager) SetOutlineTexture(iID uint32, tex *sdl.Texture) {
+	if _, ok := m.imageTextures[iID]; !ok {
+		m.imageTextures[iID] = &Image{}
+	}
+	m.imageTextures[iID].outlineTexture = tex
+}
+
+func (m *DataManager) GetOutlineTexture(iID uint32) (text *sdl.Texture, err error) {
+	if _, ok := m.imageTextures[iID]; ok {
+		return m.imageTextures[iID].outlineTexture, nil
+	}
+	return nil, errors.New("missing")
 }
