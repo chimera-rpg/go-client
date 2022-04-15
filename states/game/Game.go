@@ -10,7 +10,6 @@ import (
 	"github.com/chimera-rpg/go-client/audio"
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/client"
-	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -55,8 +54,6 @@ type Game struct {
 	world                world.World
 	keyBinds             []uint8
 	inputChan            chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
-	objectImages         map[uint32]ui.ElementI
-	objectImageIDs       map[uint32]data.StringID
 	objectShadows        map[uint32]ui.ElementI
 	mapMessages          []MapMessage
 	MessageHistory       []Message
@@ -74,8 +71,6 @@ type Game struct {
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	s.inputChan = make(chan UserInput)
-	s.objectImages = make(map[uint32]ui.ElementI)
-	s.objectImageIDs = make(map[uint32]data.StringID)
 	s.objectShadows = make(map[uint32]ui.ElementI)
 	s.statuses = make(map[cdata.StatusType]bool)
 	s.statusElements = make(map[cdata.StatusType]ui.ElementI)
@@ -253,8 +248,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 	case network.CommandTile:
 		s.world.HandleTileCommand(c)
 	case network.CommandTileLight:
-		// FIXME: temporarily disabled until we get our render performance under control.
-		//s.world.HandleTileLightCommand(c)
+		s.world.HandleTileLightCommand(c)
 	case network.CommandMessage:
 		s.HandleMessageCommand(c)
 		s.UpdateMessagesWindow()
@@ -436,15 +430,20 @@ func (s *Game) MoveWithMouse(e MouseInput) {
 }
 
 func (s *Game) focusObject(e uint32) {
-	if el, ok := s.objectImages[s.focusedObjectID]; ok {
-		el.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
+	if o := s.world.GetObject(s.focusedObjectID); o != nil {
+		if o.Element != nil {
+			o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
+		}
 	}
-	if el, ok := s.objectImages[e]; ok {
-		el.GetUpdateChannel() <- ui.UpdateOutlineColor{255, 255, 0, 128}
-		/*switch img := el.(type) {
-		case *ui.ImageElement:
-			s.focusedImage.GetUpdateChannel() <- img.Image
-		}*/
+	if o := s.world.GetObject(e); o != nil {
+		if o.Element != nil {
+			o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{255, 255, 0, 128}
+		}
 	}
+
 	s.focusedObjectID = e
+}
+
+func (s *Game) getObjectShadow(id uint32) ui.ElementI {
+	return s.objectShadows[id]
 }

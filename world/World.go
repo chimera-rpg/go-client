@@ -214,6 +214,11 @@ func (w *World) DeleteObject(oID uint32) error {
 			t.RemoveObject(oID)
 		}
 		delete(w.objects, oID)
+		// Also remove the element since we moved elements to be part of objects directly.
+		if o.Element != nil {
+			o.Element.GetDestroyChannel() <- true
+			o.Element = nil
+		}
 	}
 	//w.deletedObjects = append(w.deletedObjects, oID)
 	return nil

@@ -17,13 +17,23 @@ func (s *Game) HandleRender(delta time.Duration) {
 	m := s.world.GetCurrentMap()
 	objects := s.world.GetObjects()
 	// Delete images that no longer correspond to an existing world object.
-	for oID, t := range s.objectImages {
+	/*temp := s.objectImages[:0]
+	for _, or := range s.objectImages {
+		o := s.world.GetObject(or.ID)
+		if o == nil {
+			or.el.GetDestroyChannel() <- true
+		} else {
+			temp = append(temp, or)
+		}
+	}
+	s.objectImages = temp*/
+	/*for oID, t := range s.objectImages {
 		o := s.world.GetObject(oID)
 		if o == nil {
 			t.GetDestroyChannel() <- true
 			delete(s.objectImages, oID)
 		}
-	}
+	}*/
 	for oID, t := range s.objectShadows {
 		o := s.world.GetObject(oID)
 		if o == nil {
@@ -137,12 +147,12 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 	// If the object is currently missing, hide it. FIXME: It'd be better to keep it on screen, but grayscale, if it is outside of player view. If in player view, then it should be hidden.
 	if o != s.world.GetViewObject() {
-		if t, ok := s.objectImages[o.ID]; ok {
+		if o.Element != nil {
 			if o.Missing {
-				t.GetUpdateChannel() <- ui.UpdateHidden(true)
+				o.Element.GetUpdateChannel() <- ui.UpdateHidden(true)
 				return
 			}
-			t.GetUpdateChannel() <- ui.UpdateHidden(false)
+			o.Element.GetUpdateChannel() <- ui.UpdateHidden(false)
 		}
 	}
 	animation := s.Client.DataManager.GetAnimation(o.AnimationID)
@@ -207,8 +217,15 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 
-	img := s.Client.DataManager.GetCachedImage(frame.ImageID)
-	if _, ok := s.objectImages[o.ID]; !ok {
+	img := o.Image
+	if img == nil {
+		var err error
+		img, err = s.Client.DataManager.GetCachedImage(frame.ImageID)
+		if err == nil {
+			o.Image = img
+		}
+	}
+	if o.Element == nil {
 		if img != nil {
 			bounds := img.Bounds()
 			w = int(float64(bounds.Max.X) * scale)
@@ -216,7 +233,7 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 			if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
 				y -= h - int(float64(tileHeight)*scale)
 			}
-			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
+			o.Element = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
 							X %d
 							Y %d
@@ -238,7 +255,7 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 							H: ui.Number{Value: float64(s.objectImages[o.ID].GetHeight())},
 						}
 						s.focusedImage.GetUpdateChannel() <- img*/
-						if s.objectImages[o.ID].PixelHit(x, y) {
+						if o.Element.PixelHit(x, y) {
 							s.inputChan <- FocusObject(o.ID)
 							return false
 						}
@@ -246,9 +263,8 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 					},
 				},
 			})
-			s.objectImageIDs[o.ID] = frame.ImageID
 		} else {
-			s.objectImages[o.ID] = ui.NewImageElement(ui.ImageElementConfig{
+			o.Element = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
 							X %d
 							Y %d
@@ -263,7 +279,7 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 						if button != 1 {
 							return true
 						}
-						if s.objectImages[o.ID].PixelHit(x, y) {
+						if o.Element.PixelHit(x, y) {
 							s.inputChan <- FocusObject(o.ID)
 							return false
 						}
@@ -271,32 +287,33 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 					},
 				},
 			})
+			//s.addObjectImage(o.ID, o.Element)
 		}
-		s.MapContainer.GetAdoptChannel() <- s.objectImages[o.ID]
+		s.MapContainer.GetAdoptChannel() <- o.Element
 	} else {
 		if img != nil {
 			if o.UnblockedChange {
 				if o.Unblocked {
-					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateAlpha(0.2)
+					o.Element.GetUpdateChannel() <- ui.UpdateAlpha(0.2)
 				} else {
-					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateAlpha(1.0)
+					o.Element.GetUpdateChannel() <- ui.UpdateAlpha(1.0)
 				}
 				o.UnblockedChange = false
 			}
 			if o.VisibilityChange {
 				if o.Visible {
-					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateGrayscale(false)
+					o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(false)
 				} else {
-					s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateGrayscale(true)
+					o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(true)
 				}
 				o.VisibilityChange = false
 			}
 			if o.LightingChange {
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateColorMod{
+				o.Element.GetUpdateChannel() <- ui.UpdateColorMod{
 					R: uint8(255 * o.Brightness),
 					G: uint8(255 * o.Brightness),
 					B: uint8(255 * o.Brightness),
-					A: 1}
+					A: 255}
 				o.LightingChange = false
 			}
 			//
@@ -318,19 +335,19 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 				if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
 					y -= int(sh) - int(float64(tileHeight)*scale)
 				}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
+				o.Element.GetUpdateChannel() <- ui.UpdateDimensions{
 					X: ui.Number{Value: float64(x)},
 					Y: ui.Number{Value: float64(y)},
 					W: ui.Number{Value: sw},
 					H: ui.Number{Value: sh},
 				}
-				s.objectImages[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
+				o.Element.GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
 				o.Changed = false
 			}
 			// Only update the image if the image ID has changed.
-			if s.objectImageIDs[o.ID] != frame.ImageID {
-				s.objectImageIDs[o.ID] = frame.ImageID
-				s.objectImages[o.ID].GetUpdateChannel() <- img
+			if o.FrameImageID != frame.ImageID {
+				o.FrameImageID = frame.ImageID
+				o.Element.GetUpdateChannel() <- img
 			}
 		}
 	}

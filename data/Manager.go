@@ -2,6 +2,7 @@ package data
 
 import (
 	"bytes"
+	"errors"
 	"image"
 	"strconv"
 	"strings"
@@ -21,17 +22,23 @@ import (
 	"github.com/kettek/apng"
 )
 
+type ImageRef struct {
+	ID  uint32
+	img image.Image
+}
+
 // Manager handles access to files on the system.
 type Manager struct {
-	Conn           *network.Connection
-	Log            *logrus.Logger
-	DataPath       string // Path for client data (fonts, etc.)
-	ConfigPath     string // Path for user configuration (style overrides, bindings, etc.)
-	Config         config.Config
-	CachePath      string // Path for local cache (downloaded PNGs, etc.)
-	animations     map[uint32]Animation
-	audio          map[uint32]Audio
-	images         map[uint32]image.Image
+	Conn       *network.Connection
+	Log        *logrus.Logger
+	DataPath   string // Path for client data (fonts, etc.)
+	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
+	Config     config.Config
+	CachePath  string // Path for local cache (downloaded PNGs, etc.)
+	animations map[uint32]Animation
+	audio      map[uint32]Audio
+	//images         map[uint32]image.Image
+	images         []ImageRef
 	sounds         map[uint32]SoundEntry
 	handleCallback func(netID int, cmd network.Command)
 }
@@ -98,7 +105,7 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 
 	m.animations = make(map[uint32]Animation)
 	m.audio = make(map[uint32]Audio)
-	m.images = make(map[uint32]image.Image)
+	//m.images = make(map[uint32]image.Image)
 	m.sounds = make(map[uint32]SoundEntry)
 
 	// Collect cached images.
@@ -173,7 +180,7 @@ func (m *Manager) collectCachedImages() (err error) {
 					m.Log.Warn("[Manager] ", err)
 					return nil
 				}
-				m.images[i] = img
+				m.SetCachedImage(i, img, true)
 			}
 		}
 		return nil
@@ -315,15 +322,32 @@ func (m *Manager) GetAnimation(aID uint32) Animation {
 }
 
 // GetCachedImage returns the cached image associated with the given ID.
-func (m *Manager) GetCachedImage(iID uint32) (img image.Image) {
-	if img, ok := m.images[iID]; ok {
-		return img
+func (m *Manager) GetCachedImage(iID uint32) (img image.Image, err error) {
+	for _, ref := range m.images {
+		if ref.ID == iID {
+			return ref.img, nil
+		}
 	}
 	imageData, err := m.GetImage(m.GetDataPath("ui/loading.png"))
 	if err != nil {
-		return imageData
+		return imageData, errors.New("missing")
 	}
-	return
+	return nil, errors.New("loading")
+}
+
+func (m *Manager) SetCachedImage(iID uint32, img image.Image, override bool) {
+	for _, ref := range m.images {
+		if ref.ID == iID {
+			if override {
+				ref.img = img
+			}
+			return
+		}
+	}
+	m.images = append(m.images, ImageRef{
+		ID:  iID,
+		img: img,
+	})
 }
 
 // GetAudioSound returns the associated Sound for an audioID, soundID, and index.
@@ -409,12 +433,19 @@ func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
 
 // EnsureImage ensures that the given image is available. If it is not, then send a graphics request.
 func (m *Manager) EnsureImage(iID uint32) {
-	if _, imageExists := m.images[iID]; !imageExists {
+	exists := false
+	for _, ref := range m.images {
+		if iID == ref.ID {
+			exists = true
+			break
+		}
+	}
+	if !exists {
 		imageData, err := m.GetImage(m.GetDataPath("ui/loading.png"))
 		if err != nil {
-			m.images[iID] = image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+			m.SetCachedImage(iID, image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}}), false)
 		} else {
-			m.images[iID] = imageData
+			m.SetCachedImage(iID, imageData, false)
 		}
 
 		// Send request.
@@ -443,9 +474,9 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 		// FIXME: We should have some sort of "missing image" reference here.
 		imageData, err := m.GetImage(m.GetDataPath("ui/missing.png"))
 		if err != nil {
-			m.images[cmd.GraphicsID] = image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}})
+			m.SetCachedImage(cmd.GraphicsID, image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}}), true)
 		} else {
-			m.images[cmd.GraphicsID] = imageData
+			m.SetCachedImage(cmd.GraphicsID, imageData, true)
 		}
 	} else if cmd.Type == network.Set {
 		if cmd.DataType == network.GraphicsPng {
@@ -453,7 +484,7 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 			if img, _, err := image.Decode(bytes.NewReader(cmd.Data)); err != nil {
 				m.Log.Warn("[Manager] Could not Decode Image")
 			} else {
-				m.images[cmd.GraphicsID] = img
+				m.SetCachedImage(cmd.GraphicsID, img, true)
 			}
 			// Also write the image to disk for future use.
 			if err := m.WriteImage(cmd.GraphicsID, cmd.DataType, cmd.Data); err != nil {

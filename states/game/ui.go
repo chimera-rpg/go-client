@@ -249,11 +249,11 @@ func (s *Game) SetupUI() (err error) {
 		`,
 		Events: ui.Events{
 			OnChange: func() bool {
-				if o, ok := s.objectImages[s.focusedObjectID]; ok {
-					s.focusedImage.GetStyle().X = o.GetStyle().X
-					s.focusedImage.GetStyle().Y = o.GetStyle().Y
-					s.focusedImage.GetStyle().W = o.GetStyle().W
-					s.focusedImage.GetStyle().H = o.GetStyle().H
+				if o := s.world.GetObject(s.focusedObjectID); o != nil && o.Element != nil {
+					s.focusedImage.GetStyle().X = o.Element.GetStyle().X
+					s.focusedImage.GetStyle().Y = o.Element.GetStyle().Y
+					s.focusedImage.GetStyle().W = o.Element.GetStyle().W
+					s.focusedImage.GetStyle().H = o.Element.GetStyle().H
 					s.focusedImage.SetDirty(true)
 				}
 				return true
