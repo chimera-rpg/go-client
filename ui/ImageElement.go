@@ -7,6 +7,7 @@ import (
 // ImageElementConfig is the configuration for construction.
 type ImageElementConfig struct {
 	Image       image.Image
+	ImageID     uint32
 	Style       string
 	Events      Events
 	HideImage   bool
@@ -32,6 +33,9 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	if c.Image != nil {
 		i.Image = c.Image
 	}
+	if c.ImageID > 0 {
+		i.ImageID = c.ImageID
+	}
 	i.hideImage = c.HideImage
 	i.postOutline = c.PostOutline
 	i.grayscale = c.Grayscale
@@ -46,6 +50,10 @@ func NewImageElement(c ImageElementConfig) ElementI {
 // HandleUpdate is the method for handling update messages.
 func (i *ImageElement) HandleUpdate(update UpdateI) {
 	switch u := update.(type) {
+	case UpdateImageID:
+		img, _ := i.Context.Manager.GetCachedImage(uint32(u))
+		i.SetImage(img)
+		i.OnChange()
 	case image.Image:
 		i.SetImage(u)
 		i.OnChange()

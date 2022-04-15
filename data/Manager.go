@@ -6,6 +6,7 @@ import (
 	"image"
 	"strconv"
 	"strings"
+	"sync"
 
 	// Package image/png is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
@@ -39,6 +40,7 @@ type Manager struct {
 	audio      map[uint32]Audio
 	//images         map[uint32]image.Image
 	images         []ImageRef
+	imageLock      sync.Mutex
 	sounds         map[uint32]SoundEntry
 	handleCallback func(netID int, cmd network.Command)
 }
@@ -323,6 +325,8 @@ func (m *Manager) GetAnimation(aID uint32) Animation {
 
 // GetCachedImage returns the cached image associated with the given ID.
 func (m *Manager) GetCachedImage(iID uint32) (img image.Image, err error) {
+	m.imageLock.Lock()
+	defer m.imageLock.Unlock()
 	for _, ref := range m.images {
 		if ref.ID == iID {
 			return ref.img, nil
@@ -336,6 +340,8 @@ func (m *Manager) GetCachedImage(iID uint32) (img image.Image, err error) {
 }
 
 func (m *Manager) SetCachedImage(iID uint32, img image.Image, override bool) {
+	m.imageLock.Lock()
+	defer m.imageLock.Unlock()
 	for _, ref := range m.images {
 		if ref.ID == iID {
 			if override {

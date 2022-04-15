@@ -19,6 +19,7 @@ type ImageElement struct {
 	GrayscaleTexture *sdl.Texture
 	OutlineTexture   *sdl.Texture
 	Image            image.Image
+	ImageID          uint32
 	hideImage        bool
 	postOutline      bool
 	grayscale        bool

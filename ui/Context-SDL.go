@@ -1,3 +1,4 @@
+//go:build !mobile
 // +build !mobile
 
 package ui
@@ -11,6 +12,7 @@ import (
 // for rendering.
 type Context struct {
 	Renderer    *sdl.Renderer
+	Manager     DataManagerI
 	Font        *ttf.Font
 	OutlineFont *ttf.Font
 }

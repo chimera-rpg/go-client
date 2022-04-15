@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+	"image"
 	"sort"
 	"time"
 
@@ -36,6 +37,10 @@ func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
 		return err
 	}
 	instance.Context.OutlineFont.SetOutline(2)
+	instance.Context.Manager = &DataManager{
+		imageCache: make(map[uint32]image.Image),
+		manager:    dataManager,
+	}
 
 	err = instance.RootWindow.Setup(WindowConfig{
 		Value: "Chimera",

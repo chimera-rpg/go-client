@@ -59,6 +59,9 @@ type UpdateZIndex struct {
 // UpdateOutlineColor represents an update to the outline color of the element.
 type UpdateOutlineColor = color.NRGBA
 
+// UpdateImageID is used to do a lookup from the data manager to update an image element's image.
+type UpdateImageID uint32
+
 // UpdateHideImage is for hiding the rendering of an image element.
 type UpdateHideImage = bool
 

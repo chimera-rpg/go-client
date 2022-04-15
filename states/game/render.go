@@ -241,7 +241,8 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				Image:       img,
+				//Image:       img,
+				ImageID:     frame.ImageID,
 				PostOutline: true,
 				Events: ui.Events{
 					OnPressed: func(button uint8, x, y int32) bool {
@@ -272,7 +273,8 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				Image:       img,
+				//Image:       img,
+				ImageID:     frame.ImageID,
 				PostOutline: true,
 				Events: ui.Events{
 					OnPressed: func(button uint8, x, y int32) bool {
@@ -347,7 +349,8 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 			// Only update the image if the image ID has changed.
 			if o.FrameImageID != frame.ImageID {
 				o.FrameImageID = frame.ImageID
-				o.Element.GetUpdateChannel() <- img
+				//o.Element.GetUpdateChannel() <- img
+				o.Element.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
 			}
 		}
 	}
