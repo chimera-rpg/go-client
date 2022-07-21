@@ -13,6 +13,7 @@ import (
 
 // HandleRender handles the rendering of our Game state.
 func (s *Game) HandleRender(delta time.Duration) {
+	var uiMessages []ui.BatchMessage
 	// FIXME: This is _very_ rough and is just for testing!
 	m := s.world.GetCurrentMap()
 	objects := s.world.GetObjects()
@@ -38,7 +39,10 @@ func (s *Game) HandleRender(delta time.Duration) {
 		o := s.world.GetObject(oID)
 		if o == nil {
 			fmt.Println("Destroying shadow for ", oID)
-			t.GetDestroyChannel() <- true
+			//t.GetDestroyChannel() <- true
+			uiMessages = append(uiMessages, ui.BatchDestroyMessage{
+				Target: t,
+			})
 			delete(s.objectShadows, oID)
 		}
 	}
@@ -66,15 +70,23 @@ func (s *Game) HandleRender(delta time.Duration) {
 		x -= float64(s.MapContainer.GetWidth()) / 2
 		y -= float64(s.MapContainer.GetHeight()) / 2
 
-		s.MapContainer.GetUpdateChannel() <- ui.UpdateScroll{
+		uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+			Target: &s.MapContainer,
+			Update: ui.UpdateScroll{
+				Left: ui.Number{Value: x},
+				Top:  ui.Number{Value: y},
+			},
+		})
+		/*s.MapContainer.GetUpdateChannel() <- ui.UpdateScroll{
 			Left: ui.Number{Value: x},
 			Top:  ui.Number{Value: y},
-		}
+		}*/
 	}
 
 	// Iterate over world objects.
 	for _, o := range objects {
-		s.RenderObject(o, m, delta)
+		updates := s.RenderObject(o, m, delta)
+		uiMessages = append(uiMessages, updates...)
 	}
 
 	// Iterate over world messages.
@@ -82,8 +94,15 @@ func (s *Game) HandleRender(delta time.Duration) {
 	for i := len(s.mapMessages) - 1; i >= 0; i-- {
 		msg := s.mapMessages[i]
 		if !msg.destroyTime.Equal(time.Time{}) && now.After(msg.destroyTime) {
-			s.MapContainer.GetDisownChannel() <- msg.el
-			msg.el.GetDestroyChannel() <- true
+			uiMessages = append(uiMessages, ui.BatchDisownMessage{
+				Parent: &s.MapContainer,
+				Target: msg.el,
+			})
+			uiMessages = append(uiMessages, ui.BatchDestroyMessage{
+				Target: msg.el,
+			})
+			//s.MapContainer.GetDisownChannel() <- msg.el
+			//msg.el.GetDestroyChannel() <- true
 			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
 		} else {
 			// TODO: Check if msg has associated object and if it has moved.
@@ -94,22 +113,42 @@ func (s *Game) HandleRender(delta time.Duration) {
 					y := o.Y + uint32(o.H) + 1
 					z := o.Z
 					xPos, yPos, _ := s.GetRenderPosition(s.world.GetCurrentMap(), y, x, z)
-					msg.el.GetUpdateChannel() <- ui.UpdateX{
+					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+						Target: msg.el,
+						Update: ui.UpdateX{
+							Number: ui.Number{Value: float64(xPos)},
+						},
+					})
+					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+						Target: msg.el,
+						Update: ui.UpdateY{
+							Number: ui.Number{Value: float64(yPos)},
+						},
+					})
+					/*msg.el.GetUpdateChannel() <- ui.UpdateX{
 						Number: ui.Number{Value: float64(xPos)},
 					}
 					msg.el.GetUpdateChannel() <- ui.UpdateY{
 						Number: ui.Number{Value: float64(yPos)},
-					}
+					}*/
 				}
 			}
 			// Move message upwards if need be.
 			if msg.floatY != 0 {
-				msg.el.GetUpdateChannel() <- ui.UpdateY{
+				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					Target: msg.el,
+					Update: ui.UpdateY{
+						Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
+					},
+				})
+				/*msg.el.GetUpdateChannel() <- ui.UpdateY{
 					Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
-				}
+				}*/
 			}
 		}
 	}
+
+	s.Client.RootWindow.BatchChannel <- uiMessages
 
 	return
 }
@@ -140,7 +179,7 @@ func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, 
 }
 
 // RenderObject renders a given Object within a DynamicMap.
-func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Duration) {
+func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Duration) (uiMessages []ui.BatchMessage) {
 	scale := *s.objectsScale
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
@@ -148,10 +187,18 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 	if o != s.world.GetViewObject() {
 		if o.Element != nil {
 			if o.Missing {
-				o.Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+				//o.Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateHidden(true),
+				})
 				return
 			}
-			o.Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+			//o.Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+			uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateHidden(false),
+			})
 		}
 	}
 	animation := s.Client.DataManager.GetAnimation(o.AnimationID)
@@ -204,13 +251,14 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 
 	// Get/create our shadow position, if we should.
 	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
-		s.RenderObjectShadows(o, m, offsetX, offsetY, w, h)
+		uiMessages = append(uiMessages, s.RenderObjectShadows(o, m, offsetX, offsetY, w, h)...)
 	}
 
-	s.RenderObjectImage(o, m, frame, x, y, zIndex, w, h)
+	uiMessages = append(uiMessages, s.RenderObjectImage(o, m, frame, x, y, zIndex, w, h)...)
+	return
 }
 
-func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int) {
+func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int) (uiMessages []ui.BatchMessage) {
 	scale := *s.objectsScale
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
@@ -289,31 +337,59 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 			})
 			//s.addObjectImage(o.ID, o.Element)
 		}
-		s.MapContainer.GetAdoptChannel() <- o.Element
+		//s.MapContainer.GetAdoptChannel() <- o.Element
+		uiMessages = append(uiMessages, ui.BatchAdoptMessage{
+			Parent: &s.MapContainer,
+			Target: o.Element,
+		})
 	} else {
 		if img != nil {
 			if o.UnblockedChange {
 				if o.Unblocked {
-					o.Element.GetUpdateChannel() <- ui.UpdateAlpha(0.2)
+					//o.Element.GetUpdateChannel() <- ui.UpdateAlpha(0.2)
+					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateAlpha(0.2),
+					})
 				} else {
-					o.Element.GetUpdateChannel() <- ui.UpdateAlpha(1.0)
+					//o.Element.GetUpdateChannel() <- ui.UpdateAlpha(1.0)
+					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateAlpha(1.0),
+					})
 				}
 				o.UnblockedChange = false
 			}
 			if o.VisibilityChange {
 				if o.Visible {
-					o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(false)
+					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateGrayscale(false),
+					})
+					//o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(false)
 				} else {
-					o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(true)
+					//o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(true)
+					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateGrayscale(true),
+					})
 				}
 				o.VisibilityChange = false
 			}
 			if o.LightingChange {
-				o.Element.GetUpdateChannel() <- ui.UpdateColorMod{
-					R: uint8(255 * o.Brightness),
-					G: uint8(255 * o.Brightness),
-					B: uint8(255 * o.Brightness),
-					A: 255}
+				/*o.Element.GetUpdateChannel() <- ui.UpdateColorMod{
+				R: uint8(255 * o.Brightness),
+				G: uint8(255 * o.Brightness),
+				B: uint8(255 * o.Brightness),
+				A: 255}*/
+				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateColorMod{
+						R: uint8(255 * o.Brightness),
+						G: uint8(255 * o.Brightness),
+						B: uint8(255 * o.Brightness),
+						A: 255},
+				})
 				o.LightingChange = false
 			}
 			//
@@ -335,27 +411,45 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 				if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
 					y -= int(sh) - int(float64(tileHeight)*scale)
 				}
-				o.Element.GetUpdateChannel() <- ui.UpdateDimensions{
+
+				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateDimensions{
+						X: ui.Number{Value: float64(x)},
+						Y: ui.Number{Value: float64(y)},
+						W: ui.Number{Value: sw},
+						H: ui.Number{Value: sh},
+					},
+				})
+				/*o.Element.GetUpdateChannel() <- ui.UpdateDimensions{
 					X: ui.Number{Value: float64(x)},
 					Y: ui.Number{Value: float64(y)},
 					W: ui.Number{Value: sw},
 					H: ui.Number{Value: sh},
-				}
-				o.Element.GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
+				}*/
+				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
+				})
+				//o.Element.GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
 				o.Changed = false
 			}
 			// Only update the image if the image ID has changed.
 			if o.FrameImageID != frame.ImageID {
 				o.FrameImageID = frame.ImageID
 				//o.Element.GetUpdateChannel() <- img
-				o.Element.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
+				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateImageID(o.FrameImageID),
+				})
+				//o.Element.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
 			}
 		}
 	}
-
+	return
 }
 
-func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX, offsetY, w, h int) {
+func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX, offsetY, w, h int) (uiMessages []ui.BatchMessage) {
 	scale := *s.objectsScale
 	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
 	sy, sx, sz := s.world.GetObjectShadowPosition(o)
@@ -396,16 +490,36 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 							BackgroundColor 0 0 0 96
 						`, x, y, w, h, zIndex),
 		})
-		s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
+		//s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
+		uiMessages = append(uiMessages, ui.BatchAdoptMessage{
+			Parent: &s.MapContainer,
+			Target: s.objectShadows[o.ID],
+		})
 	} else {
 		if o.Changed {
-			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
+			/*s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
 				X: ui.Number{Value: float64(x)},
 				Y: ui.Number{Value: float64(y)},
 				W: ui.Number{Value: float64(w)},
 				H: ui.Number{Value: float64(h)},
 			}
-			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
+			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}*/
+
+			uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				Target: s.objectShadows[o.ID],
+				Update: ui.UpdateDimensions{
+					X: ui.Number{Value: float64(x)},
+					Y: ui.Number{Value: float64(y)},
+					W: ui.Number{Value: float64(w)},
+					H: ui.Number{Value: float64(h)},
+				},
+			})
+			uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				Target: s.objectShadows[o.ID],
+				Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
+			})
+
 		}
 	}
+	return
 }
