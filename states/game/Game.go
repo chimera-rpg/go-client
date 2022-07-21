@@ -135,23 +135,7 @@ func (s *Game) Close() {
 
 // Loop is our loop for managing network activity and beyond.
 func (s *Game) Loop() {
-	cleanupChan := make(chan struct{})
-	cleanupChanQuit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-cleanupChanQuit:
-				return
-			default:
-				cleanupChan <- struct{}{}
-				// NOTE: This controls automatic re-rendering
-				time.Sleep(time.Millisecond * 16)
-			}
-		}
-	}()
-	defer func() {
-		cleanupChanQuit <- struct{}{}
-	}()
+	ticker := time.NewTicker(16 * time.Millisecond)
 	lastTs := time.Now()
 	for {
 		ts := time.Now()
@@ -164,6 +148,7 @@ func (s *Game) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
+			ticker.Stop()
 			s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 			return
 		case inp := <-s.inputChan:
@@ -220,10 +205,11 @@ func (s *Game) Loop() {
 				s.ChatType.GetUpdateChannel() <- ui.UpdateValue{Value: CommandModeStrings[s.CommandMode]}
 			case DisconnectEvent:
 				s.Client.Log.Print("Disconnected from server.")
+				ticker.Stop()
 				s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 				return
 			}
-		case <-cleanupChan:
+		case <-ticker.C:
 		}
 		s.HandleRender(delta)
 		lastTs = ts
