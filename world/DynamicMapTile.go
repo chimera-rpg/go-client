@@ -2,20 +2,26 @@ package world
 
 // DynamicMapTile represents a tile.
 type DynamicMapTile struct {
-	objectIDs  []uint32
+	objects    []*Object
 	brightness float32
 }
 
-// GetObjects returns the contained objectIDs in a tile.
-func (d *DynamicMapTile) GetObjects() []uint32 {
-	return d.objectIDs
-}
-
-// RemoveObject removes the given objectID from the tile.
-func (d *DynamicMapTile) RemoveObject(oID uint32) {
-	for i, v := range d.objectIDs {
-		if v == oID {
-			d.objectIDs = append(d.objectIDs[:i], d.objectIDs[i+1:]...)
+// RemoveObject removes the given object from the tile.
+func (d *DynamicMapTile) RemoveObject(o *Object) {
+	for i, v := range d.objects {
+		if v == o {
+			d.objects = append(d.objects[:i], d.objects[i+1:]...)
+			return
 		}
 	}
+}
+
+// AddObject adds the given object from the tile.
+func (d *DynamicMapTile) AddObject(o *Object) {
+	for _, v := range d.objects {
+		if v == o {
+			return
+		}
+	}
+	d.objects = append(d.objects, o)
 }

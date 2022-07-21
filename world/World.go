@@ -68,7 +68,7 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 	p := w.GetViewObject()
 	for _, o := range w.objects {
 		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
-			t.RemoveObject(o.ID)
+			t.RemoveObject(o)
 		}
 	}
 	w.objects = make([]*Object, 0)
@@ -109,14 +109,14 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		}
 	}
 	// See if we need to invalidate any objects that no longer are contained in the given tile.
-	for _, oID := range w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z)).objectIDs {
-		o := w.GetObject(oID)
+	for _, tileObject := range w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z)).objects {
+		o := w.GetObject(uint32(tileObject.ID))
 		if o == nil {
 			continue
 		}
 		stillExists := false
 		for _, newID := range cmd.ObjectIDs {
-			if newID == oID {
+			if newID == tileObject.ID {
 				stillExists = true
 				break
 			}
@@ -129,7 +129,13 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		}
 	}
 	// Set the map tile.
-	w.maps[w.currentMap].SetTile(cmd.Y, cmd.X, cmd.Z, cmd.ObjectIDs)
+	var objects []*Object
+	for _, oID := range cmd.ObjectIDs {
+		if o := w.GetObject(oID); o != nil {
+			objects = append(objects, o)
+		}
+	}
+	w.maps[w.currentMap].SetTile(cmd.Y, cmd.X, cmd.Z, objects)
 
 	// Update our visible tiles if the view object moved.
 	if viewChanged {
@@ -147,11 +153,7 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 	w.maps[w.currentMap].SetTileLight(cmd.Y, cmd.X, cmd.Z, cmd.Brightness)
 	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	if t != nil {
-		for _, oID := range t.GetObjects() {
-			o := w.GetObject(oID)
-			if o == nil {
-				continue
-			}
+		for _, o := range t.objects {
 			o.LightingChange = true
 			o.Brightness = t.brightness
 		}
@@ -253,7 +255,7 @@ func (w *World) DeleteObject(oID uint32) error {
 	o := w.GetObject(oID)
 	if o != nil {
 		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
-			t.RemoveObject(oID)
+			t.RemoveObject(o)
 		}
 		for i, o2 := range w.objects {
 			if o2.ID == oID {
@@ -282,12 +284,7 @@ func (w *World) ClearDeletedObjects() {
 		// Remove from owning tile.
 		if o := w.GetObject(oID); o != nil {
 			t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z))
-			for i, v := range t.objectIDs {
-				if v == oID {
-					t.objectIDs = append(t.objectIDs[:i], t.objectIDs[i+1:]...)
-					break
-				}
-			}
+			t.RemoveObject(o)
 		}
 
 		for i, o2 := range w.objects {
@@ -519,11 +516,7 @@ func (w *World) updateVisibleTiles() {
 
 		tile := m.GetTile(y, x, z)
 
-		for _, oID := range tile.GetObjects() {
-			o := w.GetObject(oID)
-			if o == nil {
-				continue
-			}
+		for _, o := range tile.objects {
 			if o.Opaque {
 				return true
 			}
@@ -547,16 +540,13 @@ func (w *World) updateVisibleTiles() {
 			for z := range visibleTiles[y][x] {
 				isVisible := visibleTiles[y][x][z]
 				tiles := m.GetTile(y, x, z)
-				for _, oID := range tiles.objectIDs {
-					o := w.GetObject(oID)
-					if o != nil {
-						if !isVisible && o.Visible {
-							o.Visible = false
-							o.VisibilityChange = true
-						} else if isVisible && !o.Visible {
-							o.Visible = true
-							o.VisibilityChange = true
-						}
+				for _, o := range tiles.objects {
+					if !isVisible && o.Visible {
+						o.Visible = false
+						o.VisibilityChange = true
+					} else if isVisible && !o.Visible {
+						o.Visible = true
+						o.VisibilityChange = true
 					}
 				}
 			}
@@ -601,11 +591,7 @@ func (w *World) updateVisionUnblocking() {
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
 		t := m.GetTile(y, x, z)
 		opaque := false
-		for _, oID := range t.objectIDs {
-			o := w.GetObject(oID)
-			if o == nil {
-				continue
-			}
+		for _, o := range t.objects {
 			if o.Opaque {
 				opaque = true
 			}
@@ -622,16 +608,13 @@ func (w *World) updateVisionUnblocking() {
 			for z := range unblockedTiles[y][x] {
 				isUnblocked := unblockedTiles[y][x][z]
 				tiles := m.GetTile(y, x, z)
-				for _, oID := range tiles.objectIDs {
-					o := w.GetObject(oID)
-					if o != nil {
-						if !isUnblocked && o.Unblocked {
-							o.Unblocked = false
-							o.UnblockedChange = true
-						} else if isUnblocked && !o.Unblocked {
-							o.Unblocked = true
-							o.UnblockedChange = true
-						}
+				for _, o := range tiles.objects {
+					if !isUnblocked && o.Unblocked {
+						o.Unblocked = false
+						o.UnblockedChange = true
+					} else if isUnblocked && !o.Unblocked {
+						o.Unblocked = true
+						o.UnblockedChange = true
 					}
 				}
 			}
@@ -649,11 +632,7 @@ func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
 	z = int(o.Z)
 
 	for i := y; i > 0; i-- {
-		for _, oID := range w.maps[w.currentMap].GetTile(i, x, z).objectIDs {
-			o2 := w.GetObject(oID)
-			if o2 == nil {
-				return
-			}
+		for _, o2 := range w.maps[w.currentMap].GetTile(i, x, z).objects {
 			if o2.Opaque {
 				y = i + 1
 				// If it's an opaque tile, we treat its shadow position as one lower.

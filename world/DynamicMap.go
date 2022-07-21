@@ -19,12 +19,12 @@ func (d *DynamicMap) Init() {
 }
 
 // SetTile sets the tile at y, x, z
-func (d *DynamicMap) SetTile(y, x, z uint32, objectIDs []uint32) {
+func (d *DynamicMap) SetTile(y, x, z uint32, objects []*Object) {
 	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
 		return
 	}
 	d.tiles[y][x][z] = DynamicMapTile{
-		objectIDs: objectIDs,
+		objects: objects,
 	}
 }
 
