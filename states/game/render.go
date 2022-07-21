@@ -68,7 +68,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 
 		// Adjust for centering based on target's sizing.
 		x += (float64(int(o.W)*tileWidth) * scale) / 2
-		y += (float64((int(o.H)*int(s.Client.AnimationsConfig.YStep.Y) + (int(o.H) * tileHeight))) * scale) / 2
+		y += (float64((int(o.H)*s.Client.AnimationsConfig.YStep.Y + (int(o.H) * tileHeight))) * scale) / 2
 		// Center within the map container.
 		x -= float64(s.MapContainer.GetWidth()) / 2
 		y -= float64(s.MapContainer.GetHeight()) / 2
@@ -190,7 +190,7 @@ func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, 
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
 
 	originX := 0
-	originY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
+	originY := int(m.GetHeight()) * -s.Client.AnimationsConfig.YStep.Y
 	originX += int(y) * int(s.Client.AnimationsConfig.YStep.X)
 	originY += int(y) * int(s.Client.AnimationsConfig.YStep.Y)
 	originX += int(x) * tileWidth
@@ -335,8 +335,8 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 
 func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int, uiMessages []ui.BatchMessage) []ui.BatchMessage {
 	scale := *s.objectsScale
-	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
-	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
+	tileWidth := s.Client.AnimationsConfig.TileWidth
+	tileHeight := s.Client.AnimationsConfig.TileHeight
 
 	img := o.Image
 	if img == nil {

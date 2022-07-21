@@ -171,35 +171,33 @@ func (c *Client) IsRunning() bool {
 
 // LoadAnimationsConfig converts the map-based cdata.AnimationsConfig to a slice-based one that is more efficient for the client to constantly access.
 func (c *Client) LoadAnimationsConfig(conf cdata.AnimationsConfig) {
-	c.AnimationsConfig.TileWidth = conf.TileWidth
-	c.AnimationsConfig.TileHeight = conf.TileHeight
-	c.AnimationsConfig.YStep = struct {
-		X int8
-		Y int8
-	}(conf.YStep)
+	c.AnimationsConfig.TileWidth = int(conf.TileWidth)
+	c.AnimationsConfig.TileHeight = int(conf.TileHeight)
+	c.AnimationsConfig.YStep.X = int(conf.YStep.X)
+	c.AnimationsConfig.YStep.Y = int(conf.YStep.Y)
 	for t, a := range conf.Adjustments {
 		c.AnimationsConfig.Adjustments = append(c.AnimationsConfig.Adjustments, archetypeAnimationAdjustment{
 			Type: t,
-			X:    a.X,
-			Y:    a.Y,
+			X:    int(a.X),
+			Y:    int(a.Y),
 		})
 	}
 }
 
 type clientAnimationsConfig struct {
-	TileWidth  uint8
-	TileHeight uint8
+	TileWidth  int
+	TileHeight int
 	YStep      struct {
-		X int8
-		Y int8
+		X int
+		Y int
 	}
 	Adjustments []archetypeAnimationAdjustment
 }
 
 type archetypeAnimationAdjustment struct {
 	Type cdata.ArchetypeType
-	X    int8
-	Y    int8
+	X    int
+	Y    int
 }
 
 func (c *clientAnimationsConfig) GetAdjustment(t cdata.ArchetypeType) (archetypeAnimationAdjustment, bool) {
