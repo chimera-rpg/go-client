@@ -15,6 +15,7 @@ type Object struct {
 	AnimationID               uint32
 	Animation                 *data.Animation
 	FaceID                    uint32
+	Face                      data.Face
 	ImageChanged              bool          // Used to indicate the animation/image has changed in some meaningful way.gful way.
 	FrameIndex                int           // The current frame index.
 	FrameElapsed              time.Duration // The amount of time elapsed for the object's current frame.

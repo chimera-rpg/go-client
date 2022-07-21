@@ -259,31 +259,26 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 			}
 		}
 	}
-	// Bail if there is no animation yet. FIXME: This should still show _something_
-	if o.Animation == nil {
-		return uiMessages
-	}
-	frames := o.Animation.GetFace(o.FaceID)
-	// Bail if there are no frames to render.
-	if len(frames) == 0 {
+	// Bail if there are no frames yet. FIXME: This should still show _something_
+	if len(o.Face.Frames) == 0 {
 		return uiMessages
 	}
 	// Check for frameindex oob, as the animation or face might have changed.
-	if o.FrameIndex >= len(frames) {
-		o.FrameIndex = len(frames) - 1
+	if o.FrameIndex >= len(o.Face.Frames) {
+		o.FrameIndex = len(o.Face.Frames) - 1
 	}
-	frame := frames[o.FrameIndex]
+	frame := o.Face.Frames[o.FrameIndex]
 
 	// Animate if there are frames and they are visible. NOTE: We *might* want to be able to flag particular animations as requiring having their frames constantly elapsed, or simply record the current real frame and only update the corresponding image render when visibility is restored.
-	if len(frames) > 1 && frame.Time > 0 && o.Visible {
+	if len(o.Face.Frames) > 1 && frame.Time > 0 && o.Visible {
 		o.FrameElapsed += dt
 		for ft := time.Duration(frame.Time) * time.Millisecond; o.FrameElapsed >= ft; {
 			o.FrameElapsed -= ft
 			o.FrameIndex++
-			if o.FrameIndex >= len(frames) {
+			if o.FrameIndex >= len(o.Face.Frames) {
 				o.FrameIndex = 0
 			}
-			frame = frames[o.FrameIndex]
+			frame = o.Face.Frames[o.FrameIndex]
 			ft = time.Duration(frame.Time) * time.Millisecond
 		}
 	}

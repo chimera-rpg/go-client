@@ -220,9 +220,11 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 		if o.AnimationID != p.AnimationID {
 			// Get randomized frame start if we have the associated animation.
 			if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
+				face := anim.GetFace(p.FaceID)
 				o.Animation = anim
+				o.Face = face
 				if anim.RandomFrame {
-					o.FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
+					o.FrameIndex = rand.Intn(len(face.Frames))
 				}
 				o.ImageChanged = true
 			} else {
@@ -247,9 +249,11 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 		}
 		// Get randomized frame start if we have the associated animation.
 		if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
+			face := anim.GetFace(p.FaceID)
 			o.Animation = anim
+			o.Face = face
 			if anim.RandomFrame {
-				o.FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
+				o.FrameIndex = rand.Intn(len(face.Frames))
 			}
 			o.ImageChanged = true
 		} else {
@@ -668,11 +672,12 @@ func (w *World) CheckPendingObjectAnimations(animationID uint32) {
 		anim := w.dataManager.GetAnimation(animationID)
 		for _, objectID := range pending {
 			if o := w.GetObject(objectID); o != nil {
+				face := anim.GetFace(o.FaceID)
 				if anim.RandomFrame {
-					face := anim.GetFace(o.FaceID)
-					o.FrameIndex = rand.Intn(len(face))
+					o.FrameIndex = rand.Intn(len(face.Frames))
 				}
 				o.Animation = anim
+				o.Face = face
 				o.ImageChanged = true
 			}
 		}
