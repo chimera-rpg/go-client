@@ -202,11 +202,11 @@ type archetypeAnimationAdjustment struct {
 	Y    int8
 }
 
-func (c *clientAnimationsConfig) GetAdjustment(t cdata.ArchetypeType) archetypeAnimationAdjustment {
+func (c *clientAnimationsConfig) GetAdjustment(t cdata.ArchetypeType) (archetypeAnimationAdjustment, bool) {
 	for _, a := range c.Adjustments {
 		if a.Type == t {
-			return a
+			return a, true
 		}
 	}
-	return archetypeAnimationAdjustment{}
+	return archetypeAnimationAdjustment{}, false
 }

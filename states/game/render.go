@@ -47,7 +47,8 @@ func (s *Game) HandleRender(delta time.Duration) {
 		}
 	}
 
-	if o := s.world.GetViewObject(); o != nil {
+	viewObject := s.world.GetViewObject()
+	if o := viewObject; o != nil {
 		renderX, renderY, _ := s.GetRenderPosition(m, o.Y, o.X, o.Z)
 		scale := *s.objectsScale
 		tileWidth := int(s.Client.AnimationsConfig.TileWidth)
@@ -56,9 +57,11 @@ func (s *Game) HandleRender(delta time.Duration) {
 		// Calculate object-specific offsets.
 		offsetX := 0
 		offsetY := 0
-		adjust := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
-		offsetX += int(adjust.X)
-		offsetY += int(adjust.Y)
+		adjust, ok := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
+		if ok {
+			offsetX += int(adjust.X)
+			offsetY += int(adjust.Y)
+		}
 
 		x := float64(renderX) + float64(offsetX)*scale
 		y := float64(renderY) + float64(offsetY)*scale
@@ -85,7 +88,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 
 	// Iterate over world objects.
 	for _, o := range objects {
-		batchMessages = s.RenderObject(o, m, delta, batchMessages)
+		batchMessages = s.RenderObject(viewObject, o, m, delta, batchMessages)
 	}
 
 	// Iterate over world messages.
@@ -149,6 +152,31 @@ func (s *Game) HandleRender(delta time.Duration) {
 
 	if len(batchMessages) > 10 {
 		fmt.Println("batch", len(batchMessages))
+		alphaCount := 0
+		dimensionsCount := 0
+		hiddenCount := 0
+		grayCount := 0
+		imageCount := 0
+		otherCount := 0
+		for _, m := range batchMessages {
+			if m, ok := m.(ui.BatchUpdateMessage); ok {
+				switch m.Update.(type) {
+				case ui.UpdateAlpha:
+					alphaCount++
+				case ui.UpdateHidden:
+					hiddenCount++
+				case ui.UpdateGrayscale:
+					grayCount++
+				case ui.UpdateImageID:
+					imageCount++
+				case ui.UpdateDimensions:
+					dimensionsCount++
+				default:
+					otherCount++
+				}
+			}
+		}
+		fmt.Printf("%d alpha, %d dim, %d hid, %d gray, %d img, %d other\n", alphaCount, dimensionsCount, hiddenCount, grayCount, imageCount, otherCount)
 	}
 
 	s.Client.RootWindow.BatchChannel <- batchMessages
@@ -181,12 +209,10 @@ func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, 
 }
 
 // RenderObject renders a given Object within a DynamicMap.
-func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages []ui.BatchMessage) []ui.BatchMessage {
+func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages []ui.BatchMessage) []ui.BatchMessage {
 	scale := *s.objectsScale
 	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
 	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
-	// If the object is currently missing, hide it. FIXME: It'd be better to keep it on screen, but grayscale, if it is outside of player view. If in player view, then it should be hidden.
-	viewObject := s.world.GetViewObject()
 
 	if o != viewObject {
 		if o.Element != nil {
@@ -266,9 +292,11 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 	// Calculate archetype type-specific offsets.
 	offsetX := 0
 	offsetY := 0
-	adjust := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
-	offsetX += int(adjust.X)
-	offsetY += int(adjust.Y)
+	adjust, ok := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
+	if ok {
+		offsetX += int(adjust.X)
+		offsetY += int(adjust.Y)
+	}
 
 	// Set animation frame offsets.
 	offsetX += int(frame.X)
