@@ -16,7 +16,7 @@ type World struct {
 	dataManager             *data.Manager
 	maps                    map[data.StringID]*DynamicMap
 	currentMap              data.StringID
-	objects                 map[uint32]*Object
+	objects                 []*Object
 	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID            uint32
 	deletedObjects          []uint32 // A list of deleted object IDs. Used and cleared during the render call.
@@ -31,7 +31,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.Log = l
 
 	w.maps = make(map[data.StringID]*DynamicMap)
-	w.objects = make(map[uint32]*Object)
+	w.objects = make([]*Object, 0)
 	w.visibleTiles = make([][][]bool, 0)
 	w.unblockedTiles = make([][][]bool, 0)
 	w.PendingObjectAnimations = make(map[uint32][]uint32)
@@ -66,16 +66,16 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 
 	// Clear out our known objects. This should really be managed differently, somehow.
 	p := w.GetViewObject()
-	for oID, o := range w.objects {
+	for _, o := range w.objects {
 		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
-			t.RemoveObject(oID)
+			t.RemoveObject(o.ID)
 		}
 	}
-	w.objects = make(map[uint32]*Object)
+	w.objects = make([]*Object, 0)
 
 	// Restore our known visible object if we have one.
 	if p != nil {
-		w.objects[p.ID] = p
+		w.AddObject(p)
 	}
 
 	return nil
@@ -89,25 +89,29 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	viewChanged := false
 	// Create object if it does not exist and update its properties to match the tile coordinates.
 	for oI, oID := range cmd.ObjectIDs {
-		if _, ok := w.objects[oID]; !ok {
-			w.objects[oID] = &Object{}
+		o := w.GetObject(oID)
+		if o == nil {
+			w.AddObject(&Object{
+				ID: oID,
+			})
 		} else {
-			if w.objects[oID].Y != cmd.Y || w.objects[oID].X != cmd.X || w.objects[oID].Z != cmd.Z || w.objects[oID].Index != oI {
-				w.objects[oID].Changed = true
+			if o.Y != cmd.Y || o.X != cmd.X || o.Z != cmd.Z || o.Index != oI {
+				o.Changed = true
 			}
 		}
-		w.objects[oID].Y = cmd.Y
-		w.objects[oID].X = cmd.X
-		w.objects[oID].Z = cmd.Z
-		w.objects[oID].Index = oI
-		w.objects[oID].Missing = false
+		o.Y = cmd.Y
+		o.X = cmd.X
+		o.Z = cmd.Z
+		o.Index = oI
+		o.Missing = false
 		if oID == w.viewObjectID {
 			viewChanged = true
 		}
 	}
 	// See if we need to invalidate any objects that no longer are contained in the given tile.
 	for _, oID := range w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z)).objectIDs {
-		if _, ok := w.objects[oID]; !ok {
+		o := w.GetObject(oID)
+		if o == nil {
 			continue
 		}
 		stillExists := false
@@ -119,8 +123,8 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		}
 		// If the tile does not exist here _AND_ the object is still marked as being here, then flag the object as missing.
 		if !stillExists {
-			if w.objects[oID].Y == cmd.Y && w.objects[oID].X == cmd.X && w.objects[oID].Z == cmd.Z {
-				w.objects[oID].Missing = true
+			if o.Y == cmd.Y && o.X == cmd.X && o.Z == cmd.Z {
+				o.Missing = true
 			}
 		}
 	}
@@ -176,14 +180,15 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 
 // CreateObjectFromPayload creates or updates an Object associated with an object ID from a creation payload.
 func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPayloadCreate) error {
-	if _, ok := w.objects[oID]; ok {
+	o := w.GetObject(oID)
+	if o != nil {
 		// Update existing object.
-		w.objects[oID].Type = p.TypeID
-		w.objects[oID].AnimationID = p.AnimationID
-		w.objects[oID].FaceID = p.FaceID
+		o.Type = p.TypeID
+		o.AnimationID = p.AnimationID
+		o.FaceID = p.FaceID
 	} else {
 		// Create a new object.
-		w.objects[oID] = &Object{
+		o = &Object{
 			ID:          oID,
 			Type:        p.TypeID,
 			AnimationID: p.AnimationID,
@@ -197,23 +202,35 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 		// Get randomized frame start if we have the associated animation.
 		if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
 			if anim.RandomFrame {
-				w.objects[oID].FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
+				o.FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
 			}
 		} else {
 			// Animation does not yet exist, add it to the pending.
 			w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
 		}
+		w.AddObject(o)
 	}
 	return nil
 }
 
+// AddObject adds the given object to the objects slice.
+func (w *World) AddObject(o *Object) {
+	w.objects = append(w.objects, o)
+}
+
 // DeleteObject deletes the given object ID from the world's objects field.
 func (w *World) DeleteObject(oID uint32) error {
-	if o, ok := w.objects[oID]; ok {
+	o := w.GetObject(oID)
+	if o != nil {
 		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
 			t.RemoveObject(oID)
 		}
-		delete(w.objects, oID)
+		for i, o2 := range w.objects {
+			if o2.ID == oID {
+				w.objects = append(w.objects[:i], w.objects[i+1:]...)
+				break
+			}
+		}
 		// Also remove the element since we moved elements to be part of objects directly.
 		if o.Element != nil {
 			o.Element.GetDestroyChannel() <- true
@@ -243,30 +260,34 @@ func (w *World) ClearDeletedObjects() {
 			}
 		}
 
-		delete(w.objects, oID)
+		for i, o2 := range w.objects {
+			if o2.ID == oID {
+				w.objects = append(w.objects[:i], w.objects[i+1:]...)
+				break
+			}
+		}
 	}
 	w.deletedObjects = make([]uint32, 0)
 }
 
 // GetObjects returns an array of all objects the client knows about.
 func (w *World) GetObjects() []*Object {
-	objects := make([]*Object, len(w.objects))
-	oI := 0
-	for _, o := range w.objects {
-		objects[oI] = o
-		oI++
-	}
-	return objects
+	return w.objects
 }
 
 // GetObject returns a pointer to an object based upon its ID.
 func (w *World) GetObject(oID uint32) *Object {
-	return w.objects[oID]
+	for _, o := range w.objects {
+		if o.ID == oID {
+			return o
+		}
+	}
+	return nil
 }
 
 // GetViewObject returns a pointer to the object which the view should be centered on.
 func (w *World) GetViewObject() *Object {
-	return w.objects[w.viewObjectID]
+	return w.GetObject(w.viewObjectID)
 }
 
 // GetCurrentMap returns a pointer to the current map.
@@ -497,7 +518,8 @@ func (w *World) updateVisibleTiles() {
 				isVisible := visibleTiles[y][x][z]
 				tiles := m.GetTile(y, x, z)
 				for _, oID := range tiles.objectIDs {
-					if o, ok := w.objects[oID]; ok {
+					o := w.GetObject(oID)
+					if o != nil {
 						if !isVisible && o.Visible {
 							o.Visible = false
 							o.VisibilityChange = true
@@ -571,7 +593,8 @@ func (w *World) updateVisionUnblocking() {
 				isUnblocked := unblockedTiles[y][x][z]
 				tiles := m.GetTile(y, x, z)
 				for _, oID := range tiles.objectIDs {
-					if o, ok := w.objects[oID]; ok {
+					o := w.GetObject(oID)
+					if o != nil {
 						if !isUnblocked && o.Unblocked {
 							o.Unblocked = false
 							o.UnblockedChange = true

@@ -5,14 +5,21 @@ type Animation struct {
 	AnimationID uint32
 	RandomFrame bool
 	Ready       bool
-	Faces       map[uint32][]AnimationFrame
+	Faces       []Face
 }
 
 func (a Animation) GetFace(id uint32) []AnimationFrame {
-	if frames, ok := a.Faces[id]; ok {
-		return frames
+	for _, face := range a.Faces {
+		if face.FaceID == id {
+			return face.Frames
+		}
 	}
 	return make([]AnimationFrame, 0)
+}
+
+type Face struct {
+	FaceID uint32
+	Frames []AnimationFrame
 }
 
 // AnimationFrame provides an ImageID and Time pairing.

@@ -52,10 +52,9 @@ func (s *Game) HandleRender(delta time.Duration) {
 		// Calculate object-specific offsets.
 		offsetX := 0
 		offsetY := 0
-		if adjust, ok := s.Client.AnimationsConfig.Adjustments[cdata.ArchetypeType(o.Type)]; ok {
-			offsetX += int(adjust.X)
-			offsetY += int(adjust.Y)
-		}
+		adjust := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
+		offsetX += int(adjust.X)
+		offsetY += int(adjust.Y)
 
 		x := float64(renderX) + float64(offsetX)*scale
 		y := float64(renderY) + float64(offsetY)*scale
@@ -187,10 +186,9 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 	// Calculate archetype type-specific offsets.
 	offsetX := 0
 	offsetY := 0
-	if adjust, ok := s.Client.AnimationsConfig.Adjustments[cdata.ArchetypeType(o.Type)]; ok {
-		offsetX += int(adjust.X)
-		offsetY += int(adjust.Y)
-	}
+	adjust := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
+	offsetX += int(adjust.X)
+	offsetY += int(adjust.Y)
 
 	// Set animation frame offsets.
 	offsetX += int(frame.X)

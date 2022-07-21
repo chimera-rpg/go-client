@@ -27,7 +27,7 @@ type Client struct {
 	isRunning        bool
 	RenderChannel    chan struct{}
 	StateChannel     chan StateMessage
-	AnimationsConfig cdata.AnimationsConfig
+	AnimationsConfig clientAnimationsConfig
 }
 
 // Setup sets up a Client's base data structures for use.
@@ -167,4 +167,46 @@ func (c *Client) State() StateI {
 // IsRunning returns whether the client is running or not.
 func (c *Client) IsRunning() bool {
 	return c.isRunning
+}
+
+// LoadAnimationsConfig converts the map-based cdata.AnimationsConfig to a slice-based one that is more efficient for the client to constantly access.
+func (c *Client) LoadAnimationsConfig(conf cdata.AnimationsConfig) {
+	c.AnimationsConfig.TileWidth = conf.TileWidth
+	c.AnimationsConfig.TileHeight = conf.TileHeight
+	c.AnimationsConfig.YStep = struct {
+		X int8
+		Y int8
+	}(conf.YStep)
+	for t, a := range conf.Adjustments {
+		c.AnimationsConfig.Adjustments = append(c.AnimationsConfig.Adjustments, archetypeAnimationAdjustment{
+			Type: t,
+			X:    a.X,
+			Y:    a.Y,
+		})
+	}
+}
+
+type clientAnimationsConfig struct {
+	TileWidth  uint8
+	TileHeight uint8
+	YStep      struct {
+		X int8
+		Y int8
+	}
+	Adjustments []archetypeAnimationAdjustment
+}
+
+type archetypeAnimationAdjustment struct {
+	Type cdata.ArchetypeType
+	X    int8
+	Y    int8
+}
+
+func (c *clientAnimationsConfig) GetAdjustment(t cdata.ArchetypeType) archetypeAnimationAdjustment {
+	for _, a := range c.Adjustments {
+		if a.Type == t {
+			return a
+		}
+	}
+	return archetypeAnimationAdjustment{}
 }

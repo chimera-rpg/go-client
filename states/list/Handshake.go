@@ -79,7 +79,7 @@ func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface
 		cmd := <-s.Client.CmdChan
 		switch t := cmd.(type) {
 		case network.CommandFeatures:
-			s.Client.AnimationsConfig = t.AnimationsConfig
+			s.Client.LoadAnimationsConfig(t.AnimationsConfig)
 		default:
 			msg := fmt.Sprintf("Server \"%s\" sent non CommandFeatures.", server)
 			s.Client.Log.Print(msg)

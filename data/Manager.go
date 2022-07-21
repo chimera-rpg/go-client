@@ -36,7 +36,7 @@ type Manager struct {
 	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
 	Config     config.Config
 	CachePath  string // Path for local cache (downloaded PNGs, etc.)
-	animations map[uint32]Animation
+	animations []*Animation
 	audio      map[uint32]Audio
 	//images         map[uint32]image.Image
 	images         []ImageRef
@@ -105,7 +105,7 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 		m.Log.Info(err)
 	}
 
-	m.animations = make(map[uint32]Animation)
+	m.animations = make([]*Animation, 0)
 	m.audio = make(map[uint32]Audio)
 	//m.images = make(map[uint32]image.Image)
 	m.sounds = make(map[uint32]SoundEntry)
@@ -308,24 +308,26 @@ func (m *Manager) GetImage(file string) (img image.Image, err error) {
 
 // GetFace returns the frames for a given animation and face.
 func (m *Manager) GetFace(aID uint32, fID uint32) (f []AnimationFrame) {
-	anim, animExists := m.animations[aID]
-	if !animExists {
+	anim := m.GetAnimation(aID)
+	if anim == nil {
 		return
 	}
-	face, faceExists := anim.Faces[fID]
-	if !faceExists {
-		return
+	for _, face := range anim.Faces {
+		if face.FaceID == fID {
+			return face.Frames
+		}
 	}
-	return face
+	return
 }
 
 // GetAnimation returns the underlying animation.
-func (m *Manager) GetAnimation(aID uint32) Animation {
-	anim, animExists := m.animations[aID]
-	if !animExists {
-		return Animation{}
+func (m *Manager) GetAnimation(aID uint32) *Animation {
+	for _, anim := range m.animations {
+		if anim.AnimationID == aID {
+			return anim
+		}
 	}
-	return anim
+	return &Animation{}
 }
 
 // GetCachedImage returns the cached image associated with the given ID.
@@ -388,45 +390,61 @@ func (m *Manager) GetCachedSound(soundID uint32) (snd SoundEntry) {
 // EnsureAnimation checks if an animation associated with a given ID exists, and if not, sends a network request for the animation.
 func (m *Manager) EnsureAnimation(aID uint32) {
 	// If animation id is not known, add the animation, then send an animation request.
-	if _, animExists := m.animations[aID]; !animExists {
-		m.animations[aID] = Animation{
-			Faces:       make(map[uint32][]AnimationFrame),
-			RandomFrame: false,
-			Ready:       false,
+	for _, anim := range m.animations {
+		if anim.AnimationID == aID {
+			return
 		}
-		m.Log.WithFields(logrus.Fields{
-			"ID": aID,
-		}).Info("[Manager] Sending Animation Request")
-		m.Conn.Send(network.CommandAnimation{
-			Type:        network.Get,
-			AnimationID: aID,
-		})
 	}
-
+	m.animations = append(m.animations, &Animation{
+		AnimationID: aID,
+		Faces:       make([]Face, 0),
+		RandomFrame: false,
+		Ready:       false,
+	})
+	m.Log.WithFields(logrus.Fields{
+		"ID": aID,
+	}).Info("[Manager] Sending Animation Request")
+	m.Conn.Send(network.CommandAnimation{
+		Type:        network.Get,
+		AnimationID: aID,
+	})
 }
 
 // HandleAnimationCommand handles received animation commands and incorporates them into the animations map.
 func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
-	if anim, exists := m.animations[cmd.AnimationID]; !exists {
-		m.animations[cmd.AnimationID] = Animation{
+	animExists := false
+	var anim *Animation
+	for _, anim2 := range m.animations {
+		if anim2.AnimationID == cmd.AnimationID {
+			animExists = true
+			anim = anim2
+			break
+		}
+	}
+	if !animExists {
+		anim = &Animation{
 			AnimationID: cmd.AnimationID,
 			RandomFrame: cmd.RandomFrame,
 			Ready:       true,
-			Faces:       make(map[uint32][]AnimationFrame),
+			Faces:       make([]Face, 0),
 		}
+		m.animations = append(m.animations, anim)
 	} else {
 		anim.Ready = true
 		anim.RandomFrame = cmd.RandomFrame
-		m.animations[cmd.AnimationID] = anim
 	}
 	m.Log.WithFields(logrus.Fields{
 		"ID":        cmd.AnimationID,
 		"FaceCount": len(cmd.Faces),
 	}).Info("[Manager] Received Animation")
 	for faceID, frames := range cmd.Faces {
-		m.animations[cmd.AnimationID].Faces[faceID] = make([]AnimationFrame, len(frames))
+		face := Face{
+			FaceID: faceID,
+			Frames: make([]AnimationFrame, len(frames)),
+		}
+
 		for frameIndex, frame := range frames {
-			m.animations[cmd.AnimationID].Faces[faceID][frameIndex] = AnimationFrame{
+			face.Frames[frameIndex] = AnimationFrame{
 				ImageID: frame.ImageID,
 				Time:    frame.Time,
 				X:       frame.X,
@@ -435,6 +453,8 @@ func (m *Manager) HandleAnimationCommand(cmd network.CommandAnimation) error {
 			// Request any unknown graphics.
 			m.EnsureImage(frame.ImageID)
 		}
+
+		anim.Faces = append(anim.Faces, face)
 	}
 	if m.handleCallback != nil {
 		m.handleCallback(network.TypeAnimation, cmd)
