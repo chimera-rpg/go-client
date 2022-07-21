@@ -147,11 +147,17 @@ func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Durati
 	// If the object is currently missing, hide it. FIXME: It'd be better to keep it on screen, but grayscale, if it is outside of player view. If in player view, then it should be hidden.
 	if o != s.world.GetViewObject() {
 		if o.Element != nil {
-			if o.Missing {
-				o.Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+			if o.Missing && o.WasMissing {
 				return
 			}
-			o.Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+			if o.Missing && !o.WasMissing {
+				o.WasMissing = true
+				o.Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+				return
+			} else if !o.Missing && o.WasMissing {
+				o.WasMissing = false
+				o.Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+			}
 		}
 	}
 	animation := s.Client.DataManager.GetAnimation(o.AnimationID)
