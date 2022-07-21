@@ -8,13 +8,13 @@ type Animation struct {
 	Faces       []Face
 }
 
-func (a Animation) GetFace(id uint32) []AnimationFrame {
+func (a Animation) GetFace(id uint32) Face {
 	for _, face := range a.Faces {
 		if face.FaceID == id {
-			return face.Frames
+			return face
 		}
 	}
-	return make([]AnimationFrame, 0)
+	return Face{}
 }
 
 type Face struct {
