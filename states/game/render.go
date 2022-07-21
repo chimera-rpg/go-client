@@ -259,8 +259,11 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 			}
 		}
 	}
-	animation := s.Client.DataManager.GetAnimation(o.AnimationID)
-	frames := animation.GetFace(o.FaceID)
+	// Bail if there is no animation yet. FIXME: This should still show _something_
+	if o.Animation == nil {
+		return uiMessages
+	}
+	frames := o.Animation.GetFace(o.FaceID)
 	// Bail if there are no frames to render.
 	if len(frames) == 0 {
 		return uiMessages

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"math"
-	"math/rand"
 	"time"
 
 	"github.com/chimera-rpg/go-client/audio"
@@ -100,19 +99,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			}
 		} else if netID == network.TypeAnimation {
 			c := cmd.(network.CommandAnimation)
-			if pending, ok := s.world.PendingObjectAnimations[c.AnimationID]; ok {
-				anim := s.Client.DataManager.GetAnimation(c.AnimationID)
-				fmt.Println(c.AnimationID, anim.RandomFrame)
-				if anim.RandomFrame {
-					for _, objectID := range pending {
-						if o := s.world.GetObject(objectID); o != nil {
-							face := anim.GetFace(o.FaceID)
-							o.FrameIndex = rand.Intn(len(face))
-						}
-					}
-				}
-				delete(s.world.PendingObjectAnimations, c.AnimationID)
-			}
+			s.world.CheckPendingObjectAnimations(c.AnimationID)
 		}
 	})
 

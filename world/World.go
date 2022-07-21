@@ -216,6 +216,20 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 	if o != nil {
 		// Update existing object.
 		o.Type = p.TypeID
+
+		if o.AnimationID != p.AnimationID {
+			// Get randomized frame start if we have the associated animation.
+			if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
+				o.Animation = anim
+				if anim.RandomFrame {
+					o.FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
+				}
+				o.ImageChanged = true
+			} else {
+				// Animation does not yet exist, add it to the pending.
+				w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
+			}
+		}
 		o.AnimationID = p.AnimationID
 		o.FaceID = p.FaceID
 	} else {
@@ -233,9 +247,11 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 		}
 		// Get randomized frame start if we have the associated animation.
 		if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
+			o.Animation = anim
 			if anim.RandomFrame {
 				o.FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
 			}
+			o.ImageChanged = true
 		} else {
 			// Animation does not yet exist, add it to the pending.
 			w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
@@ -645,4 +661,21 @@ func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
 	}
 
 	return
+}
+
+func (w *World) CheckPendingObjectAnimations(animationID uint32) {
+	if pending, ok := w.PendingObjectAnimations[animationID]; ok {
+		anim := w.dataManager.GetAnimation(animationID)
+		for _, objectID := range pending {
+			if o := w.GetObject(objectID); o != nil {
+				if anim.RandomFrame {
+					face := anim.GetFace(o.FaceID)
+					o.FrameIndex = rand.Intn(len(face))
+				}
+				o.Animation = anim
+				o.ImageChanged = true
+			}
+		}
+		delete(w.PendingObjectAnimations, animationID)
+	}
 }
