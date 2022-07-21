@@ -288,18 +288,29 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 		}
 	}
 
-	// Get our render position.
-	x, y, zIndex := s.GetRenderPosition(m, o.Y, o.X, o.Z)
+	// Get and cache our render position.
+	var x, y, zIndex int
+	if o.Changed {
+		o.RenderX, o.RenderY, o.RenderZ = s.GetRenderPosition(m, o.Y, o.X, o.Z)
+	}
+	x = o.RenderX
+	y = o.RenderY
+	zIndex = o.RenderZ
+
 	zIndex += o.Index
 
 	// Calculate archetype type-specific offsets.
 	offsetX := 0
 	offsetY := 0
-	adjust, ok := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
-	if ok {
-		offsetX += int(adjust.X)
-		offsetY += int(adjust.Y)
+	// Acquire and cache our object's adjustment.
+	if !o.Adjusted {
+		adjust, _ := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
+		o.AdjustX = int(adjust.X)
+		o.AdjustY = int(adjust.Y)
+		o.Adjusted = true
 	}
+	offsetX += o.AdjustX
+	offsetY += o.AdjustY
 
 	// Set animation frame offsets.
 	offsetX += int(frame.X)
