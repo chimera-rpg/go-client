@@ -135,6 +135,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	if viewChanged {
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
+		w.UpdateViews()
 	}
 	return nil
 }
@@ -158,6 +159,34 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 	return nil
 }
 
+// Hmm
+func (w *World) UpdateViews() {
+	v := w.GetViewObject()
+	if v != nil {
+		for _, o := range w.objects {
+			if v == o {
+				continue
+			}
+			distance := math.Sqrt(math.Pow(float64(int(v.Y)-int(o.Y)), 2) + math.Pow(float64(int(v.X)-int(o.X)), 2) + math.Pow(float64(int(v.Z)-int(o.Z)), 2))
+
+			// FIXME: This must be based on the actual vision of the view object!
+			maxDistance := 20.0
+
+			if distance >= maxDistance {
+				if !o.OutOfVision {
+					o.OutOfVision = true
+					o.OutOfVisionChanged = true
+				}
+			} else {
+				if o.OutOfVision {
+					o.OutOfVision = false
+					o.OutOfVisionChanged = true
+				}
+			}
+		}
+	}
+}
+
 // HandleObjectCommand handles an ObjectCommand, creating or deleting depending on the payload.
 func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	switch p := cmd.Payload.(type) {
@@ -175,6 +204,7 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 			"payload": p,
 		}).Info("[World] Unhandled CommandObject Payload")
 	}
+	w.UpdateViews()
 	return nil
 }
 
