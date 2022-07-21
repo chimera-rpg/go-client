@@ -313,7 +313,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
 	// Eh... update outline on any of these changes.
-	s.focusObject(s.focusedObjectID)
+	//s.focusObject(s.focusedObjectID)
 	return false
 }
 
