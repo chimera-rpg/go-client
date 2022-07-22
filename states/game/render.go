@@ -17,35 +17,6 @@ func (s *Game) HandleRender(delta time.Duration) {
 	// FIXME: This is _very_ rough and is just for testing!
 	m := s.world.GetCurrentMap()
 	objects := s.world.GetObjects()
-	// Delete images that no longer correspond to an existing world object.
-	/*temp := s.objectImages[:0]
-	for _, or := range s.objectImages {
-		o := s.world.GetObject(or.ID)
-		if o == nil {
-			or.el.GetDestroyChannel() <- true
-		} else {
-			temp = append(temp, or)
-		}
-	}
-	s.objectImages = temp*/
-	/*for oID, t := range s.objectImages {
-		o := s.world.GetObject(oID)
-		if o == nil {
-			t.GetDestroyChannel() <- true
-			delete(s.objectImages, oID)
-		}
-	}*/
-	for oID, t := range s.objectShadows {
-		o := s.world.GetObject(oID)
-		if o == nil {
-			fmt.Println("Destroying shadow for ", oID)
-			//t.GetDestroyChannel() <- true
-			batchMessages = append(batchMessages, ui.BatchDestroyMessage{
-				Target: t,
-			})
-			delete(s.objectShadows, oID)
-		}
-	}
 
 	viewObject := s.world.GetViewObject()
 	if o := viewObject; o != nil {
@@ -210,39 +181,14 @@ func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, 
 
 // RenderObject renders a given Object within a DynamicMap.
 func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages []ui.BatchMessage) []ui.BatchMessage {
-	scale := *s.objectsScale
-	tileWidth := s.Client.AnimationsConfig.TileWidth
-	tileHeight := s.Client.AnimationsConfig.TileHeight
-
 	if o != viewObject {
 		if o.Element != nil {
-			/*if o.OutOfVisionChanged {
-				o.OutOfVisionChanged = false
-				if o.OutOfVision {
-					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
-						Target: o.Element,
-						Update: ui.UpdateHidden(true),
-					})
-					return uiMessages
-				} else {
-					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
-						Target: o.Element,
-						Update: ui.UpdateHidden(false),
-					})
-				}
-			}
-
-			if o.OutOfVision {
-				return uiMessages
-			}*/
-
 			if o.Missing && o.WasMissing {
 				return uiMessages
 			}
 
 			if o.Missing && !o.WasMissing {
 				o.WasMissing = true
-				//o.Element.GetUpdateChannel() <- ui.UpdateHidden(true)
 				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateHidden(true),
@@ -251,7 +197,6 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 			}
 			if !o.Missing && o.WasMissing {
 				o.WasMissing = false
-				//o.Element.GetUpdateChannel() <- ui.UpdateHidden(false)
 				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateHidden(false),
@@ -263,39 +208,19 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 	if len(o.Face.Frames) == 0 {
 		return uiMessages
 	}
-	// Check for frameindex oob, as the animation or face might have changed.
-	if o.FrameIndex >= len(o.Face.Frames) {
-		o.FrameIndex = len(o.Face.Frames) - 1
-		o.RecalculateFinalRender = true
-	}
+	o.Process(dt)
+
 	frame := o.Face.Frames[o.FrameIndex]
 
-	// Animate if there are frames and they are visible. NOTE: We *might* want to be able to flag particular animations as requiring having their frames constantly elapsed, or simply record the current real frame and only update the corresponding image render when visibility is restored.
-	if len(o.Face.Frames) > 1 && frame.Time > 0 && o.Visible {
-		o.FrameElapsed += dt
-		for ft := time.Duration(frame.Time) * time.Millisecond; o.FrameElapsed >= ft; {
-			o.FrameElapsed -= ft
-			o.FrameIndex++
-			if o.FrameIndex >= len(o.Face.Frames) {
-				o.FrameIndex = 0
-			}
-			frame = o.Face.Frames[o.FrameIndex]
-			ft = time.Duration(frame.Time) * time.Millisecond
-			o.RecalculateFinalRender = true
-		}
-	}
-
 	// Get and cache our render position.
-	var x, y, zIndex int
 	if o.Changed {
 		o.RenderX, o.RenderY, o.RenderZ = s.GetRenderPosition(m, o.Y, o.X, o.Z)
+		o.RenderZ += o.Index
 		o.RecalculateFinalRender = true
 	}
-	x = o.RenderX
-	y = o.RenderY
-	zIndex = o.RenderZ
-
-	zIndex += o.Index
+	x := o.RenderX
+	y := o.RenderY
+	zIndex := o.RenderZ
 
 	// Acquire and cache our object's adjustment.
 	if !o.Adjusted {
@@ -311,6 +236,10 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 	var w, h int
 	if o.RecalculateFinalRender {
 		o.RecalculateFinalRender = false
+
+		scale := *s.objectsScale
+		tileWidth := s.Client.AnimationsConfig.TileWidth
+		tileHeight := s.Client.AnimationsConfig.TileHeight
 
 		offsetX += o.AdjustX
 		offsetY += o.AdjustY
@@ -342,7 +271,7 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 	h = o.FinalRenderH
 
 	// Get/create our shadow position, if we should.
-	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
+	if o.HasShadow {
 		uiMessages = s.RenderObjectShadows(o, m, offsetX, offsetY, w, h, uiMessages)
 	}
 
@@ -351,10 +280,6 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 }
 
 func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int, uiMessages []ui.BatchMessage) []ui.BatchMessage {
-	scale := *s.objectsScale
-	tileWidth := s.Client.AnimationsConfig.TileWidth
-	tileHeight := s.Client.AnimationsConfig.TileHeight
-
 	img := o.Image
 	if img == nil {
 		var err error
@@ -363,6 +288,11 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 			o.Image = img
 		}
 	}
+
+	scale := *s.objectsScale
+	tileWidth := s.Client.AnimationsConfig.TileWidth
+	tileHeight := s.Client.AnimationsConfig.TileHeight
+
 	if o.Element == nil {
 		if img != nil {
 			bounds := img.Bounds()
@@ -379,7 +309,6 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				//Image:       img,
 				ImageID:     frame.ImageID,
 				PostOutline: true,
 				Events: ui.Events{
@@ -387,13 +316,6 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 						if button != 1 {
 							return true
 						}
-						/*s.focusedImage.GetUpdateChannel() <- ui.UpdateDimensions{
-							X: ui.Number{Value: float64(s.objectImages[o.ID].GetX())},
-							Y: ui.Number{Value: float64(s.objectImages[o.ID].GetY())},
-							W: ui.Number{Value: float64(s.objectImages[o.ID].GetWidth())},
-							H: ui.Number{Value: float64(s.objectImages[o.ID].GetHeight())},
-						}
-						s.focusedImage.GetUpdateChannel() <- img*/
 						if o.Element.PixelHit(x, y) {
 							s.inputChan <- FocusObject(o.ID)
 							return false
@@ -411,7 +333,6 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				//Image:       img,
 				ImageID:     frame.ImageID,
 				PostOutline: true,
 				Events: ui.Events{
@@ -427,9 +348,7 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 					},
 				},
 			})
-			//s.addObjectImage(o.ID, o.Element)
 		}
-		//s.MapContainer.GetAdoptChannel() <- o.Element
 		uiMessages = append(uiMessages, ui.BatchAdoptMessage{
 			Parent: &s.MapContainer,
 			Target: o.Element,
@@ -438,13 +357,11 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 		if img != nil {
 			if o.UnblockedChange {
 				if o.Unblocked {
-					//o.Element.GetUpdateChannel() <- ui.UpdateAlpha(0.2)
 					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 						Target: o.Element,
 						Update: ui.UpdateAlpha(0.2),
 					})
 				} else {
-					//o.Element.GetUpdateChannel() <- ui.UpdateAlpha(1.0)
 					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 						Target: o.Element,
 						Update: ui.UpdateAlpha(1.0),
@@ -458,9 +375,7 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 						Target: o.Element,
 						Update: ui.UpdateGrayscale(false),
 					})
-					//o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(false)
 				} else {
-					//o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(true)
 					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 						Target: o.Element,
 						Update: ui.UpdateGrayscale(true),
@@ -469,11 +384,6 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 				o.VisibilityChange = false
 			}
 			if o.LightingChange {
-				/*o.Element.GetUpdateChannel() <- ui.UpdateColorMod{
-				R: uint8(255 * o.Brightness),
-				G: uint8(255 * o.Brightness),
-				B: uint8(255 * o.Brightness),
-				A: 255}*/
 				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateColorMod{
@@ -513,28 +423,19 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 						H: ui.Number{Value: sh},
 					},
 				})
-				/*o.Element.GetUpdateChannel() <- ui.UpdateDimensions{
-					X: ui.Number{Value: float64(x)},
-					Y: ui.Number{Value: float64(y)},
-					W: ui.Number{Value: sw},
-					H: ui.Number{Value: sh},
-				}*/
 				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
 				})
-				//o.Element.GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
 				o.Changed = false
 			}
 			// Only update the image if the image ID has changed.
 			if o.FrameImageID != frame.ImageID {
 				o.FrameImageID = frame.ImageID
-				//o.Element.GetUpdateChannel() <- img
 				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateImageID(o.FrameImageID),
 				})
-				//o.Element.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
 			}
 		}
 	}
@@ -570,8 +471,8 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 		y += rh / 2
 	}
 
-	if _, ok := s.objectShadows[o.ID]; !ok {
-		s.objectShadows[o.ID] = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
+	if o.ShadowElement == nil {
+		o.ShadowElement = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
 			Shape: ui.EllipseShape,
 			Style: fmt.Sprintf(`
 							X %d
@@ -585,7 +486,7 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 		//s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
 		uiMessages = append(uiMessages, ui.BatchAdoptMessage{
 			Parent: &s.MapContainer,
-			Target: s.objectShadows[o.ID],
+			Target: o.ShadowElement,
 		})
 	} else {
 		if o.Changed {
@@ -598,7 +499,7 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}*/
 
 			uiMessages = append(uiMessages, ui.BatchUpdateMessage{
-				Target: s.objectShadows[o.ID],
+				Target: o.ShadowElement,
 				Update: ui.UpdateDimensions{
 					X: ui.Number{Value: float64(x)},
 					Y: ui.Number{Value: float64(y)},
@@ -608,7 +509,7 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 			})
 
 			uiMessages = append(uiMessages, ui.BatchUpdateMessage{
-				Target: s.objectShadows[o.ID],
+				Target: o.ShadowElement,
 				Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
 			})
 

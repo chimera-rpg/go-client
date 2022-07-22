@@ -19,6 +19,7 @@ type World struct {
 	objects                 []*Object
 	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID            uint32
+	viewObject              *Object
 	deletedObjects          []uint32 // A list of deleted object IDs. Used and cleared during the render call.
 	visibleTiles            [][][]bool
 	unblockedTiles          [][][]bool
@@ -105,6 +106,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		o.Index = oI
 		o.Missing = false
 		if oID == w.viewObjectID {
+			w.viewObject = o
 			viewChanged = true
 		}
 	}
@@ -141,7 +143,6 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	if viewChanged {
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
-		w.UpdateViews()
 	}
 	return nil
 }
@@ -161,34 +162,6 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 	return nil
 }
 
-// Hmm
-func (w *World) UpdateViews() {
-	v := w.GetViewObject()
-	if v != nil {
-		for _, o := range w.objects {
-			if v == o {
-				continue
-			}
-			distance := math.Sqrt(math.Pow(float64(int(v.Y)-int(o.Y)), 2) + math.Pow(float64(int(v.X)-int(o.X)), 2) + math.Pow(float64(int(v.Z)-int(o.Z)), 2))
-
-			// FIXME: This must be based on the actual vision of the view object!
-			maxDistance := 20.0
-
-			if distance >= maxDistance {
-				if !o.OutOfVision {
-					o.OutOfVision = true
-					o.OutOfVisionChanged = true
-				}
-			} else {
-				if o.OutOfVision {
-					o.OutOfVision = false
-					o.OutOfVisionChanged = true
-				}
-			}
-		}
-	}
-}
-
 // HandleObjectCommand handles an ObjectCommand, creating or deleting depending on the payload.
 func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	switch p := cmd.Payload.(type) {
@@ -199,6 +172,7 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 		w.DeleteObject(cmd.ObjectID)
 	case network.CommandObjectPayloadViewTarget:
 		w.viewObjectID = cmd.ObjectID
+		w.viewObject = w.GetObject(cmd.ObjectID)
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
 	default:
@@ -206,7 +180,6 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 			"payload": p,
 		}).Info("[World] Unhandled CommandObject Payload")
 	}
-	w.UpdateViews()
 	return nil
 }
 
@@ -262,6 +235,12 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 		}
 		w.AddObject(o)
 	}
+
+	// Ensure our shadow gets created.
+	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
+		o.HasShadow = true
+	}
+
 	return nil
 }
 
@@ -287,6 +266,11 @@ func (w *World) DeleteObject(oID uint32) error {
 		if o.Element != nil {
 			o.Element.GetDestroyChannel() <- true
 			o.Element = nil
+		}
+		// Remove shadow element.
+		if o.ShadowElement != nil {
+			o.ShadowElement.GetDestroyChannel() <- true
+			o.ShadowElement = nil
 		}
 	}
 	//w.deletedObjects = append(w.deletedObjects, oID)
@@ -334,7 +318,7 @@ func (w *World) GetObject(oID uint32) *Object {
 
 // GetViewObject returns a pointer to the object which the view should be centered on.
 func (w *World) GetViewObject() *Object {
-	return w.GetObject(w.viewObjectID)
+	return w.viewObject
 }
 
 // GetCurrentMap returns a pointer to the current map.

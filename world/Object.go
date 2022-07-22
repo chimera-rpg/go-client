@@ -35,10 +35,10 @@ type Object struct {
 	LightingChange                                                                                 bool        // Used to represent if the lighting of the object has changed.
 	Brightness                                                                                     float32     // How much additional brightness should be applied...?
 	Element                                                                                        ui.ElementI // This is kind of bad, but it's simpler for rendering if we pair the ui element with the object directly.
+	HasShadow                                                                                      bool        // Used to indicate that the object should have a shadow. Defined on object creation based upon its archetype type.
+	ShadowElement                                                                                  ui.ElementI // This is also kind of bad.
 	FrameImageID                                                                                   uint32
 	Image                                                                                          image.Image // Image reference, also stored here for faster access...
-	OutOfVision                                                                                    bool        // Represents if the object is out of the character's vision.
-	OutOfVisionChanged                                                                             bool        // Represents if the object is out of the character's vision.
 	RenderX, RenderY, RenderZ                                                                      int         // Cached render positions, set in RenderObject after Changes is set to true.
 	Adjusted                                                                                       bool
 	AdjustX, AdjustY                                                                               int
@@ -55,4 +55,24 @@ func ObjectsFilter(vo []Object, f func(Object) bool) []Object {
 		}
 	}
 	return vof
+}
+
+// Process is called whenever the object is re-rendered to handle frame advancement and similar.
+func (o *Object) Process(dt time.Duration) {
+	frame := o.Face.Frames[o.FrameIndex]
+
+	// Animate if there are frames and they are visible. NOTE: We *might* want to be able to flag particular animations as requiring having their frames constantly elapsed, or simply record the current real frame and only update the corresponding image render when visibility is restored.
+	if len(o.Face.Frames) > 1 && frame.Time > 0 && o.Visible {
+		o.FrameElapsed += dt
+		for ft := time.Duration(frame.Time) * time.Millisecond; o.FrameElapsed >= ft; {
+			o.FrameElapsed -= ft
+			o.FrameIndex++
+			if o.FrameIndex >= len(o.Face.Frames) {
+				o.FrameIndex = 0
+			}
+			frame = o.Face.Frames[o.FrameIndex]
+			ft = time.Duration(frame.Time) * time.Millisecond
+			o.RecalculateFinalRender = true
+		}
+	}
 }
