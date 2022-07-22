@@ -246,7 +246,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 				ID:     snd.SoundID,
 				Volume: c.Volume,
 			}
-			if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
+			if m, err := s.createMapMessage(int(c.Y), int(c.X), int(c.Z), "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
 				s.mapMessages = append(s.mapMessages, m)
 				s.MapContainer.GetAdoptChannel() <- m.el
 			}

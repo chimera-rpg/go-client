@@ -57,9 +57,9 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 			w.maps[cmd.MapID].Init()
 		}*/
 	w.maps[cmd.MapID] = &DynamicMap{
-		height: uint32(cmd.Height),
-		width:  uint32(cmd.Width),
-		depth:  uint32(cmd.Depth),
+		height: cmd.Height,
+		width:  cmd.Width,
+		depth:  cmd.Depth,
 	}
 	w.maps[cmd.MapID].Init()
 
@@ -96,13 +96,13 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 				ID: oID,
 			})
 		} else {
-			if o.Y != cmd.Y || o.X != cmd.X || o.Z != cmd.Z || o.Index != oI {
+			if o.Y != int(cmd.Y) || o.X != int(cmd.X) || o.Z != int(cmd.Z) || o.Index != oI {
 				o.Changed = true
 			}
 		}
-		o.Y = cmd.Y
-		o.X = cmd.X
-		o.Z = cmd.Z
+		o.Y = int(cmd.Y)
+		o.X = int(cmd.X)
+		o.Z = int(cmd.Z)
 		o.Index = oI
 		o.Missing = false
 		if oID == w.viewObjectID {
@@ -125,7 +125,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		}
 		// If the tile does not exist here _AND_ the object is still marked as being here, then flag the object as missing.
 		if !stillExists {
-			if o.Y == cmd.Y && o.X == cmd.X && o.Z == cmd.Z {
+			if o.Y == int(cmd.Y) && o.X == int(cmd.X) && o.Z == int(cmd.Z) {
 				o.Missing = true
 			}
 		}
@@ -215,9 +215,9 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			AnimationID: p.AnimationID,
 			FaceID:      p.FaceID,
 			Missing:     true,
-			H:           p.Height,
-			W:           p.Width,
-			D:           p.Depth,
+			H:           int8(p.Height),
+			W:           int8(p.Width),
+			D:           int8(p.Depth),
 			Opaque:      p.Opaque,
 		}
 		// Get randomized frame start if we have the associated animation.

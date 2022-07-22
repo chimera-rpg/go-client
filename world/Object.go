@@ -20,8 +20,8 @@ type Object struct {
 	FrameIndex                                                                                     int           // The current frame index.
 	FrameElapsed                                                                                   time.Duration // The amount of time elapsed for the object's current frame.
 	Index                                                                                          int           // Position in its owning Tile.
-	Y, X, Z                                                                                        uint32        // We keep Y, X, Z information here to make it easier to render objects. This is updated when Tile updates are received.
-	H, W, D                                                                                        uint8
+	Y, X, Z                                                                                        int           // We keep Y, X, Z information here to make it easier to render objects. This is updated when Tile updates are received.
+	H, W, D                                                                                        int8
 	Missing                                                                                        bool // Represents if the object is currently in an unknown location. This happens when a Tile that holds an Object no longer holds it and no other Tile has claimed it.
 	WasMissing                                                                                     bool
 	Changed                                                                                        bool        // Represents if the object's position has been changed. Cleared by Game.RenderObject

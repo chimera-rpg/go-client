@@ -77,7 +77,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 				o := s.world.GetObject(msg.objectID)
 				if o != nil {
 					x := o.X
-					y := o.Y + uint32(o.H) + 1
+					y := o.Y + int(o.H) + 1
 					z := o.Z
 					xPos, yPos, _ := s.GetRenderPosition(s.world.GetCurrentMap(), y, x, z)
 					batchMessages = append(batchMessages, ui.BatchUpdateMessage{
@@ -140,21 +140,21 @@ func (s *Game) HandleRender(delta time.Duration) {
 }
 
 // GetRenderPosition gets world to pixel coordinate positions for a given tile location.
-func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, targetY, targetZ int) {
+func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z int) (targetX, targetY, targetZ int) {
 	scale := *s.objectsScale
-	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
-	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
+	tileWidth := s.Client.AnimationsConfig.TileWidth
+	tileHeight := s.Client.AnimationsConfig.TileHeight
 
 	originX := 0
 	originY := int(m.GetHeight()) * -s.Client.AnimationsConfig.YStep.Y
-	originX += int(y) * int(s.Client.AnimationsConfig.YStep.X)
-	originY += int(y) * int(s.Client.AnimationsConfig.YStep.Y)
-	originX += int(x) * tileWidth
-	originY += int(z) * tileHeight
+	originX += y * s.Client.AnimationsConfig.YStep.X
+	originY += y * s.Client.AnimationsConfig.YStep.Y
+	originX += x * tileWidth
+	originY += z * tileHeight
 
-	indexZ := int(z)
-	indexX := int(x)
-	indexY := int(y)
+	indexZ := z
+	indexX := x
+	indexY := y
 
 	targetZ = (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX)
 
@@ -432,7 +432,7 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
 	sy, sx, sz := s.world.GetObjectShadowPosition(o)
 
-	x, y, zIndex := s.GetRenderPosition(m, uint32(sy), uint32(sx), uint32(sz))
+	x, y, zIndex := s.GetRenderPosition(m, sy, sx, sz)
 	// TODO: Fix shadows so they have a higher zIndex than z+1, but only for y of the same.
 	zIndex--
 
