@@ -28,9 +28,17 @@ func (s *Game) GetRenderContext() RenderContext {
 	}
 }
 
+type BatchMessages struct {
+	messages []ui.BatchMessage
+}
+
+func (b *BatchMessages) add(m ui.BatchMessage) {
+	b.messages = append(b.messages, m)
+}
+
 // HandleRender handles the rendering of our Game state.
 func (s *Game) HandleRender(delta time.Duration) {
-	var batchMessages = make([]ui.BatchMessage, 0, 1024)
+	var batchMessages BatchMessages
 	ctx := s.GetRenderContext()
 	// FIXME: This is _very_ rough and is just for testing!
 	m := s.world.GetCurrentMap()
@@ -59,7 +67,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 		x -= float64(s.MapContainer.GetWidth()) / 2
 		y -= float64(s.MapContainer.GetHeight()) / 2
 
-		batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+		batchMessages.add(ui.BatchUpdateMessage{
 			Target: &s.MapContainer,
 			Update: ui.UpdateScroll{
 				Left: ui.Number{Value: x},
@@ -70,7 +78,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 
 	// Iterate over world objects.
 	for _, o := range objects {
-		batchMessages = s.RenderObject(ctx, viewObject, o, m, delta, batchMessages)
+		s.RenderObject(ctx, viewObject, o, m, delta, &batchMessages)
 	}
 
 	// Iterate over world messages.
@@ -78,11 +86,11 @@ func (s *Game) HandleRender(delta time.Duration) {
 	for i := len(s.mapMessages) - 1; i >= 0; i-- {
 		msg := s.mapMessages[i]
 		if !msg.destroyTime.Equal(time.Time{}) && now.After(msg.destroyTime) {
-			batchMessages = append(batchMessages, ui.BatchDisownMessage{
+			batchMessages.add(ui.BatchDisownMessage{
 				Parent: &s.MapContainer,
 				Target: msg.el,
 			})
-			batchMessages = append(batchMessages, ui.BatchDestroyMessage{
+			batchMessages.add(ui.BatchDestroyMessage{
 				Target: msg.el,
 			})
 			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
@@ -95,13 +103,13 @@ func (s *Game) HandleRender(delta time.Duration) {
 					y := o.Y + int(o.H) + 1
 					z := o.Z
 					xPos, yPos, _ := s.GetRenderPosition(ctx, s.world.GetCurrentMap(), y, x, z)
-					batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+					batchMessages.add(ui.BatchUpdateMessage{
 						Target: msg.el,
 						Update: ui.UpdateX{
 							Number: ui.Number{Value: float64(xPos)},
 						},
 					})
-					batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+					batchMessages.add(ui.BatchUpdateMessage{
 						Target: msg.el,
 						Update: ui.UpdateY{
 							Number: ui.Number{Value: float64(yPos)},
@@ -111,7 +119,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 			}
 			// Move message upwards if need be.
 			if msg.floatY != 0 {
-				batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+				batchMessages.add(ui.BatchUpdateMessage{
 					Target: msg.el,
 					Update: ui.UpdateY{
 						Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
@@ -121,15 +129,15 @@ func (s *Game) HandleRender(delta time.Duration) {
 		}
 	}
 
-	if len(batchMessages) > 10 {
-		fmt.Println("batch", len(batchMessages))
+	if len(batchMessages.messages) > 10 {
+		fmt.Println("batch", len(batchMessages.messages))
 		alphaCount := 0
 		dimensionsCount := 0
 		hiddenCount := 0
 		grayCount := 0
 		imageCount := 0
 		otherCount := 0
-		for _, m := range batchMessages {
+		for _, m := range batchMessages.messages {
 			if m, ok := m.(ui.BatchUpdateMessage); ok {
 				switch m.Update.(type) {
 				case ui.UpdateAlpha:
@@ -150,7 +158,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 		fmt.Printf("%d alpha, %d dim, %d hid, %d gray, %d img, %d other\n", alphaCount, dimensionsCount, hiddenCount, grayCount, imageCount, otherCount)
 	}
 
-	s.Client.RootWindow.BatchChannel <- batchMessages
+	s.Client.RootWindow.BatchChannel <- batchMessages.messages
 	return
 }
 
@@ -176,24 +184,24 @@ func (s *Game) GetRenderPosition(ctx RenderContext, m *world.DynamicMap, y, x, z
 }
 
 // RenderObject renders a given Object within a DynamicMap.
-func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages []ui.BatchMessage) []ui.BatchMessage {
+func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages *BatchMessages) {
 	if o != viewObject {
 		if o.Element != nil {
 			if o.Missing && o.WasMissing {
-				return uiMessages
+				return
 			}
 
 			if o.Missing && !o.WasMissing {
 				o.WasMissing = true
-				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateHidden(true),
 				})
-				return uiMessages
+				return
 			}
 			if !o.Missing && o.WasMissing {
 				o.WasMissing = false
-				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateHidden(false),
 				})
@@ -202,7 +210,7 @@ func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *worl
 	}
 	// Bail if there are no frames yet. FIXME: This should still show _something_
 	if len(o.Face.Frames) == 0 {
-		return uiMessages
+		return
 	}
 	o.Process(dt)
 
@@ -253,14 +261,14 @@ func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *worl
 
 	// Get/create our shadow position, if we should.
 	if o.HasShadow {
-		uiMessages = s.RenderObjectShadows(ctx, o, m, o.FinalRenderOffsetX, o.FinalRenderOffsetY, o.FinalRenderW, o.FinalRenderH, uiMessages)
+		s.RenderObjectShadows(ctx, o, m, o.FinalRenderOffsetX, o.FinalRenderOffsetY, o.FinalRenderW, o.FinalRenderH, uiMessages)
 	}
 
-	uiMessages = s.RenderObjectImage(ctx, o, m, o.Frame, o.FinalRenderX, o.FinalRenderY, o.RenderZ, o.FinalRenderW, o.FinalRenderH, uiMessages)
-	return uiMessages
+	s.RenderObjectImage(ctx, o, m, o.Frame, o.FinalRenderX, o.FinalRenderY, o.RenderZ, o.FinalRenderW, o.FinalRenderH, uiMessages)
+	return
 }
 
-func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int, uiMessages []ui.BatchMessage) []ui.BatchMessage {
+func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int, uiMessages *BatchMessages) {
 	if o.Image == nil {
 		var err error
 		o.Image, err = s.Client.DataManager.GetCachedImage(frame.ImageID)
@@ -325,7 +333,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 				},
 			})
 		}
-		uiMessages = append(uiMessages, ui.BatchAdoptMessage{
+		uiMessages.add(ui.BatchAdoptMessage{
 			Parent: &s.MapContainer,
 			Target: o.Element,
 		})
@@ -333,12 +341,12 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 		if o.Image != nil {
 			if o.UnblockedChange {
 				if o.Unblocked {
-					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					uiMessages.add(ui.BatchUpdateMessage{
 						Target: o.Element,
 						Update: ui.UpdateAlpha(0.2),
 					})
 				} else {
-					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					uiMessages.add(ui.BatchUpdateMessage{
 						Target: o.Element,
 						Update: ui.UpdateAlpha(1.0),
 					})
@@ -347,12 +355,12 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 			}
 			if o.VisibilityChange {
 				if o.Visible {
-					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					uiMessages.add(ui.BatchUpdateMessage{
 						Target: o.Element,
 						Update: ui.UpdateGrayscale(false),
 					})
 				} else {
-					uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+					uiMessages.add(ui.BatchUpdateMessage{
 						Target: o.Element,
 						Update: ui.UpdateGrayscale(true),
 					})
@@ -360,7 +368,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 				o.VisibilityChange = false
 			}
 			if o.LightingChange {
-				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateColorMod{
 						R: uint8(255 * o.Brightness),
@@ -390,7 +398,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 					y -= int(sh) - ctx.tileHeightScaled
 				}
 
-				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateDimensions{
 						X: ui.Number{Value: float64(x)},
@@ -399,7 +407,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 						H: ui.Number{Value: sh},
 					},
 				})
-				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
 				})
@@ -408,17 +416,17 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 			// Only update the image if the image ID has changed.
 			if o.FrameImageID != frame.ImageID {
 				o.FrameImageID = frame.ImageID
-				uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
 					Update: ui.UpdateImageID(o.FrameImageID),
 				})
 			}
 		}
 	}
-	return uiMessages
+	return
 }
 
-func (s *Game) RenderObjectShadows(ctx RenderContext, o *world.Object, m *world.DynamicMap, offsetX, offsetY, w, h int, uiMessages []ui.BatchMessage) []ui.BatchMessage {
+func (s *Game) RenderObjectShadows(ctx RenderContext, o *world.Object, m *world.DynamicMap, offsetX, offsetY, w, h int, uiMessages *BatchMessages) {
 	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
 	sy, sx, sz := s.world.GetObjectShadowPosition(o)
 
@@ -459,21 +467,13 @@ func (s *Game) RenderObjectShadows(ctx RenderContext, o *world.Object, m *world.
 						`, x, y, w, h, zIndex),
 		})
 		//s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
-		uiMessages = append(uiMessages, ui.BatchAdoptMessage{
+		uiMessages.add(ui.BatchAdoptMessage{
 			Parent: &s.MapContainer,
 			Target: o.ShadowElement,
 		})
 	} else {
 		if o.Changed {
-			/*s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
-				X: ui.Number{Value: float64(x)},
-				Y: ui.Number{Value: float64(y)},
-				W: ui.Number{Value: float64(w)},
-				H: ui.Number{Value: float64(h)},
-			}
-			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}*/
-
-			uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+			uiMessages.add(ui.BatchUpdateMessage{
 				Target: o.ShadowElement,
 				Update: ui.UpdateDimensions{
 					X: ui.Number{Value: float64(x)},
@@ -483,12 +483,12 @@ func (s *Game) RenderObjectShadows(ctx RenderContext, o *world.Object, m *world.
 				},
 			})
 
-			uiMessages = append(uiMessages, ui.BatchUpdateMessage{
+			uiMessages.add(ui.BatchUpdateMessage{
 				Target: o.ShadowElement,
 				Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
 			})
 
 		}
 	}
-	return uiMessages
+	return
 }
