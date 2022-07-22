@@ -211,8 +211,8 @@ func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, 
 // RenderObject renders a given Object within a DynamicMap.
 func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages []ui.BatchMessage) []ui.BatchMessage {
 	scale := *s.objectsScale
-	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
-	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
+	tileWidth := s.Client.AnimationsConfig.TileWidth
+	tileHeight := s.Client.AnimationsConfig.TileHeight
 
 	if o != viewObject {
 		if o.Element != nil {
@@ -266,6 +266,7 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 	// Check for frameindex oob, as the animation or face might have changed.
 	if o.FrameIndex >= len(o.Face.Frames) {
 		o.FrameIndex = len(o.Face.Frames) - 1
+		o.RecalculateFinalRender = true
 	}
 	frame := o.Face.Frames[o.FrameIndex]
 
@@ -280,6 +281,7 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 			}
 			frame = o.Face.Frames[o.FrameIndex]
 			ft = time.Duration(frame.Time) * time.Millisecond
+			o.RecalculateFinalRender = true
 		}
 	}
 
@@ -287,6 +289,7 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 	var x, y, zIndex int
 	if o.Changed {
 		o.RenderX, o.RenderY, o.RenderZ = s.GetRenderPosition(m, o.Y, o.X, o.Z)
+		o.RecalculateFinalRender = true
 	}
 	x = o.RenderX
 	y = o.RenderY
@@ -294,30 +297,49 @@ func (s *Game) RenderObject(viewObject *world.Object, o *world.Object, m *world.
 
 	zIndex += o.Index
 
-	// Calculate archetype type-specific offsets.
-	offsetX := 0
-	offsetY := 0
 	// Acquire and cache our object's adjustment.
 	if !o.Adjusted {
 		adjust, _ := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
 		o.AdjustX = int(adjust.X)
 		o.AdjustY = int(adjust.Y)
 		o.Adjusted = true
+		o.RecalculateFinalRender = true
 	}
-	offsetX += o.AdjustX
-	offsetY += o.AdjustY
 
-	// Set animation frame offsets.
-	offsetX += int(frame.X)
-	offsetY += int(frame.Y)
+	// Calculate archetype type-specific offsets.
+	var offsetX, offsetY int
+	var w, h int
+	if o.RecalculateFinalRender {
+		o.RecalculateFinalRender = false
 
-	// Adjust our target position.
-	x += int(float64(offsetX) * scale)
-	y += int(float64(offsetY) * scale)
+		offsetX += o.AdjustX
+		offsetY += o.AdjustY
 
-	// Calculate our scaled pixel position at which to render.
-	w := int(float64(tileWidth) * scale)
-	h := int(float64(tileHeight) * scale)
+		// Set animation frame offsets.
+		offsetX += int(frame.X)
+		offsetY += int(frame.Y)
+
+		// Adjust our target position.
+		x += int(float64(offsetX) * scale)
+		y += int(float64(offsetY) * scale)
+
+		// Calculate our scaled pixel position at which to render.
+		w = int(float64(tileWidth) * scale)
+		h = int(float64(tileHeight) * scale)
+
+		o.FinalRenderOffsetX = offsetX
+		o.FinalRenderOffsetY = offsetY
+		o.FinalRenderX = x
+		o.FinalRenderY = y
+		o.FinalRenderW = w
+		o.FinalRenderH = h
+	}
+	x = o.FinalRenderX
+	y = o.FinalRenderY
+	offsetX = o.FinalRenderOffsetX
+	offsetY = o.FinalRenderOffsetY
+	w = o.FinalRenderW
+	h = o.FinalRenderH
 
 	// Get/create our shadow position, if we should.
 	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
