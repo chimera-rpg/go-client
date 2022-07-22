@@ -27,7 +27,7 @@ type MapMessage struct {
 
 func (s *Game) createMapMessage(y, x, z int, body string, col color.RGBA) (MapMessage, error) {
 	// Get our initial render position
-	xPos, yPos, _ := s.GetRenderPosition(s.world.GetCurrentMap(), y, x, z)
+	xPos, yPos, _ := s.GetRenderPosition(s.GetRenderContext(), s.world.GetCurrentMap(), y, x, z)
 
 	// Average characters in a word: 4.7; assume slow reading speed 100 wpm, so 1.6 wps; let's assume 4 chars per word so 6 chars per second.
 	charsPerSecond := len(body) / 6
