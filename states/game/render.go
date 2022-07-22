@@ -51,10 +51,6 @@ func (s *Game) HandleRender(delta time.Duration) {
 				Top:  ui.Number{Value: y},
 			},
 		})
-		/*s.MapContainer.GetUpdateChannel() <- ui.UpdateScroll{
-			Left: ui.Number{Value: x},
-			Top:  ui.Number{Value: y},
-		}*/
 	}
 
 	// Iterate over world objects.
@@ -74,8 +70,6 @@ func (s *Game) HandleRender(delta time.Duration) {
 			batchMessages = append(batchMessages, ui.BatchDestroyMessage{
 				Target: msg.el,
 			})
-			//s.MapContainer.GetDisownChannel() <- msg.el
-			//msg.el.GetDestroyChannel() <- true
 			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
 		} else {
 			// TODO: Check if msg has associated object and if it has moved.
@@ -98,12 +92,6 @@ func (s *Game) HandleRender(delta time.Duration) {
 							Number: ui.Number{Value: float64(yPos)},
 						},
 					})
-					/*msg.el.GetUpdateChannel() <- ui.UpdateX{
-						Number: ui.Number{Value: float64(xPos)},
-					}
-					msg.el.GetUpdateChannel() <- ui.UpdateY{
-						Number: ui.Number{Value: float64(yPos)},
-					}*/
 				}
 			}
 			// Move message upwards if need be.
@@ -114,9 +102,6 @@ func (s *Game) HandleRender(delta time.Duration) {
 						Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
 					},
 				})
-				/*msg.el.GetUpdateChannel() <- ui.UpdateY{
-					Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
-				}*/
 			}
 		}
 	}
