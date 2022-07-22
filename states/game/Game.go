@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"math"
-	"math/rand"
 	"time"
 
 	"github.com/chimera-rpg/go-client/audio"
@@ -100,19 +99,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 			}
 		} else if netID == network.TypeAnimation {
 			c := cmd.(network.CommandAnimation)
-			if pending, ok := s.world.PendingObjectAnimations[c.AnimationID]; ok {
-				anim := s.Client.DataManager.GetAnimation(c.AnimationID)
-				fmt.Println(c.AnimationID, anim.RandomFrame)
-				if anim.RandomFrame {
-					for _, objectID := range pending {
-						if o := s.world.GetObject(objectID); o != nil {
-							face := anim.GetFace(o.FaceID)
-							o.FrameIndex = rand.Intn(len(face))
-						}
-					}
-				}
-				delete(s.world.PendingObjectAnimations, c.AnimationID)
-			}
+			s.world.CheckPendingObjectAnimations(c.AnimationID)
 		}
 	})
 
@@ -135,23 +122,7 @@ func (s *Game) Close() {
 
 // Loop is our loop for managing network activity and beyond.
 func (s *Game) Loop() {
-	cleanupChan := make(chan struct{})
-	cleanupChanQuit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-cleanupChanQuit:
-				return
-			default:
-				cleanupChan <- struct{}{}
-				// NOTE: This controls automatic re-rendering
-				time.Sleep(time.Millisecond * 16)
-			}
-		}
-	}()
-	defer func() {
-		cleanupChanQuit <- struct{}{}
-	}()
+	ticker := time.NewTicker(16 * time.Millisecond)
 	lastTs := time.Now()
 	for {
 		ts := time.Now()
@@ -164,6 +135,7 @@ func (s *Game) Loop() {
 			}
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
+			ticker.Stop()
 			s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 			return
 		case inp := <-s.inputChan:
@@ -220,10 +192,11 @@ func (s *Game) Loop() {
 				s.ChatType.GetUpdateChannel() <- ui.UpdateValue{Value: CommandModeStrings[s.CommandMode]}
 			case DisconnectEvent:
 				s.Client.Log.Print("Disconnected from server.")
+				ticker.Stop()
 				s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 				return
 			}
-		case <-cleanupChan:
+		case <-ticker.C:
 		}
 		s.HandleRender(delta)
 		lastTs = ts
@@ -273,7 +246,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 				ID:     snd.SoundID,
 				Volume: c.Volume,
 			}
-			if m, err := s.createMapMessage(c.Y, c.X, c.Z, "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
+			if m, err := s.createMapMessage(int(c.Y), int(c.X), int(c.Z), "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
 				s.mapMessages = append(s.mapMessages, m)
 				s.MapContainer.GetAdoptChannel() <- m.el
 			}
@@ -340,7 +313,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.Client.Log.Printf("Server sent a Command %+v\n", c)
 	}
 	// Eh... update outline on any of these changes.
-	s.focusObject(s.focusedObjectID)
+	//s.focusObject(s.focusedObjectID)
 	return false
 }
 

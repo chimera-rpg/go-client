@@ -19,6 +19,7 @@ type World struct {
 	objects                 []*Object
 	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID            uint32
+	viewObject              *Object
 	deletedObjects          []uint32 // A list of deleted object IDs. Used and cleared during the render call.
 	visibleTiles            [][][]bool
 	unblockedTiles          [][][]bool
@@ -56,9 +57,9 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 			w.maps[cmd.MapID].Init()
 		}*/
 	w.maps[cmd.MapID] = &DynamicMap{
-		height: uint32(cmd.Height),
-		width:  uint32(cmd.Width),
-		depth:  uint32(cmd.Depth),
+		height: cmd.Height,
+		width:  cmd.Width,
+		depth:  cmd.Depth,
 	}
 	w.maps[cmd.MapID].Init()
 
@@ -68,7 +69,7 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 	p := w.GetViewObject()
 	for _, o := range w.objects {
 		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
-			t.RemoveObject(o.ID)
+			t.RemoveObject(o)
 		}
 	}
 	w.objects = make([]*Object, 0)
@@ -95,41 +96,48 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 				ID: oID,
 			})
 		} else {
-			if o.Y != cmd.Y || o.X != cmd.X || o.Z != cmd.Z || o.Index != oI {
+			if o.Y != int(cmd.Y) || o.X != int(cmd.X) || o.Z != int(cmd.Z) || o.Index != oI {
 				o.Changed = true
 			}
 		}
-		o.Y = cmd.Y
-		o.X = cmd.X
-		o.Z = cmd.Z
+		o.Y = int(cmd.Y)
+		o.X = int(cmd.X)
+		o.Z = int(cmd.Z)
 		o.Index = oI
 		o.Missing = false
 		if oID == w.viewObjectID {
+			w.viewObject = o
 			viewChanged = true
 		}
 	}
 	// See if we need to invalidate any objects that no longer are contained in the given tile.
-	for _, oID := range w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z)).objectIDs {
-		o := w.GetObject(oID)
+	for _, tileObject := range w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z)).objects {
+		o := w.GetObject(uint32(tileObject.ID))
 		if o == nil {
 			continue
 		}
 		stillExists := false
 		for _, newID := range cmd.ObjectIDs {
-			if newID == oID {
+			if newID == tileObject.ID {
 				stillExists = true
 				break
 			}
 		}
 		// If the tile does not exist here _AND_ the object is still marked as being here, then flag the object as missing.
 		if !stillExists {
-			if o.Y == cmd.Y && o.X == cmd.X && o.Z == cmd.Z {
+			if o.Y == int(cmd.Y) && o.X == int(cmd.X) && o.Z == int(cmd.Z) {
 				o.Missing = true
 			}
 		}
 	}
 	// Set the map tile.
-	w.maps[w.currentMap].SetTile(cmd.Y, cmd.X, cmd.Z, cmd.ObjectIDs)
+	var objects []*Object
+	for _, oID := range cmd.ObjectIDs {
+		if o := w.GetObject(oID); o != nil {
+			objects = append(objects, o)
+		}
+	}
+	w.maps[w.currentMap].SetTile(cmd.Y, cmd.X, cmd.Z, objects)
 
 	// Update our visible tiles if the view object moved.
 	if viewChanged {
@@ -146,11 +154,7 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 	w.maps[w.currentMap].SetTileLight(cmd.Y, cmd.X, cmd.Z, cmd.Brightness)
 	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	if t != nil {
-		for _, oID := range t.GetObjects() {
-			o := w.GetObject(oID)
-			if o == nil {
-				continue
-			}
+		for _, o := range t.objects {
 			o.LightingChange = true
 			o.Brightness = t.brightness
 		}
@@ -168,6 +172,7 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 		w.DeleteObject(cmd.ObjectID)
 	case network.CommandObjectPayloadViewTarget:
 		w.viewObjectID = cmd.ObjectID
+		w.viewObject = w.GetObject(cmd.ObjectID)
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
 	default:
@@ -184,8 +189,26 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 	if o != nil {
 		// Update existing object.
 		o.Type = p.TypeID
-		o.AnimationID = p.AnimationID
-		o.FaceID = p.FaceID
+
+		if o.AnimationID != p.AnimationID || o.FaceID != p.FaceID {
+			// Get randomized frame start if we have the associated animation.
+			if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
+				face := anim.GetFace(p.FaceID)
+				o.Animation = anim
+				o.Face = face
+				if anim.RandomFrame {
+					o.FrameIndex = rand.Intn(len(face.Frames))
+				} else {
+					o.FrameIndex = 0
+				}
+				o.Frame = face.Frames[o.FrameIndex]
+			} else {
+				// Animation does not yet exist, add it to the pending.
+				w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
+			}
+			o.AnimationID = p.AnimationID
+			o.FaceID = p.FaceID
+		}
 	} else {
 		// Create a new object.
 		o = &Object{
@@ -194,22 +217,32 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			AnimationID: p.AnimationID,
 			FaceID:      p.FaceID,
 			Missing:     true,
-			H:           p.Height,
-			W:           p.Width,
-			D:           p.Depth,
+			H:           int8(p.Height),
+			W:           int8(p.Width),
+			D:           int8(p.Depth),
 			Opaque:      p.Opaque,
 		}
 		// Get randomized frame start if we have the associated animation.
 		if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
+			face := anim.GetFace(p.FaceID)
+			o.Animation = anim
+			o.Face = face
 			if anim.RandomFrame {
-				o.FrameIndex = rand.Intn(len(anim.GetFace(p.FaceID)))
+				o.FrameIndex = rand.Intn(len(face.Frames))
 			}
+			o.Frame = face.Frames[o.FrameIndex]
 		} else {
 			// Animation does not yet exist, add it to the pending.
 			w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
 		}
 		w.AddObject(o)
 	}
+
+	// Ensure our shadow gets created.
+	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
+		o.HasShadow = true
+	}
+
 	return nil
 }
 
@@ -223,7 +256,7 @@ func (w *World) DeleteObject(oID uint32) error {
 	o := w.GetObject(oID)
 	if o != nil {
 		if t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z)); t != nil {
-			t.RemoveObject(oID)
+			t.RemoveObject(o)
 		}
 		for i, o2 := range w.objects {
 			if o2.ID == oID {
@@ -235,6 +268,11 @@ func (w *World) DeleteObject(oID uint32) error {
 		if o.Element != nil {
 			o.Element.GetDestroyChannel() <- true
 			o.Element = nil
+		}
+		// Remove shadow element.
+		if o.ShadowElement != nil {
+			o.ShadowElement.GetDestroyChannel() <- true
+			o.ShadowElement = nil
 		}
 	}
 	//w.deletedObjects = append(w.deletedObjects, oID)
@@ -252,12 +290,7 @@ func (w *World) ClearDeletedObjects() {
 		// Remove from owning tile.
 		if o := w.GetObject(oID); o != nil {
 			t := w.GetCurrentMap().GetTile(int(o.Y), int(o.X), int(o.Z))
-			for i, v := range t.objectIDs {
-				if v == oID {
-					t.objectIDs = append(t.objectIDs[:i], t.objectIDs[i+1:]...)
-					break
-				}
-			}
+			t.RemoveObject(o)
 		}
 
 		for i, o2 := range w.objects {
@@ -287,7 +320,7 @@ func (w *World) GetObject(oID uint32) *Object {
 
 // GetViewObject returns a pointer to the object which the view should be centered on.
 func (w *World) GetViewObject() *Object {
-	return w.GetObject(w.viewObjectID)
+	return w.viewObject
 }
 
 // GetCurrentMap returns a pointer to the current map.
@@ -489,11 +522,7 @@ func (w *World) updateVisibleTiles() {
 
 		tile := m.GetTile(y, x, z)
 
-		for _, oID := range tile.GetObjects() {
-			o := w.GetObject(oID)
-			if o == nil {
-				continue
-			}
+		for _, o := range tile.objects {
 			if o.Opaque {
 				return true
 			}
@@ -517,16 +546,13 @@ func (w *World) updateVisibleTiles() {
 			for z := range visibleTiles[y][x] {
 				isVisible := visibleTiles[y][x][z]
 				tiles := m.GetTile(y, x, z)
-				for _, oID := range tiles.objectIDs {
-					o := w.GetObject(oID)
-					if o != nil {
-						if !isVisible && o.Visible {
-							o.Visible = false
-							o.VisibilityChange = true
-						} else if isVisible && !o.Visible {
-							o.Visible = true
-							o.VisibilityChange = true
-						}
+				for _, o := range tiles.objects {
+					if !isVisible && o.Visible {
+						o.Visible = false
+						o.VisibilityChange = true
+					} else if isVisible && !o.Visible {
+						o.Visible = true
+						o.VisibilityChange = true
 					}
 				}
 			}
@@ -571,11 +597,7 @@ func (w *World) updateVisionUnblocking() {
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
 		t := m.GetTile(y, x, z)
 		opaque := false
-		for _, oID := range t.objectIDs {
-			o := w.GetObject(oID)
-			if o == nil {
-				continue
-			}
+		for _, o := range t.objects {
 			if o.Opaque {
 				opaque = true
 			}
@@ -592,16 +614,13 @@ func (w *World) updateVisionUnblocking() {
 			for z := range unblockedTiles[y][x] {
 				isUnblocked := unblockedTiles[y][x][z]
 				tiles := m.GetTile(y, x, z)
-				for _, oID := range tiles.objectIDs {
-					o := w.GetObject(oID)
-					if o != nil {
-						if !isUnblocked && o.Unblocked {
-							o.Unblocked = false
-							o.UnblockedChange = true
-						} else if isUnblocked && !o.Unblocked {
-							o.Unblocked = true
-							o.UnblockedChange = true
-						}
+				for _, o := range tiles.objects {
+					if !isUnblocked && o.Unblocked {
+						o.Unblocked = false
+						o.UnblockedChange = true
+					} else if isUnblocked && !o.Unblocked {
+						o.Unblocked = true
+						o.UnblockedChange = true
 					}
 				}
 			}
@@ -619,11 +638,7 @@ func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
 	z = int(o.Z)
 
 	for i := y; i > 0; i-- {
-		for _, oID := range w.maps[w.currentMap].GetTile(i, x, z).objectIDs {
-			o2 := w.GetObject(oID)
-			if o2 == nil {
-				return
-			}
+		for _, o2 := range w.maps[w.currentMap].GetTile(i, x, z).objects {
 			if o2.Opaque {
 				y = i + 1
 				// If it's an opaque tile, we treat its shadow position as one lower.
@@ -636,4 +651,24 @@ func (w *World) GetObjectShadowPosition(o *Object) (y, x, z int) {
 	}
 
 	return
+}
+
+func (w *World) CheckPendingObjectAnimations(animationID uint32) {
+	if pending, ok := w.PendingObjectAnimations[animationID]; ok {
+		anim := w.dataManager.GetAnimation(animationID)
+		for _, objectID := range pending {
+			if o := w.GetObject(objectID); o != nil {
+				face := anim.GetFace(o.FaceID)
+				if anim.RandomFrame {
+					o.FrameIndex = rand.Intn(len(face.Frames))
+				} else {
+					o.FrameIndex = 0
+				}
+				o.Animation = anim
+				o.Face = face
+				o.Frame = face.Frames[o.FrameIndex]
+			}
+		}
+		delete(w.PendingObjectAnimations, animationID)
+	}
 }

@@ -3,7 +3,7 @@ package world
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
 	tiles                [][][]DynamicMapTile
-	height, width, depth uint32
+	height, width, depth int
 }
 
 // Init initializes the DynamicMap.
@@ -19,12 +19,12 @@ func (d *DynamicMap) Init() {
 }
 
 // SetTile sets the tile at y, x, z
-func (d *DynamicMap) SetTile(y, x, z uint32, objectIDs []uint32) {
+func (d *DynamicMap) SetTile(y, x, z uint32, objects []*Object) {
 	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
 		return
 	}
 	d.tiles[y][x][z] = DynamicMapTile{
-		objectIDs: objectIDs,
+		objects: objects,
 	}
 }
 
@@ -44,16 +44,16 @@ func (d *DynamicMap) SetTileLight(y, x, z uint32, brightness float32) {
 }
 
 // GetHeight gets height.
-func (d *DynamicMap) GetHeight() uint32 {
+func (d *DynamicMap) GetHeight() int {
 	return d.height
 }
 
 // GetWidth gets width.
-func (d *DynamicMap) GetWidth() uint32 {
+func (d *DynamicMap) GetWidth() int {
 	return d.width
 }
 
 // GetDepth gets depth.
-func (d *DynamicMap) GetDepth() uint32 {
+func (d *DynamicMap) GetDepth() int {
 	return d.depth
 }

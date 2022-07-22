@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"math"
+	"os"
 	"time"
 
 	"github.com/chimera-rpg/go-client/data"
@@ -11,70 +12,73 @@ import (
 	cdata "github.com/chimera-rpg/go-common/data"
 )
 
+type RenderContext struct {
+	scale                             float64
+	tileWidth, tileHeight             int
+	tileWidthScaled, tileHeightScaled int
+}
+
+func (s *Game) GetRenderContext() RenderContext {
+	return RenderContext{
+		scale:            *s.objectsScale,
+		tileWidth:        s.Client.AnimationsConfig.TileWidth,
+		tileHeight:       s.Client.AnimationsConfig.TileHeight,
+		tileWidthScaled:  int(float64(s.Client.AnimationsConfig.TileWidth) * *s.objectsScale),
+		tileHeightScaled: int(float64(s.Client.AnimationsConfig.TileHeight) * *s.objectsScale),
+	}
+}
+
+type BatchMessages struct {
+	messages []ui.BatchMessage
+}
+
+func (b *BatchMessages) add(m ui.BatchMessage) {
+	b.messages = append(b.messages, m)
+}
+
 // HandleRender handles the rendering of our Game state.
 func (s *Game) HandleRender(delta time.Duration) {
+	var batchMessages BatchMessages
+	ctx := s.GetRenderContext()
 	// FIXME: This is _very_ rough and is just for testing!
 	m := s.world.GetCurrentMap()
 	objects := s.world.GetObjects()
-	// Delete images that no longer correspond to an existing world object.
-	/*temp := s.objectImages[:0]
-	for _, or := range s.objectImages {
-		o := s.world.GetObject(or.ID)
-		if o == nil {
-			or.el.GetDestroyChannel() <- true
-		} else {
-			temp = append(temp, or)
-		}
-	}
-	s.objectImages = temp*/
-	/*for oID, t := range s.objectImages {
-		o := s.world.GetObject(oID)
-		if o == nil {
-			t.GetDestroyChannel() <- true
-			delete(s.objectImages, oID)
-		}
-	}*/
-	for oID, t := range s.objectShadows {
-		o := s.world.GetObject(oID)
-		if o == nil {
-			fmt.Println("Destroying shadow for ", oID)
-			t.GetDestroyChannel() <- true
-			delete(s.objectShadows, oID)
-		}
-	}
 
-	if o := s.world.GetViewObject(); o != nil {
-		renderX, renderY, _ := s.GetRenderPosition(m, o.Y, o.X, o.Z)
-		scale := *s.objectsScale
-		tileWidth := int(s.Client.AnimationsConfig.TileWidth)
-		tileHeight := int(s.Client.AnimationsConfig.TileHeight)
+	viewObject := s.world.GetViewObject()
+	if o := viewObject; o != nil {
+		renderX, renderY, _ := s.GetRenderPosition(ctx, m, o.Y, o.X, o.Z)
 
 		// Calculate object-specific offsets.
 		offsetX := 0
 		offsetY := 0
-		adjust := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
-		offsetX += int(adjust.X)
-		offsetY += int(adjust.Y)
+		adjust, ok := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
+		if ok {
+			offsetX += int(adjust.X)
+			offsetY += int(adjust.Y)
+		}
 
-		x := float64(renderX) + float64(offsetX)*scale
-		y := float64(renderY) + float64(offsetY)*scale
+		x := float64(renderX) + float64(offsetX)*ctx.scale
+		y := float64(renderY) + float64(offsetY)*ctx.scale
 
 		// Adjust for centering based on target's sizing.
-		x += (float64(int(o.W)*tileWidth) * scale) / 2
-		y += (float64((int(o.H)*int(s.Client.AnimationsConfig.YStep.Y) + (int(o.H) * tileHeight))) * scale) / 2
+		x += (float64(int(o.W)*ctx.tileWidth) * ctx.scale) / 2
+		y += (float64((int(o.H)*s.Client.AnimationsConfig.YStep.Y + (int(o.H) * ctx.tileHeight))) * ctx.scale) / 2
 		// Center within the map container.
 		x -= float64(s.MapContainer.GetWidth()) / 2
 		y -= float64(s.MapContainer.GetHeight()) / 2
 
-		s.MapContainer.GetUpdateChannel() <- ui.UpdateScroll{
-			Left: ui.Number{Value: x},
-			Top:  ui.Number{Value: y},
-		}
+		batchMessages.add(ui.BatchUpdateMessage{
+			Target: &s.MapContainer,
+			Update: ui.UpdateScroll{
+				Left: ui.Number{Value: x},
+				Top:  ui.Number{Value: y},
+			},
+		})
 	}
 
 	// Iterate over world objects.
 	for _, o := range objects {
-		s.RenderObject(o, m, delta)
+		s.RenderObject(ctx, viewObject, o, m, delta, &batchMessages)
 	}
 
 	// Iterate over world messages.
@@ -82,8 +86,13 @@ func (s *Game) HandleRender(delta time.Duration) {
 	for i := len(s.mapMessages) - 1; i >= 0; i-- {
 		msg := s.mapMessages[i]
 		if !msg.destroyTime.Equal(time.Time{}) && now.After(msg.destroyTime) {
-			s.MapContainer.GetDisownChannel() <- msg.el
-			msg.el.GetDestroyChannel() <- true
+			batchMessages.add(ui.BatchDisownMessage{
+				Parent: &s.MapContainer,
+				Target: msg.el,
+			})
+			batchMessages.add(ui.BatchDestroyMessage{
+				Target: msg.el,
+			})
 			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
 		} else {
 			// TODO: Check if msg has associated object and if it has moved.
@@ -91,151 +100,189 @@ func (s *Game) HandleRender(delta time.Duration) {
 				o := s.world.GetObject(msg.objectID)
 				if o != nil {
 					x := o.X
-					y := o.Y + uint32(o.H) + 1
+					y := o.Y + int(o.H) + 1
 					z := o.Z
-					xPos, yPos, _ := s.GetRenderPosition(s.world.GetCurrentMap(), y, x, z)
-					msg.el.GetUpdateChannel() <- ui.UpdateX{
-						Number: ui.Number{Value: float64(xPos)},
-					}
-					msg.el.GetUpdateChannel() <- ui.UpdateY{
-						Number: ui.Number{Value: float64(yPos)},
-					}
+					xPos, yPos, _ := s.GetRenderPosition(ctx, s.world.GetCurrentMap(), y, x, z)
+					batchMessages.add(ui.BatchUpdateMessage{
+						Target: msg.el,
+						Update: ui.UpdateX{
+							Number: ui.Number{Value: float64(xPos)},
+						},
+					})
+					batchMessages.add(ui.BatchUpdateMessage{
+						Target: msg.el,
+						Update: ui.UpdateY{
+							Number: ui.Number{Value: float64(yPos)},
+						},
+					})
 				}
 			}
 			// Move message upwards if need be.
 			if msg.floatY != 0 {
-				msg.el.GetUpdateChannel() <- ui.UpdateY{
-					Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
-				}
+				batchMessages.add(ui.BatchUpdateMessage{
+					Target: msg.el,
+					Update: ui.UpdateY{
+						Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
+					},
+				})
 			}
 		}
 	}
 
+	if len(batchMessages.messages) > 10 {
+		fmt.Println("batch", len(batchMessages.messages))
+		alphaCount := 0
+		dimensionsCount := 0
+		hiddenCount := 0
+		grayCount := 0
+		imageCount := 0
+		otherCount := 0
+		for _, m := range batchMessages.messages {
+			if m, ok := m.(ui.BatchUpdateMessage); ok {
+				switch m.Update.(type) {
+				case ui.UpdateAlpha:
+					alphaCount++
+				case ui.UpdateHidden:
+					hiddenCount++
+				case ui.UpdateGrayscale:
+					grayCount++
+				case ui.UpdateImageID:
+					imageCount++
+				case ui.UpdateDimensions:
+					dimensionsCount++
+				default:
+					otherCount++
+				}
+			}
+		}
+		fmt.Printf("%d alpha, %d dim, %d hid, %d gray, %d img, %d other\n", alphaCount, dimensionsCount, hiddenCount, grayCount, imageCount, otherCount)
+	}
+
+	s.Client.RootWindow.BatchChannel <- batchMessages.messages
 	return
 }
 
 // GetRenderPosition gets world to pixel coordinate positions for a given tile location.
-func (s *Game) GetRenderPosition(m *world.DynamicMap, y, x, z uint32) (targetX, targetY, targetZ int) {
-	scale := *s.objectsScale
-	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
-	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
-
+func (s *Game) GetRenderPosition(ctx RenderContext, m *world.DynamicMap, y, x, z int) (targetX, targetY, targetZ int) {
 	originX := 0
-	originY := int(m.GetHeight()) * int(-s.Client.AnimationsConfig.YStep.Y)
-	originX += int(y) * int(s.Client.AnimationsConfig.YStep.X)
-	originY += int(y) * int(s.Client.AnimationsConfig.YStep.Y)
-	originX += int(x) * tileWidth
-	originY += int(z) * tileHeight
+	originY := int(m.GetHeight()) * -s.Client.AnimationsConfig.YStep.Y
+	originX += y * s.Client.AnimationsConfig.YStep.X
+	originY += y * s.Client.AnimationsConfig.YStep.Y
+	originX += x * ctx.tileWidth
+	originY += z * ctx.tileHeight
 
-	indexZ := int(z)
-	indexX := int(x)
-	indexY := int(y)
+	indexZ := z
+	indexX := x
+	indexY := y
 
 	targetZ = (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX)
 
 	// Calculate our scaled pixel position at which to render.
-	targetX = int(float64(originX)*scale) + 100
-	targetY = int(float64(originY)*scale) + 100
+	targetX = int(float64(originX)*ctx.scale) + 100
+	targetY = int(float64(originY)*ctx.scale) + 100
 	return
 }
 
 // RenderObject renders a given Object within a DynamicMap.
-func (s *Game) RenderObject(o *world.Object, m *world.DynamicMap, dt time.Duration) {
-	scale := *s.objectsScale
-	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
-	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
-	// If the object is currently missing, hide it. FIXME: It'd be better to keep it on screen, but grayscale, if it is outside of player view. If in player view, then it should be hidden.
-	if o != s.world.GetViewObject() {
+func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages *BatchMessages) {
+	if o != viewObject {
 		if o.Element != nil {
 			if o.Missing && o.WasMissing {
 				return
 			}
 			if o.Missing && !o.WasMissing {
 				o.WasMissing = true
-				o.Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateHidden(true),
+				})
 				return
-			} else if !o.Missing && o.WasMissing {
+			}
+			if !o.Missing && o.WasMissing {
 				o.WasMissing = false
-				o.Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateHidden(false),
+				})
 			}
 		}
 	}
-	animation := s.Client.DataManager.GetAnimation(o.AnimationID)
-	frames := animation.GetFace(o.FaceID)
-	// Bail if there are no frames to render.
-	if len(frames) == 0 {
+	// Bail if there are no frames yet. FIXME: This should still show _something_
+	if len(o.Face.Frames) == 0 {
 		return
 	}
-	// Check for frameindex oob, as the animation or face might have changed.
-	if o.FrameIndex >= len(frames) {
-		o.FrameIndex = len(frames) - 1
-	}
-	frame := frames[o.FrameIndex]
+	o.Process(dt)
 
-	if len(frames) > 1 && frame.Time > 0 {
-		o.FrameElapsed += dt
-		for ft := time.Duration(frame.Time) * time.Millisecond; o.FrameElapsed >= ft; {
-			o.FrameElapsed -= ft
-			o.FrameIndex++
-			if o.FrameIndex >= len(frames) {
-				o.FrameIndex = 0
-			}
-			frame = frames[o.FrameIndex]
-			ft = time.Duration(frame.Time) * time.Millisecond
-		}
+	// Get and cache our render position.
+	if o.Changed {
+		o.RenderX, o.RenderY, o.RenderZ = s.GetRenderPosition(ctx, m, o.Y, o.X, o.Z)
+		o.RenderZ += o.Index
+		o.RecalculateFinalRender = true
 	}
 
-	// Get our render position.
-	x, y, zIndex := s.GetRenderPosition(m, o.Y, o.X, o.Z)
-	zIndex += o.Index
+	// Acquire and cache our object's adjustment.
+	if !o.Adjusted {
+		adjust, _ := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
+		o.AdjustX = int(adjust.X)
+		o.AdjustY = int(adjust.Y)
+		o.Adjusted = true
+		o.RecalculateFinalRender = true
+	}
 
 	// Calculate archetype type-specific offsets.
-	offsetX := 0
-	offsetY := 0
-	adjust := s.Client.AnimationsConfig.GetAdjustment(cdata.ArchetypeType(o.Type))
-	offsetX += int(adjust.X)
-	offsetY += int(adjust.Y)
+	var offsetX, offsetY int
+	var w, h int
+	if o.RecalculateFinalRender {
+		o.RecalculateFinalRender = false
 
-	// Set animation frame offsets.
-	offsetX += int(frame.X)
-	offsetY += int(frame.Y)
+		offsetX += o.AdjustX
+		offsetY += o.AdjustY
 
-	// Adjust our target position.
-	x += int(float64(offsetX) * scale)
-	y += int(float64(offsetY) * scale)
+		// Set animation frame offsets.
+		offsetX += int(o.Frame.X)
+		offsetY += int(o.Frame.Y)
 
-	// Calculate our scaled pixel position at which to render.
-	w := int(float64(tileWidth) * scale)
-	h := int(float64(tileHeight) * scale)
+		// Adjust our target position.
+		x := o.RenderX + int(float64(offsetX)*ctx.scale)
+		y := o.RenderY + int(float64(offsetY)*ctx.scale)
+
+		// Calculate our scaled pixel position at which to render.
+		w = ctx.tileWidthScaled
+		h = ctx.tileHeightScaled
+
+		o.FinalRenderOffsetX = offsetX
+		o.FinalRenderOffsetY = offsetY
+		o.FinalRenderX = x
+		o.FinalRenderY = y
+		o.FinalRenderW = w
+		o.FinalRenderH = h
+	}
 
 	// Get/create our shadow position, if we should.
-	if o.Type == cdata.ArchetypeNPC.AsUint8() || o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeItem.AsUint8() {
-		s.RenderObjectShadows(o, m, offsetX, offsetY, w, h)
+	if o.HasShadow {
+		s.RenderObjectShadows(ctx, o, m, o.FinalRenderOffsetX, o.FinalRenderOffsetY, o.FinalRenderW, o.FinalRenderH, uiMessages)
 	}
 
-	s.RenderObjectImage(o, m, frame, x, y, zIndex, w, h)
+	s.RenderObjectImage(ctx, o, m, o.Frame, o.FinalRenderX, o.FinalRenderY, o.RenderZ, o.FinalRenderW, o.FinalRenderH, uiMessages)
+	return
 }
 
-func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int) {
-	scale := *s.objectsScale
-	tileWidth := int(s.Client.AnimationsConfig.TileWidth)
-	tileHeight := int(s.Client.AnimationsConfig.TileHeight)
-
-	img := o.Image
-	if img == nil {
+func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int, uiMessages *BatchMessages) {
+	if o.Image == nil {
 		var err error
-		img, err = s.Client.DataManager.GetCachedImage(frame.ImageID)
-		if err == nil {
-			o.Image = img
+		o.Image, err = s.Client.DataManager.GetCachedImage(frame.ImageID)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
 		}
 	}
+
 	if o.Element == nil {
-		if img != nil {
-			bounds := img.Bounds()
-			w = int(float64(bounds.Max.X) * scale)
-			h = int(float64(bounds.Max.Y) * scale)
-			if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
-				y -= h - int(float64(tileHeight)*scale)
+		if o.Image != nil {
+			bounds := o.Image.Bounds()
+			w = int(float64(bounds.Max.X) * ctx.scale)
+			h = int(float64(bounds.Max.Y) * ctx.scale)
+			if (o.H > 1 || o.D > 1) && bounds.Max.Y > ctx.tileHeight {
+				y -= h - ctx.tileHeightScaled
 			}
 			o.Element = ui.NewImageElement(ui.ImageElementConfig{
 				Style: fmt.Sprintf(`
@@ -245,7 +292,6 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				//Image:       img,
 				ImageID:     frame.ImageID,
 				PostOutline: true,
 				Events: ui.Events{
@@ -253,13 +299,6 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 						if button != 1 {
 							return true
 						}
-						/*s.focusedImage.GetUpdateChannel() <- ui.UpdateDimensions{
-							X: ui.Number{Value: float64(s.objectImages[o.ID].GetX())},
-							Y: ui.Number{Value: float64(s.objectImages[o.ID].GetY())},
-							W: ui.Number{Value: float64(s.objectImages[o.ID].GetWidth())},
-							H: ui.Number{Value: float64(s.objectImages[o.ID].GetHeight())},
-						}
-						s.focusedImage.GetUpdateChannel() <- img*/
 						if o.Element.PixelHit(x, y) {
 							s.inputChan <- FocusObject(o.ID)
 							return false
@@ -277,7 +316,6 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				//Image:       img,
 				ImageID:     frame.ImageID,
 				PostOutline: true,
 				Events: ui.Events{
@@ -293,86 +331,111 @@ func (s *Game) RenderObjectImage(o *world.Object, m *world.DynamicMap, frame dat
 					},
 				},
 			})
-			//s.addObjectImage(o.ID, o.Element)
 		}
-		s.MapContainer.GetAdoptChannel() <- o.Element
+		uiMessages.add(ui.BatchAdoptMessage{
+			Parent: &s.MapContainer,
+			Target: o.Element,
+		})
 	} else {
-		if img != nil {
+		if o.Image != nil {
 			if o.UnblockedChange {
 				if o.Unblocked {
-					o.Element.GetUpdateChannel() <- ui.UpdateAlpha(0.2)
+					uiMessages.add(ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateAlpha(0.2),
+					})
 				} else {
-					o.Element.GetUpdateChannel() <- ui.UpdateAlpha(1.0)
+					uiMessages.add(ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateAlpha(1.0),
+					})
 				}
 				o.UnblockedChange = false
 			}
 			if o.VisibilityChange {
 				if o.Visible {
-					o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(false)
+					uiMessages.add(ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateGrayscale(false),
+					})
 				} else {
-					o.Element.GetUpdateChannel() <- ui.UpdateGrayscale(true)
+					uiMessages.add(ui.BatchUpdateMessage{
+						Target: o.Element,
+						Update: ui.UpdateGrayscale(true),
+					})
 				}
 				o.VisibilityChange = false
 			}
 			if o.LightingChange {
-				o.Element.GetUpdateChannel() <- ui.UpdateColorMod{
-					R: uint8(255 * o.Brightness),
-					G: uint8(255 * o.Brightness),
-					B: uint8(255 * o.Brightness),
-					A: 255}
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateColorMod{
+						R: uint8(255 * o.Brightness),
+						G: uint8(255 * o.Brightness),
+						B: uint8(255 * o.Brightness),
+						A: 255},
+				})
 				o.LightingChange = false
 			}
 			//
 			if o.Changed {
-				bounds := img.Bounds()
-				w = int(float64(bounds.Max.X) * scale)
-				h = int(float64(bounds.Max.Y) * scale)
+				bounds := o.Image.Bounds()
+				w = int(float64(bounds.Max.X) * ctx.scale)
+				h = int(float64(bounds.Max.Y) * ctx.scale)
 
 				var sw, sh float64
 				sw = float64(w)
 				sh = float64(h)
 				if o.Squeezing {
-					sw = math.Max(float64(w-w/4), float64(tileWidth)*scale)
+					sw = math.Max(float64(w-w/4), float64(ctx.tileWidthScaled))
 				}
 				if o.Crouching {
-					sh = math.Max(float64(h-h/3), float64(tileHeight)*scale)
+					sh = math.Max(float64(h-h/3), float64(ctx.tileHeightScaled))
 				}
 
-				if (o.H > 1 || o.D > 1) && bounds.Max.Y > tileHeight {
-					y -= int(sh) - int(float64(tileHeight)*scale)
+				if (o.H > 1 || o.D > 1) && bounds.Max.Y > ctx.tileHeight {
+					y -= int(sh) - ctx.tileHeightScaled
 				}
-				o.Element.GetUpdateChannel() <- ui.UpdateDimensions{
-					X: ui.Number{Value: float64(x)},
-					Y: ui.Number{Value: float64(y)},
-					W: ui.Number{Value: sw},
-					H: ui.Number{Value: sh},
-				}
-				o.Element.GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
+
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateDimensions{
+						X: ui.Number{Value: float64(x)},
+						Y: ui.Number{Value: float64(y)},
+						W: ui.Number{Value: sw},
+						H: ui.Number{Value: sh},
+					},
+				})
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
+				})
 				o.Changed = false
 			}
 			// Only update the image if the image ID has changed.
 			if o.FrameImageID != frame.ImageID {
 				o.FrameImageID = frame.ImageID
-				//o.Element.GetUpdateChannel() <- img
-				o.Element.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateImageID(o.FrameImageID),
+				})
 			}
 		}
 	}
-
+	return
 }
 
-func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX, offsetY, w, h int) {
-	scale := *s.objectsScale
+func (s *Game) RenderObjectShadows(ctx RenderContext, o *world.Object, m *world.DynamicMap, offsetX, offsetY, w, h int, uiMessages *BatchMessages) {
 	// TODO: We should probably slice up an object's shadows based upon its width and depth. This will probably require using polygons unless SDL_gfx can clip rendered ellipses. Or, perhaps, use SDL_gfx's pie drawing calls for each shadow quadrant?
 	sy, sx, sz := s.world.GetObjectShadowPosition(o)
 
-	x, y, zIndex := s.GetRenderPosition(m, uint32(sy), uint32(sx), uint32(sz))
+	x, y, zIndex := s.GetRenderPosition(ctx, m, sy, sx, sz)
 	// TODO: Fix shadows so they have a higher zIndex than z+1, but only for y of the same.
 	zIndex--
 
 	// Adjust our target position.
-	x += int(float64(offsetX) * scale)
-	y += int((float64(offsetY) + float64(o.D)) * scale)
+	x += int(float64(offsetX) * ctx.scale)
+	y += int((float64(offsetY) + float64(o.D)) * ctx.scale)
 
 	w = w * int(o.W)
 	h = h * int(o.D)
@@ -390,8 +453,8 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 		y += rh / 2
 	}
 
-	if _, ok := s.objectShadows[o.ID]; !ok {
-		s.objectShadows[o.ID] = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
+	if o.ShadowElement == nil {
+		o.ShadowElement = ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
 			Shape: ui.EllipseShape,
 			Style: fmt.Sprintf(`
 							X %d
@@ -402,16 +465,29 @@ func (s *Game) RenderObjectShadows(o *world.Object, m *world.DynamicMap, offsetX
 							BackgroundColor 0 0 0 96
 						`, x, y, w, h, zIndex),
 		})
-		s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
+		//s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
+		uiMessages.add(ui.BatchAdoptMessage{
+			Parent: &s.MapContainer,
+			Target: o.ShadowElement,
+		})
 	} else {
 		if o.Changed {
-			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateDimensions{
-				X: ui.Number{Value: float64(x)},
-				Y: ui.Number{Value: float64(y)},
-				W: ui.Number{Value: float64(w)},
-				H: ui.Number{Value: float64(h)},
-			}
-			s.objectShadows[o.ID].GetUpdateChannel() <- ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}}
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.ShadowElement,
+				Update: ui.UpdateDimensions{
+					X: ui.Number{Value: float64(x)},
+					Y: ui.Number{Value: float64(y)},
+					W: ui.Number{Value: float64(w)},
+					H: ui.Number{Value: float64(h)},
+				},
+			})
+
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.ShadowElement,
+				Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
+			})
+
 		}
 	}
+	return
 }
