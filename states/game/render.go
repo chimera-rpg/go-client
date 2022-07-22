@@ -190,7 +190,6 @@ func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *worl
 			if o.Missing && o.WasMissing {
 				return
 			}
-
 			if o.Missing && !o.WasMissing {
 				o.WasMissing = true
 				uiMessages.add(ui.BatchUpdateMessage{
