@@ -190,7 +190,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 		// Update existing object.
 		o.Type = p.TypeID
 
-		if o.AnimationID != p.AnimationID {
+		if o.AnimationID != p.AnimationID || o.FaceID != p.FaceID {
 			// Get randomized frame start if we have the associated animation.
 			if anim := w.dataManager.GetAnimation(p.AnimationID); anim.Ready {
 				face := anim.GetFace(p.FaceID)
@@ -198,15 +198,17 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 				o.Face = face
 				if anim.RandomFrame {
 					o.FrameIndex = rand.Intn(len(face.Frames))
+				} else {
+					o.FrameIndex = 0
 				}
-				o.ImageChanged = true
+				o.Frame = face.Frames[o.FrameIndex]
 			} else {
 				// Animation does not yet exist, add it to the pending.
 				w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
 			}
+			o.AnimationID = p.AnimationID
+			o.FaceID = p.FaceID
 		}
-		o.AnimationID = p.AnimationID
-		o.FaceID = p.FaceID
 	} else {
 		// Create a new object.
 		o = &Object{
@@ -228,7 +230,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			if anim.RandomFrame {
 				o.FrameIndex = rand.Intn(len(face.Frames))
 			}
-			o.ImageChanged = true
+			o.Frame = face.Frames[o.FrameIndex]
 		} else {
 			// Animation does not yet exist, add it to the pending.
 			w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
@@ -659,10 +661,12 @@ func (w *World) CheckPendingObjectAnimations(animationID uint32) {
 				face := anim.GetFace(o.FaceID)
 				if anim.RandomFrame {
 					o.FrameIndex = rand.Intn(len(face.Frames))
+				} else {
+					o.FrameIndex = 0
 				}
 				o.Animation = anim
 				o.Face = face
-				o.ImageChanged = true
+				o.Frame = face.Frames[o.FrameIndex]
 			}
 		}
 		delete(w.PendingObjectAnimations, animationID)
