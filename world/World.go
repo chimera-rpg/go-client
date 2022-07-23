@@ -2,8 +2,10 @@ package world
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/rand"
+	"os"
 
 	"github.com/chimera-rpg/go-client/data"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -230,7 +232,11 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			if anim.RandomFrame {
 				o.FrameIndex = rand.Intn(len(face.Frames))
 			}
-			o.Frame = face.Frames[o.FrameIndex]
+			if o.FrameIndex < len(face.Frames) {
+				o.Frame = face.Frames[o.FrameIndex]
+			} else {
+				fmt.Fprintf(os.Stderr, "missing frame %d\n", p.AnimationID)
+			}
 		} else {
 			// Animation does not yet exist, add it to the pending.
 			w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
@@ -666,7 +672,11 @@ func (w *World) CheckPendingObjectAnimations(animationID uint32) {
 				}
 				o.Animation = anim
 				o.Face = face
-				o.Frame = face.Frames[o.FrameIndex]
+				if o.FrameIndex < len(face.Frames) {
+					o.Frame = face.Frames[o.FrameIndex]
+				} else {
+					fmt.Fprintf(os.Stderr, "missing frame %d\n", animationID)
+				}
 			}
 		}
 		delete(w.PendingObjectAnimations, animationID)
