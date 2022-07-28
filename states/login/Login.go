@@ -6,6 +6,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/config"
+	"github.com/chimera-rpg/go-client/states/game"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
 )
@@ -282,6 +283,9 @@ func (s *Login) Loop() {
 // HandleNet handles the network commands received in Loop().
 func (s *Login) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
+	case network.CommandRejoin: // If we are sent a rejoin command, just immediately head over to game state.
+		s.Client.StateChannel <- client.StateMessage{Push: true, State: &game.Game{}, Args: nil}
+		return true
 	case network.CommandBasic:
 		s.Client.Log.Print("Got basic")
 		if t.Type == network.Reject {
@@ -312,7 +316,7 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 			return true
 		}
 	default:
-		msg := fmt.Sprintf("Server sent non CommandBasic")
+		msg := fmt.Sprintf("Server sent non CommandBasic %d", t.GetType())
 		s.Client.Log.Print(msg)
 		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: msg}
 		return true
