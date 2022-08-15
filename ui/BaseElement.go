@@ -34,6 +34,7 @@ type BaseElement struct {
 	Focused   bool
 	Holdable  bool
 	Held      bool
+	OOB       bool
 	// Context is cached when the object is created.
 	Context *Context
 	// x, y, w, h are cached values from CalculateStyle
@@ -95,7 +96,7 @@ func (b *BaseElement) Render() {
 		return b.Children[i].GetZIndex() < b.Children[j].GetZIndex()
 	})
 	// Render.
-	for _, child := range b.Children {
+	for _, child := range b.VisibleChildren() {
 		child.Render()
 	}
 	b.RenderPost()
@@ -377,6 +378,17 @@ func (b *BaseElement) CalculateStyle() {
 	}
 	if maxh > 0 && h > maxh {
 		h = maxh
+	}
+
+	// Check if we're out of bounds relative to our parent.
+	if b.Parent != nil {
+		pw := b.Parent.GetWidth() / 2
+		ph := b.Parent.GetHeight() / 2
+		if x >= -pw && y >= -h && (x-w) <= pw+pw && (y-h) <= ph+ph {
+			b.OOB = false
+		} else {
+			b.OOB = true
+		}
 	}
 
 	// Scroll
@@ -838,4 +850,17 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 
 func (b *BaseElement) IsGrayscale() bool {
 	return false
+}
+
+func (b *BaseElement) IsOOB() bool {
+	return b.OOB
+}
+
+func (b *BaseElement) VisibleChildren() (vchilds []ElementI) {
+	for _, c := range b.Children {
+		if !c.IsOOB() {
+			vchilds = append(vchilds, c)
+		}
+	}
+	return
 }

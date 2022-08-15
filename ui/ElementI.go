@@ -55,6 +55,8 @@ type ElementI interface {
 	SetHidden(b bool)
 	IsHidden() bool
 	//
+	IsOOB() bool
+	//
 	Hit(x int32, y int32) bool
 	PixelHit(x int32, y int32) bool
 	// Events

@@ -62,7 +62,7 @@ func (w *Container) Render() {
 	w.Context.Renderer.Clear()
 
 	w.BaseElement.Render()
-	for _, child := range w.Children {
+	for _, child := range w.BaseElement.VisibleChildren() {
 		child.RenderPost()
 	}
 	if w.Parent != nil {
