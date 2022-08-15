@@ -30,7 +30,7 @@ func (d *DynamicMap) SetTile(y, x, z uint32, objects []*Object) {
 
 // GetTile gets the tile stack at Y, X, Z.
 func (d *DynamicMap) GetTile(y, x, z int) (tiles *DynamicMapTile) {
-	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
+	if y < 0 || y >= len(d.tiles) || x < 0 || x >= len(d.tiles[0]) || z < 0 || z >= len(d.tiles[0][0]) {
 		return
 	}
 	return &d.tiles[y][x][z]

@@ -19,6 +19,7 @@ type World struct {
 	maps                    map[data.StringID]*DynamicMap
 	currentMap              data.StringID
 	objects                 []*Object
+	visibleObjects          []*Object
 	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID            uint32
 	viewObject              *Object
@@ -35,6 +36,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 
 	w.maps = make(map[data.StringID]*DynamicMap)
 	w.objects = make([]*Object, 0)
+	w.visibleObjects = make([]*Object, 0)
 	w.visibleTiles = make([][][]bool, 0)
 	w.unblockedTiles = make([][][]bool, 0)
 	w.PendingObjectAnimations = make(map[uint32][]uint32)
@@ -75,6 +77,7 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 		}
 	}
 	w.objects = make([]*Object, 0)
+	w.visibleObjects = nil
 
 	// Restore our known visible object if we have one.
 	if p != nil {
@@ -143,6 +146,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 
 	// Update our visible tiles if the view object moved.
 	if viewChanged {
+		w.updateVisibleObjects()
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
 	}
@@ -314,6 +318,11 @@ func (w *World) GetObjects() []*Object {
 	return w.objects
 }
 
+// GetVisibleObjects returns an array of view objects.
+func (w *World) GetVisibleObjects() []*Object {
+	return w.visibleObjects
+}
+
 // GetObject returns a pointer to an object based upon its ID.
 func (w *World) GetObject(oID uint32) *Object {
 	for _, o := range w.objects {
@@ -460,6 +469,25 @@ func (w *World) rayCasts(rays [][2][3]float64, maxY, maxX, maxZ float64, hit fun
 
 			if hit(int(y), int(x), int(z)) {
 				break
+			}
+		}
+	}
+}
+
+func (w *World) updateVisibleObjects() {
+	w.visibleObjects = nil
+	o := w.GetViewObject()
+	if o == nil {
+		return
+	}
+	m := w.GetCurrentMap()
+	// FIXME: Don't use 16, use whatever is set as our player's view box + 1
+	for y := o.Y - 16; y < o.Y+16; y++ {
+		for x := o.X - 16; x < o.X+16; x++ {
+			for z := o.Z - 16; z < o.Z+16; z++ {
+				if tile := m.GetTile(y, x, z); tile != nil {
+					w.visibleObjects = append(w.visibleObjects, tile.objects...)
+				}
 			}
 		}
 	}
