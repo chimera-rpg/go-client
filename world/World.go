@@ -567,7 +567,7 @@ func (w *World) updateVisibleTiles() {
 	// This feels wrong, but we duplicate the rays and offset the origin to ensure we can see over vertical edges on character's sides.
 	for _, r := range rays {
 		rays = append(rays, [2][3]float64{
-			{r[0][0], r[0][1] + float64(o.W), r[0][2] + float64(o.D) + 1},
+			{r[0][0], r[0][1] + float64(o.W), r[0][2] + float64(o.D)},
 			{r[1][0], r[1][1], r[1][2]},
 		})
 	}
