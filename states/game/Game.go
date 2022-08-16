@@ -215,6 +215,27 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 	case network.CommandAudio:
 		s.Client.DataManager.HandleAudioCommand(c)
 	case network.CommandMap:
+		// FIXME: We probably should handle removing of elements this elsewhere.
+		{
+			var batchMessages BatchMessages
+
+			for _, o := range s.world.GetObjects() {
+				if o == s.world.GetViewObject() {
+					continue
+				}
+				if o.Element != nil {
+					batchMessages.add(ui.BatchDestroyMessage{
+						Target: o.Element,
+					})
+				}
+				if o.ShadowElement != nil {
+					batchMessages.add(ui.BatchDestroyMessage{
+						Target: o.ShadowElement,
+					})
+				}
+			}
+			s.Client.RootWindow.BatchChannel <- batchMessages.messages
+		}
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:
 		s.world.HandleObjectCommand(c)
