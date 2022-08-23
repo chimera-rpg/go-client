@@ -51,6 +51,12 @@ type MouseMoveInput struct {
 	x, y int32
 }
 
+type GroundCell struct {
+	element ui.Container
+	image   ui.ElementI
+	text    ui.ElementI
+}
+
 // SetupUI sets up all the UI windows.
 func (s *Game) SetupUI() (err error) {
 	if s.Client.DataManager.Config.Game.Graphics.ObjectScale == 0 {
@@ -387,4 +393,8 @@ func (s *Game) UpdateStateWindow() {
 		}
 		y += v.GetHeight()
 	}
+}
+
+func (s *Game) UpdateGroundWindow() {
+	// This should show nearby items, organized by view object Y to view object Height, from bottom to top. This also has to take in mind width and depth, as well as reach, so this becomes difficult... perhaps there could be a toggle for view modes, one with each height, width, depth, stack, in columns, the other with "nearby items" that just show all non-block, non-tile, non-character, and similar items in a column.
 }

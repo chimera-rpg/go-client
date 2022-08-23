@@ -22,7 +22,7 @@ const (
 	CommandModeChat = iota
 	CommandModeSay
 
-//	CommandModeCmd
+// CommandModeCmd
 )
 
 var CommandModeStrings = []string{
@@ -46,6 +46,7 @@ type Game struct {
 	MapContainer         ui.Container
 	InventoryWindow      ui.Container
 	GroundWindow         ui.Container
+	groundElements       [][]GroundCell
 	StatsWindow          ui.Container
 	StateWindow          ui.Container
 	statusElements       map[cdata.StatusType]ui.ElementI
@@ -199,6 +200,7 @@ func (s *Game) Loop() {
 		case <-ticker.C:
 		}
 		s.HandleRender(delta)
+		s.UpdateGroundWindow()
 		lastTs = ts
 	}
 }
