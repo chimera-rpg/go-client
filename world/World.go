@@ -552,16 +552,18 @@ func (w *World) updateVisibleTiles() {
 	}
 
 	markTiles := func(y, x, z int) bool {
+		// NOTE: We're unsafely accessing map tiles since the results of our rayCasts are
 		visibleTiles[y][x][z] = true
+		return m.tiles[y][x][z].opaque
+		/*tile := m.GetTile(y, x, z)
+		if tile != nil {
+			visibleTiles[y][x][z] = true
 
-		tile := m.GetTile(y, x, z)
-
-		for _, o := range tile.objects {
-			if o.Opaque {
+			if tile.opaque {
 				return true
 			}
 		}
-		return false
+		return false*/
 	}
 
 	// This feels wrong, but we duplicate the rays and offset the origin to ensure we can see over vertical edges on character's sides.
@@ -579,8 +581,8 @@ func (w *World) updateVisibleTiles() {
 		for x := range visibleTiles[y] {
 			for z := range visibleTiles[y][x] {
 				isVisible := visibleTiles[y][x][z]
-				tiles := m.GetTile(y, x, z)
-				for _, o := range tiles.objects {
+				//tile := m.GetTile(y, x, z)
+				for _, o := range m.tiles[y][x][z].objects {
 					if !isVisible && o.Visible {
 						o.Visible = false
 						o.VisibilityChange = true
@@ -629,14 +631,7 @@ func (w *World) updateVisionUnblocking() {
 
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
-		t := m.GetTile(y, x, z)
-		opaque := false
-		for _, o := range t.objects {
-			if o.Opaque {
-				opaque = true
-			}
-		}
-		if opaque {
+		if m.tiles[y][x][z].opaque {
 			unblockedTiles[y][x][z] = true
 		}
 		return false

@@ -26,6 +26,7 @@ func (d *DynamicMap) SetTile(y, x, z uint32, objects []*Object) {
 	d.tiles[y][x][z] = DynamicMapTile{
 		objects: objects,
 	}
+	d.tiles[y][x][z].Refresh()
 }
 
 // GetTile gets the tile stack at Y, X, Z.

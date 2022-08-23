@@ -4,6 +4,15 @@ package world
 type DynamicMapTile struct {
 	objects    []*Object
 	brightness float32
+	opaque     bool
+}
+
+func (d *DynamicMapTile) Refresh() {
+	for _, o := range d.objects {
+		if o.Opaque {
+			d.opaque = true
+		}
+	}
 }
 
 // RemoveObject removes the given object from the tile.
@@ -11,6 +20,7 @@ func (d *DynamicMapTile) RemoveObject(o *Object) {
 	for i, v := range d.objects {
 		if v == o {
 			d.objects = append(d.objects[:i], d.objects[i+1:]...)
+			d.Refresh()
 			return
 		}
 	}
@@ -24,4 +34,5 @@ func (d *DynamicMapTile) AddObject(o *Object) {
 		}
 	}
 	d.objects = append(d.objects, o)
+	d.Refresh()
 }
