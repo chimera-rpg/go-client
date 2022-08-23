@@ -347,7 +347,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 				if o.Unblocked {
 					uiMessages.add(ui.BatchUpdateMessage{
 						Target: o.Element,
-						Update: ui.UpdateAlpha(0.2),
+						Update: ui.UpdateAlpha(0.1),
 					})
 				} else {
 					uiMessages.add(ui.BatchUpdateMessage{
