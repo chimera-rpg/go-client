@@ -24,7 +24,7 @@ type World struct {
 	viewObjectID            uint32
 	viewObject              *Object
 	deletedObjects          []uint32 // A list of deleted object IDs. Used and cleared during the render call.
-	visibleTiles            [][][]bool
+	visibleTiles            []bool
 	unblockedTiles          [][][]bool
 	Log                     *logrus.Logger
 }
@@ -37,7 +37,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.maps = make(map[data.StringID]*DynamicMap)
 	w.objects = make([]*Object, 0)
 	w.visibleObjects = make([]*Object, 0)
-	w.visibleTiles = make([][][]bool, 0)
+	w.visibleTiles = make([]bool, 0)
 	w.unblockedTiles = make([][][]bool, 0)
 	w.PendingObjectAnimations = make(map[uint32][]uint32)
 	w.currentMap = 0
@@ -142,7 +142,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 			objects = append(objects, o)
 		}
 	}
-	w.maps[w.currentMap].SetTile(cmd.Y, cmd.X, cmd.Z, objects)
+	w.maps[w.currentMap].SetTile(int(cmd.Y), int(cmd.X), int(cmd.Z), objects)
 
 	// Update our visible tiles if the view object moved.
 	if viewChanged {
@@ -157,7 +157,7 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 	if _, ok := w.maps[w.currentMap]; !ok {
 		return errors.New("cannot set tile light, as no map exists")
 	}
-	w.maps[w.currentMap].SetTileLight(cmd.Y, cmd.X, cmd.Z, cmd.Brightness)
+	w.maps[w.currentMap].SetTileLight(int(cmd.Y), int(cmd.X), int(cmd.Z), cmd.Brightness)
 	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	if t != nil {
 		for _, o := range t.objects {
@@ -543,18 +543,12 @@ func (w *World) updateVisibleTiles() {
 
 	rays := w.getCubeRays(y1, x1, z1, int(ymin), int(xmin), int(zmin), int(ymax), int(xmax), int(zmax))
 
-	visibleTiles := make([][][]bool, m.GetHeight())
-	for i := range visibleTiles {
-		visibleTiles[i] = make([][]bool, m.GetWidth())
-		for j := range visibleTiles[i] {
-			visibleTiles[i][j] = make([]bool, m.GetDepth())
-		}
-	}
+	visibleTiles := make([]bool, m.height*m.width*m.depth)
 
 	markTiles := func(y, x, z int) bool {
 		// NOTE: We're unsafely accessing map tiles since the results of our rayCasts are
-		visibleTiles[y][x][z] = true
-		return m.tiles[y][x][z].opaque
+		visibleTiles[m.height*m.width*z+m.width*y+x] = true
+		return m.tiles[m.height*m.width*z+m.width*y+x].opaque
 		/*tile := m.GetTile(y, x, z)
 		if tile != nil {
 			visibleTiles[y][x][z] = true
@@ -577,20 +571,15 @@ func (w *World) updateVisibleTiles() {
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), markTiles)
 	// Set objects no longer visible
-	for y := range visibleTiles {
-		for x := range visibleTiles[y] {
-			for z := range visibleTiles[y][x] {
-				isVisible := visibleTiles[y][x][z]
-				//tile := m.GetTile(y, x, z)
-				for _, o := range m.tiles[y][x][z].objects {
-					if !isVisible && o.Visible {
-						o.Visible = false
-						o.VisibilityChange = true
-					} else if isVisible && !o.Visible {
-						o.Visible = true
-						o.VisibilityChange = true
-					}
-				}
+	for j := 0; j < len(m.tiles); j++ {
+		isVisible := visibleTiles[j]
+		for _, o := range m.tiles[j].objects {
+			if !isVisible && o.Visible {
+				o.Visible = false
+				o.VisibilityChange = true
+			} else if isVisible && !o.Visible {
+				o.Visible = true
+				o.VisibilityChange = true
 			}
 		}
 	}
@@ -631,7 +620,7 @@ func (w *World) updateVisionUnblocking() {
 
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
-		if m.tiles[y][x][z].opaque {
+		if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
 			unblockedTiles[y][x][z] = true
 		}
 		return false

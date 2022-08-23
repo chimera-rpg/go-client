@@ -2,46 +2,47 @@ package world
 
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
-	tiles                [][][]DynamicMapTile
+	tiles                []DynamicMapTile
 	height, width, depth int
 }
 
 // Init initializes the DynamicMap.
 func (d *DynamicMap) Init() {
-	d.tiles = make([][][]DynamicMapTile, d.height)
-	for i := range d.tiles {
-		d.tiles[i] = make([][]DynamicMapTile, d.width)
-		for j := range d.tiles[i] {
-			d.tiles[i][j] = make([]DynamicMapTile, d.depth)
-		}
-	}
+	d.tiles = make([]DynamicMapTile, d.height*d.width*d.depth)
+}
 
+func (d *DynamicMap) Index(y, x, z int) int {
+	return (d.height*d.width*z + d.width*y) + x
+}
+func (d *DynamicMap) At(y, x, z int) *DynamicMapTile {
+	return &d.tiles[d.Index(y, x, z)]
 }
 
 // SetTile sets the tile at y, x, z
-func (d *DynamicMap) SetTile(y, x, z uint32, objects []*Object) {
-	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
+func (d *DynamicMap) SetTile(y, x, z int, objects []*Object) {
+	if y >= d.height || x >= d.width || z >= d.depth {
 		return
 	}
-	d.tiles[y][x][z] = DynamicMapTile{
+	idx := d.Index(y, x, z)
+	d.tiles[idx] = DynamicMapTile{
 		objects: objects,
 	}
-	d.tiles[y][x][z].Refresh()
+	d.tiles[idx].Refresh()
 }
 
 // GetTile gets the tile stack at Y, X, Z.
 func (d *DynamicMap) GetTile(y, x, z int) (tiles *DynamicMapTile) {
-	if y < 0 || y >= len(d.tiles) || x < 0 || x >= len(d.tiles[0]) || z < 0 || z >= len(d.tiles[0][0]) {
+	if y < 0 || y >= d.height || x < 0 || x >= d.width || z < 0 || z >= d.depth {
 		return
 	}
-	return &d.tiles[y][x][z]
+	return &d.tiles[d.Index(y, x, z)]
 }
 
-func (d *DynamicMap) SetTileLight(y, x, z uint32, brightness float32) {
-	if int(y) >= len(d.tiles) || int(x) >= len(d.tiles[0]) || int(z) >= len(d.tiles[0][0]) {
+func (d *DynamicMap) SetTileLight(y, x, z int, brightness float32) {
+	if y < 0 || y >= d.height || x < 0 || x >= d.width || z < 0 || z >= d.depth {
 		return
 	}
-	d.tiles[y][x][z].brightness = brightness
+	d.tiles[d.Index(y, x, z)].brightness = brightness
 }
 
 // GetHeight gets height.
