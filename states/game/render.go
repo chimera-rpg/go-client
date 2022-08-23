@@ -270,7 +270,7 @@ func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *worl
 	return
 }
 
-func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.DynamicMap, frame data.AnimationFrame, x, y, zIndex, w, h int, uiMessages *BatchMessages) {
+func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.DynamicMap, frame *data.AnimationFrame, x, y, zIndex, w, h int, uiMessages *BatchMessages) {
 	if o.Image == nil {
 		var err error
 		o.Image, err = s.Client.DataManager.GetCachedImage(frame.ImageID)

@@ -16,7 +16,7 @@ type Object struct {
 	Animation                                                                                      *data.Animation
 	FaceID                                                                                         uint32
 	Face                                                                                           data.Face
-	Frame                                                                                          data.AnimationFrame
+	Frame                                                                                          *data.AnimationFrame
 	FrameIndex                                                                                     int           // The current frame index.
 	FrameElapsed                                                                                   time.Duration // The amount of time elapsed for the object's current frame.
 	Index                                                                                          int           // Position in its owning Tile.
@@ -59,7 +59,7 @@ func ObjectsFilter(vo []Object, f func(Object) bool) []Object {
 
 // Process is called whenever the object is re-rendered to handle frame advancement and similar.
 func (o *Object) Process(dt time.Duration) {
-	o.Frame = o.Face.Frames[o.FrameIndex]
+	o.Frame = &(o.Face.Frames[o.FrameIndex])
 
 	// Animate if there are frames and they are visible. NOTE: We *might* want to be able to flag particular animations as requiring having their frames constantly elapsed, or simply record the current real frame and only update the corresponding image render when visibility is restored.
 	if len(o.Face.Frames) > 1 && o.Frame.Time > 0 && o.Visible {
@@ -70,7 +70,7 @@ func (o *Object) Process(dt time.Duration) {
 			if o.FrameIndex >= len(o.Face.Frames) {
 				o.FrameIndex = 0
 			}
-			o.Frame = o.Face.Frames[o.FrameIndex]
+			o.Frame = &(o.Face.Frames[o.FrameIndex])
 			ft = time.Duration(o.Frame.Time) * time.Millisecond
 			o.RecalculateFinalRender = true
 		}

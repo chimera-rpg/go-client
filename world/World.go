@@ -207,7 +207,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 				} else {
 					o.FrameIndex = 0
 				}
-				o.Frame = face.Frames[o.FrameIndex]
+				o.Frame = &(face.Frames[o.FrameIndex])
 			} else {
 				// Animation does not yet exist, add it to the pending.
 				w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
@@ -237,7 +237,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 				o.FrameIndex = rand.Intn(len(face.Frames))
 			}
 			if o.FrameIndex < len(face.Frames) {
-				o.Frame = face.Frames[o.FrameIndex]
+				o.Frame = &(face.Frames[o.FrameIndex])
 			} else {
 				fmt.Fprintf(os.Stderr, "missing frame %d\n", p.AnimationID)
 			}
@@ -685,7 +685,7 @@ func (w *World) CheckPendingObjectAnimations(animationID uint32) {
 				o.Animation = anim
 				o.Face = face
 				if o.FrameIndex < len(face.Frames) {
-					o.Frame = face.Frames[o.FrameIndex]
+					o.Frame = &(face.Frames[o.FrameIndex])
 				} else {
 					fmt.Fprintf(os.Stderr, "missing frame %d\n", animationID)
 				}
