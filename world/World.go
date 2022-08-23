@@ -15,18 +15,19 @@ import (
 
 // World is a collection of all the current known client representations of the game world.
 type World struct {
-	dataManager             *data.Manager
-	maps                    map[data.StringID]*DynamicMap
-	currentMap              data.StringID
-	objects                 []*Object
-	changedObjects          []*Object
-	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
-	viewObjectID            uint32
-	viewObject              *Object
-	deletedObjects          []uint32 // A list of deleted object IDs. Used and cleared during the render call.
-	visibleTiles            []bool
-	unblockedTiles          [][][]bool
-	Log                     *logrus.Logger
+	dataManager                      *data.Manager
+	maps                             map[data.StringID]*DynamicMap
+	currentMap                       data.StringID
+	objects                          []*Object
+	changedObjects                   []*Object
+	PendingObjectAnimations          map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
+	viewObjectID                     uint32
+	viewObject                       *Object
+	viewHeight, viewWidth, viewDepth int
+	deletedObjects                   []uint32 // A list of deleted object IDs. Used and cleared during the render call.
+	visibleTiles                     []bool
+	unblockedTiles                   [][][]bool
+	Log                              *logrus.Logger
 }
 
 // Init initializes the given world object with the passed client.
@@ -180,6 +181,9 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 	case network.CommandObjectPayloadViewTarget:
 		w.viewObjectID = cmd.ObjectID
 		w.viewObject = w.GetObject(cmd.ObjectID)
+		w.viewHeight = int(p.Height)
+		w.viewWidth = int(p.Width)
+		w.viewDepth = int(p.Depth)
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
 	default:
@@ -533,9 +537,9 @@ func (w *World) updateVisibleTiles() {
 	z1 := float64(o.Z)
 
 	// Acquire our box dimensions
-	vhh := float64(32 / 2)
-	vwh := float64(32 / 2)
-	vdh := float64(32 / 2)
+	vhh := float64(w.viewHeight) / 2
+	vwh := float64(w.viewWidth) / 2
+	vdh := float64(w.viewDepth) / 2
 
 	ymin := y1 - vhh
 	if ymin < 0 {
@@ -543,7 +547,7 @@ func (w *World) updateVisibleTiles() {
 	}
 	ymax := y1 + vhh
 	if ymax > float64(m.GetHeight()) {
-		ymax = float64(m.GetHeight()) - 1
+		ymax = float64(m.GetHeight())
 	}
 
 	xmin := x1 - vwh
@@ -552,7 +556,7 @@ func (w *World) updateVisibleTiles() {
 	}
 	xmax := x1 + vwh
 	if xmax > float64(m.GetWidth()) {
-		xmax = float64(m.GetWidth()) - 1
+		xmax = float64(m.GetWidth())
 	}
 
 	zmin := z1 - vdh
@@ -561,7 +565,7 @@ func (w *World) updateVisibleTiles() {
 	}
 	zmax := z1 + vdh
 	if zmax > float64(m.GetDepth()) {
-		zmax = float64(m.GetDepth()) - 1
+		zmax = float64(m.GetDepth())
 	}
 
 	rays := w.getCubeRays(y1, x1, z1, int(ymin), int(xmin), int(zmin), int(ymax), int(xmax), int(zmax))
