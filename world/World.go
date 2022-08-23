@@ -371,6 +371,42 @@ func (w *World) getSphereRays(yi, xi, zi int, radius float64) (targets [][2][3]f
 	return targets
 }
 
+func (w *World) getConeRays(originY, originX, originZ float64, radius float64, distance float64) (targets [][2][3]float64) {
+	// Collect our end-points as 16 points aligned against the Y axis.
+	/*points := 32
+	rads := math.Pi * 2 / float64(points)
+	for i := 0; i < points; i++ {
+		x := math.Sin(rads*float64(i)) * radius
+		y := math.Cos(rads*float64(i)) * radius
+		z := distance
+		targets = append(targets, [2][3]float64{
+			{originY, originX, originZ},
+			{originY + y, originX + x, originZ + z},
+		})
+	}*/
+	r2 := radius * radius
+	area := int(r2) << 2
+	rr := int(radius) << 1
+
+	for i := 0; i < area; i++ {
+		tx := float64((i % rr) - int(radius))
+		ty := float64((i / rr) - int(radius))
+
+		if originY+ty < originY {
+			continue
+		}
+
+		if tx*tx+ty*ty <= r2 {
+			targets = append(targets, [2][3]float64{
+				{originY, originX, originZ - radius/2},
+				{originY + ty, originX + tx, originZ + radius},
+			})
+		}
+	}
+
+	return targets
+}
+
 func (w *World) getCubeRays(originY, originX, originZ float64, minY, minX, minZ, maxY, maxX, maxZ int) (c [][2][3]float64) {
 	for y := minY; y < maxY; y++ {
 		for x := minX; x < maxX; x++ {
@@ -583,22 +619,6 @@ func (w *World) updateVisionUnblocking() {
 	}
 	m := w.GetCurrentMap()
 
-	// Collect our end-points for rays
-	oY := float64(o.Y) + float64(o.H)/2
-	oX := float64(o.X) + float64(o.W)/2
-	oZ := float64(o.Z)
-
-	minY := int(oY) + 6
-	maxY := minY + int(o.H) + 8
-	minX := int(oX) - 4
-	maxX := minX + int(o.W) + 6
-	minZ := int(oZ) + 3
-	maxZ := minZ + int(o.D) + 8
-
-	rays := w.getCubeRays(oY, oX, oZ, minY, minX, minZ, maxY, maxX, maxZ)
-	// TODO: We actually need to use an angled cone, originating from the near view target origin to whatever area we deem as the "camera" area
-	// TODO: Or, we could have 2 "cubes" -- basically 2 flat cubes that create a "right angle bracket"
-
 	unblockedTiles := make([][][]bool, m.GetHeight())
 	for i := range unblockedTiles {
 		unblockedTiles[i] = make([][]bool, m.GetWidth())
@@ -607,13 +627,51 @@ func (w *World) updateVisionUnblocking() {
 		}
 	}
 
+	for y := o.Y + 1; y < o.Y+16; y++ {
+		if y < 0 || y >= m.height {
+			continue
+		}
+		for x := o.X - 10; x < o.X+10; x++ {
+			if x < 0 || x >= m.width {
+				continue
+			}
+			for z := o.Z; z < o.Z+20; z++ {
+				if z < 0 || z >= m.depth {
+					continue
+				}
+				if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+					unblockedTiles[y][x][z] = true
+				}
+			}
+		}
+
+	}
+
+	// Collect our end-points for rays
+	/*oY := float64(o.Y) + float64(o.H)/2
+	oX := float64(o.X) + float64(o.W)/2
+	oZ := float64(o.Z)
+
+	//rays := w.getConeRays(oY, oX, oZ, 16, 16)
+	minY := int(oY) + 6
+	maxY := minY + int(o.H) + 8
+	minX := int(oX) - 9
+	maxX := minX + int(o.W) + 17
+	minZ := int(oZ) + 3
+	maxZ := minZ + int(o.D) + 8
+	rays := w.getCubeRays(oY, oX, oZ, minY, minX, minZ, maxY, maxX, maxZ)
+	// TODO: We actually need to use an angled cone, originating from the near view target origin to whatever area we deem as the "camera" area
+	// TODO: Or, we could have 2 "cubes" -- basically 2 flat cubes that create a "right angle bracket"
+
+
+
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
 		if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
 			unblockedTiles[y][x][z] = true
 		}
 		return false
-	})
+	})*/
 
 	// Set objects no longer Unblocked
 	for y := range unblockedTiles {
