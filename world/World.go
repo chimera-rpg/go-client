@@ -20,6 +20,7 @@ type World struct {
 	currentMap              data.StringID
 	objects                 []*Object
 	visibleObjects          []*Object
+	changedObjects          []*Object
 	PendingObjectAnimations map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID            uint32
 	viewObject              *Object
@@ -100,6 +101,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 			w.AddObject(&Object{
 				ID: oID,
 			})
+			o = w.GetObject(oID)
 		} else {
 			if o.Y != int(cmd.Y) || o.X != int(cmd.X) || o.Z != int(cmd.Z) || o.Index != oI {
 				o.Changed = true
@@ -114,6 +116,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 			w.viewObject = o
 			viewChanged = true
 		}
+		w.changedObjects = append(w.changedObjects, o)
 	}
 	// See if we need to invalidate any objects that no longer are contained in the given tile.
 	for _, tileObject := range w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z)).objects {
@@ -132,6 +135,7 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		if !stillExists {
 			if o.Y == int(cmd.Y) && o.X == int(cmd.X) && o.Z == int(cmd.Z) {
 				o.Missing = true
+				w.changedObjects = append(w.changedObjects, o)
 			}
 		}
 	}
@@ -163,6 +167,7 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 		for _, o := range t.objects {
 			o.LightingChange = true
 			o.Brightness = t.brightness
+			w.changedObjects = append(w.changedObjects, o)
 		}
 	}
 	return nil
@@ -214,6 +219,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			}
 			o.AnimationID = p.AnimationID
 			o.FaceID = p.FaceID
+			w.changedObjects = append(w.changedObjects, o)
 		}
 	} else {
 		// Create a new object.
@@ -259,6 +265,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 // AddObject adds the given object to the objects slice.
 func (w *World) AddObject(o *Object) {
 	w.objects = append(w.objects, o)
+	w.changedObjects = append(w.changedObjects, o)
 }
 
 // DeleteObject deletes the given object ID from the world's objects field.
@@ -321,6 +328,14 @@ func (w *World) GetObjects() []*Object {
 // GetVisibleObjects returns an array of view objects.
 func (w *World) GetVisibleObjects() []*Object {
 	return w.visibleObjects
+}
+
+func (w *World) GetChangedObjects() []*Object {
+	return w.changedObjects
+}
+
+func (w *World) ClearChangedObjects() {
+	w.changedObjects = make([]*Object, 0)
 }
 
 // GetObject returns a pointer to an object based upon its ID.
@@ -577,9 +592,11 @@ func (w *World) updateVisibleTiles() {
 			if !isVisible && o.Visible {
 				o.Visible = false
 				o.VisibilityChange = true
+				w.changedObjects = append(w.changedObjects, o)
 			} else if isVisible && !o.Visible {
 				o.Visible = true
 				o.VisibilityChange = true
+				w.changedObjects = append(w.changedObjects, o)
 			}
 		}
 	}
@@ -636,9 +653,11 @@ func (w *World) updateVisionUnblocking() {
 					if !isUnblocked && o.Unblocked {
 						o.Unblocked = false
 						o.UnblockedChange = true
+						w.changedObjects = append(w.changedObjects, o)
 					} else if isUnblocked && !o.Unblocked {
 						o.Unblocked = true
 						o.UnblockedChange = true
+						w.changedObjects = append(w.changedObjects, o)
 					}
 				}
 			}
@@ -689,6 +708,7 @@ func (w *World) CheckPendingObjectAnimations(animationID uint32) {
 				} else {
 					fmt.Fprintf(os.Stderr, "missing frame %d\n", animationID)
 				}
+				w.changedObjects = append(w.changedObjects, o)
 			}
 		}
 		delete(w.PendingObjectAnimations, animationID)

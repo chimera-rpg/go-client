@@ -42,7 +42,6 @@ func (s *Game) HandleRender(delta time.Duration) {
 	ctx := s.GetRenderContext()
 	// FIXME: This is _very_ rough and is just for testing!
 	m := s.world.GetCurrentMap()
-	objects := s.world.GetVisibleObjects()
 
 	viewObject := s.world.GetViewObject()
 	if o := viewObject; o != nil {
@@ -77,12 +76,15 @@ func (s *Game) HandleRender(delta time.Duration) {
 	}
 
 	// Iterate over world objects.
+	objects := s.world.GetChangedObjects()
 	if len(objects) > 1000 {
 		fmt.Printf("Rendering %d objects\n", len(objects))
 	}
 	for _, o := range objects {
 		s.RenderObject(ctx, viewObject, o, m, delta, &batchMessages)
 	}
+
+	s.world.ClearChangedObjects()
 
 	// Iterate over world messages.
 	now := time.Now()
