@@ -366,7 +366,7 @@ func (w *World) getSphereRays(yi, xi, zi int, radius float64) (targets [][2][3]f
 }
 
 func (w *World) getCubeRays(originY, originX, originZ float64, minY, minX, minZ, maxY, maxX, maxZ int) (c [][2][3]float64) {
-	for y := minY; y < maxX; y++ {
+	for y := minY; y < maxY; y++ {
 		for x := minX; x < maxX; x++ {
 			for z := minZ; z < maxZ; z++ {
 				c = append(c, [2][3]float64{{originY, originX, originZ}, {float64(y), float64(x), float64(z)}})
