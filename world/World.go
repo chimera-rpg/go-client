@@ -537,9 +537,9 @@ func (w *World) updateVisibleTiles() {
 	z1 := float64(o.Z)
 
 	// Acquire our box dimensions
-	vhh := float64(w.viewHeight) / 2
-	vwh := float64(w.viewWidth) / 2
-	vdh := float64(w.viewDepth) / 2
+	vhh := float64(w.viewHeight / 2)
+	vwh := float64(w.viewWidth / 2)
+	vdh := float64(w.viewDepth / 2)
 
 	ymin := y1 - vhh
 	if ymin < 0 {
