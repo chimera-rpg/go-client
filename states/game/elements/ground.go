@@ -248,6 +248,7 @@ func (g *GroundModeWindow) SyncObjects() {
 	}
 	x := 0
 	y := 0
+	// row and col are used to overlap the items by 1 pixel so their borders overlap.
 	row := 0
 	col := 0
 	maxWidth := int(g.objectsList.GetWidth())
