@@ -307,6 +307,15 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 						if button != 1 {
 							return true
 						}
+						// Ignore elements with an alpha less than or equal 0.1.
+						if o.Element.GetStyle().Alpha.Value <= 0.1 {
+							return true
+						}
+						// Ignore elements that are blocks or tiles.
+						// TODO: Ignore if shift is held.
+						if o.Type == cdata.ArchetypeBlock.AsUint8() || o.Type == cdata.ArchetypeTile.AsUint8() {
+							return true
+						}
 						if o.Element.PixelHit(x, y) {
 							s.inputChan <- FocusObject(o.ID)
 							return false
