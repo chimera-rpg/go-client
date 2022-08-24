@@ -2,12 +2,24 @@ package elements
 
 import (
 	"math"
+	"time"
 
 	"github.com/chimera-rpg/go-client/ui"
 )
 
 type MapWindow struct {
 	Container ui.Container
+	Messages  []MapMessage
+}
+
+// MapMessage represents a floating message on the map.
+type MapMessage struct {
+	ObjectID    uint32
+	TrackObject bool
+	X, Y, Z     int
+	El          ui.ElementI
+	DestroyTime time.Time
+	FloatY      float64
 }
 
 func (m *MapWindow) Setup(style string, inputChan chan interface{}) (ui.Container, error) {

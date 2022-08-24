@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"time"
 
+	"github.com/chimera-rpg/go-client/states/game/elements"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
 )
@@ -15,17 +16,7 @@ type Message struct {
 	Message  network.CommandMessage
 }
 
-// MapMessage represents a floating message on the map.
-type MapMessage struct {
-	objectID    uint32
-	trackObject bool
-	x, y, z     int
-	el          ui.ElementI
-	destroyTime time.Time
-	floatY      float64
-}
-
-func (s *Game) createMapMessage(y, x, z int, body string, col color.RGBA) (MapMessage, error) {
+func (s *Game) createMapMessage(y, x, z int, body string, col color.RGBA) (elements.MapMessage, error) {
 	// Get our initial render position
 	xPos, yPos, _ := s.GetRenderPosition(s.GetRenderContext(), s.world.GetCurrentMap(), y, x, z)
 
@@ -37,10 +28,10 @@ func (s *Game) createMapMessage(y, x, z int, body string, col color.RGBA) (MapMe
 	}
 
 	// Create our MapMessage.
-	m := MapMessage{
-		x: xPos,
-		y: yPos,
-		el: ui.NewTextElement(ui.TextElementConfig{
+	m := elements.MapMessage{
+		X: xPos,
+		Y: yPos,
+		El: ui.NewTextElement(ui.TextElementConfig{
 			Style: fmt.Sprintf(`
 				X %d
 				Y %d
@@ -51,12 +42,12 @@ func (s *Game) createMapMessage(y, x, z int, body string, col color.RGBA) (MapMe
 			`, xPos, yPos, col.R, col.G, col.B, col.A),
 			Value: body,
 		}),
-		destroyTime: time.Now().Add(time.Second * time.Duration(charsPerSecond)),
+		DestroyTime: time.Now().Add(time.Second * time.Duration(charsPerSecond)),
 	}
 
 	return m, nil
 }
-func (s *Game) createMapObjectMessage(objectID uint32, body string, col color.RGBA) (MapMessage, error) {
+func (s *Game) createMapObjectMessage(objectID uint32, body string, col color.RGBA) (elements.MapMessage, error) {
 	o := s.world.GetObject(objectID)
 	var x, y, z int
 
@@ -70,6 +61,6 @@ func (s *Game) createMapObjectMessage(objectID uint32, body string, col color.RG
 	if err != nil {
 		return m, err
 	}
-	m.objectID = objectID
+	m.ObjectID = objectID
 	return m, nil
 }

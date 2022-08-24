@@ -98,34 +98,34 @@ func (s *Game) HandleRender(delta time.Duration) {
 
 	// Iterate over world messages.
 	now := time.Now()
-	for i := len(s.mapMessages) - 1; i >= 0; i-- {
-		msg := s.mapMessages[i]
-		if !msg.destroyTime.Equal(time.Time{}) && now.After(msg.destroyTime) {
+	for i := len(s.MapWindow.Messages) - 1; i >= 0; i-- {
+		msg := s.MapWindow.Messages[i]
+		if !msg.DestroyTime.Equal(time.Time{}) && now.After(msg.DestroyTime) {
 			batchMessages.add(ui.BatchDisownMessage{
 				Parent: &s.MapWindow.Container,
-				Target: msg.el,
+				Target: msg.El,
 			})
 			batchMessages.add(ui.BatchDestroyMessage{
-				Target: msg.el,
+				Target: msg.El,
 			})
-			s.mapMessages = append(s.mapMessages[:i], s.mapMessages[i+1:]...)
+			s.MapWindow.Messages = append(s.MapWindow.Messages[:i], s.MapWindow.Messages[i+1:]...)
 		} else {
 			// TODO: Check if msg has associated object and if it has moved.
-			if msg.trackObject {
-				o := s.world.GetObject(msg.objectID)
+			if msg.TrackObject {
+				o := s.world.GetObject(msg.ObjectID)
 				if o != nil {
 					x := o.X
 					y := o.Y + int(o.H) + 1
 					z := o.Z
 					xPos, yPos, _ := s.GetRenderPosition(ctx, s.world.GetCurrentMap(), y, x, z)
 					batchMessages.add(ui.BatchUpdateMessage{
-						Target: msg.el,
+						Target: msg.El,
 						Update: ui.UpdateX{
 							Number: ui.Number{Value: float64(xPos)},
 						},
 					})
 					batchMessages.add(ui.BatchUpdateMessage{
-						Target: msg.el,
+						Target: msg.El,
 						Update: ui.UpdateY{
 							Number: ui.Number{Value: float64(yPos)},
 						},
@@ -133,11 +133,11 @@ func (s *Game) HandleRender(delta time.Duration) {
 				}
 			}
 			// Move message upwards if need be.
-			if msg.floatY != 0 {
+			if msg.FloatY != 0 {
 				batchMessages.add(ui.BatchUpdateMessage{
-					Target: msg.el,
+					Target: msg.El,
 					Update: ui.UpdateY{
-						Number: ui.Number{Value: msg.el.GetStyle().Y.Value + msg.floatY*float64(delta.Milliseconds())},
+						Number: ui.Number{Value: msg.El.GetStyle().Y.Value + msg.FloatY*float64(delta.Milliseconds())},
 					},
 				})
 			}

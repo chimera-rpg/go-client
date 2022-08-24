@@ -266,8 +266,8 @@ func (s *Game) UpdateMessagesWindow() {
 					if err != nil {
 						// TODO: Print some sort of error.
 					}
-					s.mapMessages = append(s.mapMessages, mapMessage)
-					s.MapWindow.Container.GetAdoptChannel() <- mapMessage.el
+					s.MapWindow.Messages = append(s.MapWindow.Messages, mapMessage)
+					s.MapWindow.Container.GetAdoptChannel() <- mapMessage.El
 				}
 				// FIXME: Replace wtih GetPlayerObject()
 				if o == s.world.GetViewObject() {

@@ -54,7 +54,6 @@ type Game struct {
 	keyBinds             []uint8
 	inputChan            chan interface{} // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
 	objectShadows        map[uint32]ui.ElementI
-	mapMessages          []MapMessage
 	MessageHistory       []Message
 	bindings             *binds.Bindings
 	repeatingKeys        map[uint8]int
@@ -276,8 +275,8 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 				Volume: c.Volume,
 			}
 			if m, err := s.createMapMessage(int(c.Y), int(c.X), int(c.Z), "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
-				s.mapMessages = append(s.mapMessages, m)
-				s.MapWindow.Container.GetAdoptChannel() <- m.el
+				s.MapWindow.Messages = append(s.MapWindow.Messages, m)
+				s.MapWindow.Container.GetAdoptChannel() <- m.El
 			}
 		}
 	case network.CommandMusic:
@@ -306,32 +305,32 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		}
 		totalDamage += c.AttributeDamage
 		if m, err := s.createMapObjectMessage(c.Target, fmt.Sprintf("%1.f", totalDamage), color.RGBA{255, 255, 255, 200}); err == nil {
-			m.floatY = -0.02
+			m.FloatY = -0.02
 			// TODO: Make some sort of color map for: damage types, as well as if we're the target of the damage.
 			if c.Target == s.world.GetViewObject().ID {
-				m.el.GetStyle().ForegroundColor = color.NRGBA{
+				m.El.GetStyle().ForegroundColor = color.NRGBA{
 					R: 255,
 					G: 64,
 					B: 64,
 					A: 200,
 				}
-				m.el.GetStyle().OutlineColor = color.NRGBA{
+				m.El.GetStyle().OutlineColor = color.NRGBA{
 					R: 255,
 					G: 255,
 					B: 255,
 					A: 200,
 				}
 			} else {
-				m.el.GetStyle().OutlineColor = color.NRGBA{
+				m.El.GetStyle().OutlineColor = color.NRGBA{
 					R: 255,
 					G: 64,
 					B: 64,
 					A: 200,
 				}
 			}
-			m.el.GetStyle().ZIndex.Value = float64(99999 + len(s.mapMessages) + 1)
-			s.mapMessages = append(s.mapMessages, m)
-			s.MapWindow.Container.GetAdoptChannel() <- m.el
+			m.El.GetStyle().ZIndex.Value = float64(99999 + len(s.MapWindow.Messages) + 1)
+			s.MapWindow.Messages = append(s.MapWindow.Messages, m)
+			s.MapWindow.Container.GetAdoptChannel() <- m.El
 		}
 		if c.Target == s.world.GetViewObject().ID {
 			// TODO: Show info about us getting hit.
