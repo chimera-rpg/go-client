@@ -45,9 +45,7 @@ type Game struct {
 	CommandContainer     ui.ElementI
 	MapContainer         ui.Container
 	InventoryWindow      ui.Container
-	GroundWindow         ui.Container
-	groundElements       [][]GroundCell
-	groundModeButton     ui.ElementI
+	GroundWindow         GroundModeWindow
 	GroundMode           GroundMode
 	StatsWindow          ui.Container
 	StateWindow          ui.Container
@@ -179,7 +177,7 @@ func (s *Game) Loop() {
 				}
 			case GroundModeEvent:
 				s.GroundMode = e.Mode
-				s.groundModeButton.GetUpdateChannel() <- ui.UpdateValue{Value: e.Mode.String()}
+				s.GroundWindow.SyncMode()
 			case MouseInput:
 				if e.button == 3 {
 					s.MoveWithMouse(e)
