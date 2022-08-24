@@ -73,9 +73,6 @@ func (s *Game) HandleRender(delta time.Duration) {
 				Top:  ui.Number{Value: y},
 			},
 		})
-
-		// Might as well refresh our Ground view here.
-		s.GroundWindow.RefreshFromWorld(&s.world)
 	}
 
 	// Iterate over world objects.
@@ -85,6 +82,14 @@ func (s *Game) HandleRender(delta time.Duration) {
 	}
 	for _, o := range objects {
 		s.RenderObject(ctx, viewObject, o, m, delta, &batchMessages)
+	}
+
+	// FIXME: This was moved from the viewObject check so as to allow updating beyond when the view object has changed.
+	if viewObject != nil {
+		// FIXME: We should keep track of tile mod time, then tell our ground window to refresh its tiles if any of those tiles have changed.
+		if len(objects) > 0 {
+			s.GroundWindow.RefreshFromWorld(&s.world)
+		}
 	}
 
 	s.world.ClearChangedObjects()

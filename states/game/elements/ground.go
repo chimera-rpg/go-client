@@ -1,6 +1,8 @@
 package elements
 
 import (
+	"fmt"
+
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
 	"github.com/chimera-rpg/go-common/data"
@@ -27,11 +29,18 @@ type GroundModeEvent struct {
 	Mode GroundMode
 }
 
+type ObjectContainer struct {
+	container *ui.Container
+	image     ui.ElementI
+}
+
 type GroundModeWindow struct {
-	mode         GroundMode
-	objects      [][][][]*world.Object
-	Container    ui.Container
-	toggleButton ui.ElementI
+	mode             GroundMode
+	objects          []*world.Object
+	Container        ui.Container
+	objectsList      ui.Container
+	objectContainers []ObjectContainer
+	toggleButton     ui.ElementI
 }
 
 func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.Container, error) {
@@ -39,13 +48,20 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.C
 		Value: "Ground",
 		Style: style,
 	})
+	g.objectsList.Setup(ui.ContainerConfig{
+		Style: `
+			Y 10%
+			W 100%
+			H 90%
+		`,
+	})
 	g.toggleButton = ui.NewButtonElement(ui.ButtonElementConfig{
 		Value: g.mode.String(),
 		Style: `
 			X 0
 			Y 0
 			W 64
-			MinH 20
+			H 10%
 		`,
 		NoFocus: true,
 		Events: ui.Events{
@@ -63,6 +79,7 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.C
 			},
 		},
 	})
+	g.Container.GetAdoptChannel() <- g.objectsList.This
 	g.Container.GetAdoptChannel() <- g.toggleButton
 
 	return g.Container, nil
@@ -74,7 +91,84 @@ func (g *GroundModeWindow) SyncMode(mode GroundMode) {
 }
 
 func (g *GroundModeWindow) SyncObjects() {
-	// TODO: iterate over g.objects, add/remove Y, X, Z, and tiles container quandrants to fit, then add or replace image elements, etc. as needed.
+	w := 48
+	h := 48
+	if len(g.objectContainers) > len(g.objects) {
+		for i := len(g.objects); i < len(g.objectContainers); i++ {
+			g.objectContainers[i].container.GetDestroyChannel() <- true
+		}
+		g.objectContainers = g.objectContainers[:len(g.objects)]
+	}
+	if len(g.objectContainers) < len(g.objects) {
+		for i := len(g.objectContainers); i < len(g.objects); i++ {
+			el, _ := ui.NewContainerElement(ui.ContainerConfig{
+				Style: fmt.Sprintf(`
+					W %d
+					H %d
+					BackgroundColor 0 0 255 32
+					Resize ToContent
+				`, w, h),
+			})
+			box := ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
+				Shape: ui.RectangleShape,
+				Style: `
+					X 0
+					Y 0
+					W 100%
+					H 100%
+					OutlineColor 0 0 0 255
+				`,
+			})
+			img := ui.NewImageElement(ui.ImageElementConfig{
+				Style: `
+					Origin CenterX CenterY
+					X 50%
+					Y 50%
+				`,
+			})
+			g.objectContainers = append(g.objectContainers, ObjectContainer{
+				container: el,
+				image:     img,
+			})
+			el.GetAdoptChannel() <- box
+			el.GetAdoptChannel() <- img
+			g.objectsList.GetAdoptChannel() <- el.This
+		}
+	}
+	x := 0
+	y := 0
+	row := 0
+	col := 0
+	maxWidth := int(g.objectsList.GetWidth())
+	for i, c := range g.objectContainers {
+		if x+w >= maxWidth {
+			x = 0
+			y += h
+			row++
+			col = 0
+		}
+
+		c.container.GetUpdateChannel() <- ui.UpdateX{Number: ui.Number{Value: float64(x - col)}}
+		c.container.GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(y - row)}}
+
+		if g.objects[i].FrameImageID > 0 {
+			bounds := g.objects[i].Image.Bounds()
+			c.image.GetUpdateChannel() <- ui.UpdateDimensions{
+				X: c.image.GetStyle().X,
+				Y: c.image.GetStyle().Y,
+				W: ui.Number{Value: float64(bounds.Dx() * 2)},
+				H: ui.Number{Value: float64(bounds.Dy() * 2)},
+			}
+			c.image.GetUpdateChannel() <- ui.UpdateImageID(g.objects[i].FrameImageID)
+		}
+
+		// TODO: If focusedObjectID == g.objects[i].ID, set background
+
+		x += w
+		col++
+	}
+
+	g.Container.GetUpdateChannel() <- ui.UpdateDirt(true)
 }
 
 // Refresh assigns the view to a 3D slice of tiles.
@@ -94,21 +188,15 @@ func (g *GroundModeWindow) RefreshFromWorld(w *world.World) {
 	maxZ := reach
 	//
 	typeFilter := []uint8{data.ArchetypeArmor.AsUint8(), data.ArchetypeWeapon.AsUint8(), data.ArchetypeItem.AsUint8(), data.ArchetypeGeneric.AsUint8(), data.ArchetypeShield.AsUint8(), data.ArchetypeFood.AsUint8()}
-	// 1. Collect a 3D slice of all notable objects in range.
-	var objects [][][][]*world.Object
-	for ys := minY; ys < maxY; ys++ {
-		y := ys + reach
-		objects = append(objects, make([][][]*world.Object, 0))
-		for xs := minX; xs < maxX; xs++ {
-			x := xs + reach
-			objects[y] = append(objects[y], make([][]*world.Object, 0))
-			for zs := minZ; zs < maxZ; zs++ {
-				z := zs - minZ
-				objects[y][x] = append(objects[y][x], make([]*world.Object, 0))
+	// 1. Collect a slice of all notable objects in range.
+	var objects []*world.Object
+	for xs := minX; xs < maxX; xs++ {
+		for zs := minZ; zs < maxZ; zs++ {
+			for ys := minY; ys < maxY; ys++ {
 				if t := m.GetTile(vo.Y+ys, vo.X+xs, vo.Z+zs); t != nil {
 					for _, o := range t.Objects() {
 						if slices.Contains(typeFilter, o.Type) {
-							objects[y][x][z] = append(objects[y][x][z], o)
+							objects = append(objects, o)
 						}
 					}
 				}
