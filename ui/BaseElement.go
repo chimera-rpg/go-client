@@ -834,6 +834,10 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Style.ZIndex = u.Number
 	case UpdateOutlineColor:
 		b.Style.OutlineColor = u
+	case UpdateBackgroundColor:
+		b.Style.BackgroundColor = color.NRGBA(u)
+	case UpdateForegroundColor:
+		b.Style.ForegroundColor = color.NRGBA(u)
 	case UpdateDirt:
 		dirty = u
 	case UpdateFocus:
