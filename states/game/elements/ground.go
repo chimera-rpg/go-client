@@ -43,32 +43,41 @@ type ObjectContainer struct {
 	container *ui.Container
 	image     ui.ElementI
 	count     ui.ElementI
+	lastCount int
+	hidden    bool
 }
 
 type GroundModeWindow struct {
 	mode             GroundMode
 	aggregate        bool
 	objects          []ObjectReference
-	Container        ui.Container
-	objectsList      ui.Container
+	Container        *ui.Container
+	objectsList      *ui.Container
 	objectContainers []ObjectContainer
 	nearbyButton     ui.ElementI
 	underfootButton  ui.ElementI
 	aggregateButton  ui.ElementI
 }
 
-func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.Container, error) {
-	g.Container.Setup(ui.ContainerConfig{
+func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (*ui.Container, error) {
+	var err error
+	g.Container, err = ui.NewContainerElement(ui.ContainerConfig{
 		Value: "Ground",
 		Style: style,
 	})
-	g.objectsList.Setup(ui.ContainerConfig{
+	if err != nil {
+		return nil, err
+	}
+	g.objectsList, err = ui.NewContainerElement(ui.ContainerConfig{
 		Style: `
 			Y 10%
 			W 100%
 			H 90%
 		`,
 	})
+	if err != nil {
+		return nil, err
+	}
 	g.nearbyButton = ui.NewButtonElement(ui.ButtonElementConfig{
 		Value: "nearby",
 		Style: `
@@ -162,13 +171,19 @@ func (g *GroundModeWindow) ToggleCombo() {
 }
 
 func (g *GroundModeWindow) SyncObjects() {
+	batchMessages := make([]ui.BatchMessage, 0)
 	w := 48
 	h := 48
 	if len(g.objectContainers) > len(g.objects) {
 		for i := len(g.objects); i < len(g.objectContainers); i++ {
-			g.objectContainers[i].container.GetDestroyChannel() <- true
+			if !g.objectContainers[i].hidden {
+				batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+					Target: g.objectContainers[i].container,
+					Update: ui.UpdateHidden(true),
+				})
+				g.objectContainers[i].hidden = true
+			}
 		}
-		g.objectContainers = g.objectContainers[:len(g.objects)]
 	}
 	if len(g.objectContainers) < len(g.objects) {
 		for i := len(g.objectContainers); i < len(g.objects); i++ {
@@ -207,15 +222,28 @@ func (g *GroundModeWindow) SyncObjects() {
 					OutlineColor 255 255 255 128
 				`,
 			})
+			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+				Parent: g.objectsList,
+				Target: el,
+			})
+
 			g.objectContainers = append(g.objectContainers, ObjectContainer{
 				container: el,
 				image:     img,
 				count:     count,
 			})
-			el.GetAdoptChannel() <- box
-			el.GetAdoptChannel() <- img
-			el.GetAdoptChannel() <- count
-			g.objectsList.GetAdoptChannel() <- el.This
+			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+				Parent: el,
+				Target: box,
+			})
+			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+				Parent: el,
+				Target: img,
+			})
+			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+				Parent: el,
+				Target: count,
+			})
 		}
 	}
 	x := 0
@@ -223,7 +251,8 @@ func (g *GroundModeWindow) SyncObjects() {
 	row := 0
 	col := 0
 	maxWidth := int(g.objectsList.GetWidth())
-	for i, c := range g.objectContainers {
+	for i := range g.objects {
+		c := &(g.objectContainers[i])
 		if x+w >= maxWidth {
 			x = 0
 			y += h
@@ -231,24 +260,55 @@ func (g *GroundModeWindow) SyncObjects() {
 			col = 0
 		}
 
-		c.container.GetUpdateChannel() <- ui.UpdateX{Number: ui.Number{Value: float64(x - col)}}
-		c.container.GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(y - row)}}
+		if c.hidden {
+			batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+				Target: c.container,
+				Update: ui.UpdateHidden(false),
+			})
+			c.hidden = false
+		}
+
+		batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+			Target: c.container,
+			Update: ui.UpdateX{Number: ui.Number{Value: float64(x - col)}},
+		})
+		batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+			Target: c.container,
+			Update: ui.UpdateY{Number: ui.Number{Value: float64(y - row)}},
+		})
 
 		if g.objects[i].object.FrameImageID > 0 {
 			bounds := g.objects[i].object.Image.Bounds()
-			c.image.GetUpdateChannel() <- ui.UpdateDimensions{
-				X: c.image.GetStyle().X,
-				Y: c.image.GetStyle().Y,
-				W: ui.Number{Value: float64(bounds.Dx() * 2)},
-				H: ui.Number{Value: float64(bounds.Dy() * 2)},
-			}
-			c.image.GetUpdateChannel() <- ui.UpdateImageID(g.objects[i].object.FrameImageID)
+			batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+				Target: c.image,
+				Update: ui.UpdateDimensions{
+					X: c.image.GetStyle().X,
+					Y: c.image.GetStyle().Y,
+					W: ui.Number{Value: float64(bounds.Dx() * 2)},
+					H: ui.Number{Value: float64(bounds.Dy() * 2)},
+				},
+			})
+
+			batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+				Target: c.image,
+				Update: ui.UpdateImageID(g.objects[i].object.FrameImageID),
+			})
 		}
 
-		if g.objects[i].count == 1 {
-			c.count.GetUpdateChannel() <- ui.UpdateValue{Value: ""}
-		} else {
-			c.count.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("%d", g.objects[i].count)}
+		// lastCount is an optimization to prevent unnecessarily changing the text value which is expensive due to no font atlas being used.
+		if c.lastCount != g.objects[i].count {
+			if g.objects[i].count == 1 {
+				batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+					Target: c.count,
+					Update: ui.UpdateValue{Value: ""},
+				})
+			} else {
+				batchMessages = append(batchMessages, ui.BatchUpdateMessage{
+					Target: c.count,
+					Update: ui.UpdateValue{Value: fmt.Sprintf("%d", g.objects[i].count)},
+				})
+			}
+			c.lastCount = g.objects[i].count
 		}
 		// TODO: If focusedObjectID == g.objects[i].ID, set background
 
@@ -256,7 +316,10 @@ func (g *GroundModeWindow) SyncObjects() {
 		col++
 	}
 
-	g.Container.GetUpdateChannel() <- ui.UpdateDirt(true)
+	if len(batchMessages) > 0 {
+		ui.GlobalInstance.RootWindow.BatchChannel <- batchMessages
+	}
+	//g.Container.GetUpdateChannel() <- ui.UpdateDirt(true)
 }
 
 // Refresh assigns the view to a slice of tiles.
