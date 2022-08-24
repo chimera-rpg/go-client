@@ -44,7 +44,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 	m := s.world.GetCurrentMap()
 
 	viewObject := s.world.GetViewObject()
-	if o := viewObject; o != nil {
+	if o := viewObject; o != nil && o.Changed {
 		renderX, renderY, _ := s.GetRenderPosition(ctx, m, o.Y, o.X, o.Z)
 
 		// Calculate object-specific offsets.
@@ -73,6 +73,9 @@ func (s *Game) HandleRender(delta time.Duration) {
 				Top:  ui.Number{Value: y},
 			},
 		})
+
+		// Might as well refresh our Ground view here.
+		s.GroundWindow.RefreshFromWorld(&s.world)
 	}
 
 	// Iterate over world objects.

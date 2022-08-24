@@ -7,6 +7,10 @@ type DynamicMapTile struct {
 	opaque     bool
 }
 
+func (d *DynamicMapTile) Objects() []*Object {
+	return d.objects
+}
+
 func (d *DynamicMapTile) Refresh() {
 	for _, o := range d.objects {
 		if o.Opaque {

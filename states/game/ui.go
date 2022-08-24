@@ -9,10 +9,6 @@ import (
 	"github.com/chimera-rpg/go-common/network"
 )
 
-// UserInput is an interface used in a channel in Game for handling UI input.
-type UserInput interface {
-}
-
 // ChangeCommandMode notifies the UI to change the command mode.
 type ChangeCommandMode struct{}
 
@@ -25,26 +21,6 @@ type ResizeEvent struct{}
 // ChatEvent is used to send an input chat to the main loop.
 type ChatEvent struct {
 	Body string
-}
-
-// GroundMode is the type for indicating the current ground mode.
-type GroundMode int
-
-const (
-	GroundModeNearby = iota
-	GroundModeExact
-)
-
-func (g GroundMode) String() string {
-	if g == GroundModeExact {
-		return "exact"
-	}
-	return "nearby"
-}
-
-// GroundModeEvent is used to change the ground/nearby items mode.
-type GroundModeEvent struct {
-	Mode GroundMode
 }
 
 // DisconnectEvent is used to tell the client to disconnect.
@@ -245,7 +221,8 @@ func (s *Game) SetupUI() (err error) {
 	})
 	s.GameContainer.AdoptChannel <- s.InventoryWindow.This
 	// Sub-window: ground
-	err = s.GroundWindow.Setup(s)
+	container, err := s.GroundWindow.Setup(GroundWindowStyle, s.inputChan)
+	s.GameContainer.AdoptChannel <- container.This
 	// Sub-window: stats
 	err = s.StatsWindow.Setup(ui.ContainerConfig{
 		Value: "Stats",

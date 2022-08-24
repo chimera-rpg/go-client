@@ -9,6 +9,7 @@ import (
 	"github.com/chimera-rpg/go-client/audio"
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/states/game/elements"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -45,15 +46,14 @@ type Game struct {
 	CommandContainer     ui.ElementI
 	MapContainer         ui.Container
 	InventoryWindow      ui.Container
-	GroundWindow         GroundModeWindow
-	GroundMode           GroundMode
+	GroundWindow         elements.GroundModeWindow
 	StatsWindow          ui.Container
 	StateWindow          ui.Container
 	statusElements       map[cdata.StatusType]ui.ElementI
 	statuses             map[cdata.StatusType]bool
 	world                world.World
 	keyBinds             []uint8
-	inputChan            chan UserInput // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
+	inputChan            chan interface{} // This channel is used to transfer input from the UI goroutine to the Client goroutine safely.
 	objectShadows        map[uint32]ui.ElementI
 	mapMessages          []MapMessage
 	MessageHistory       []Message
@@ -70,7 +70,7 @@ type Game struct {
 
 // Init our Game state.
 func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, err error) {
-	s.inputChan = make(chan UserInput)
+	s.inputChan = make(chan interface{})
 	s.objectShadows = make(map[uint32]ui.ElementI)
 	s.statuses = make(map[cdata.StatusType]bool)
 	s.statusElements = make(map[cdata.StatusType]ui.ElementI)
@@ -175,9 +175,8 @@ func (s *Game) Loop() {
 						})
 					}
 				}
-			case GroundModeEvent:
-				s.GroundMode = e.Mode
-				s.GroundWindow.SyncMode()
+			case elements.GroundModeEvent:
+				s.GroundWindow.SyncMode(e.Mode)
 			case MouseInput:
 				if e.button == 3 {
 					s.MoveWithMouse(e)
