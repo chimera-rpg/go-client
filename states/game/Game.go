@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"image/color"
-	"math"
 	"time"
 
 	"github.com/chimera-rpg/go-client/audio"
@@ -44,8 +43,8 @@ type Game struct {
 	ChatWindow           ui.Container
 	messageElements      []ui.ElementI
 	CommandContainer     ui.ElementI
-	MapContainer         ui.Container
 	InventoryWindow      ui.Container
+	MapWindow            elements.MapWindow
 	GroundWindow         elements.GroundModeWindow
 	StatsWindow          ui.Container
 	StateWindow          ui.Container
@@ -182,13 +181,13 @@ func (s *Game) Loop() {
 			case elements.GroundModeComboEvent:
 				s.GroundWindow.ToggleCombo()
 				s.GroundWindow.RefreshFromWorld(&s.world)
-			case MouseInput:
-				if e.button == 3 {
+			case elements.MouseInput:
+				if e.Button == 3 {
 					s.MoveWithMouse(e)
 				}
-			case MouseMoveInput:
+			case elements.MouseMoveInput:
 				if s.heldButtons[3] {
-					s.RunWithMouse(e.x, e.y)
+					s.RunWithMouse(e.X, e.Y)
 				}
 			case FocusObject:
 				s.focusObject(e)
@@ -278,7 +277,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 			}
 			if m, err := s.createMapMessage(int(c.Y), int(c.X), int(c.Z), "*"+snd.Text+"*", color.RGBA{128, 200, 255, 220}); err == nil {
 				s.mapMessages = append(s.mapMessages, m)
-				s.MapContainer.GetAdoptChannel() <- m.el
+				s.MapWindow.Container.GetAdoptChannel() <- m.el
 			}
 		}
 	case network.CommandMusic:
@@ -332,7 +331,7 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 			}
 			m.el.GetStyle().ZIndex.Value = float64(99999 + len(s.mapMessages) + 1)
 			s.mapMessages = append(s.mapMessages, m)
-			s.MapContainer.GetAdoptChannel() <- m.el
+			s.MapWindow.Container.GetAdoptChannel() <- m.el
 		}
 		if c.Target == s.world.GetViewObject().ID {
 			// TODO: Show info about us getting hit.
@@ -356,19 +355,8 @@ func (s *Game) HandleMessageCommand(m network.CommandMessage) {
 	s.UpdateMessagesWindow()
 }
 
-func (s *Game) GetViewToMouseAngle(x, y int32) float64 {
-	x1 := x - s.MapContainer.GetAbsoluteX()
-	y1 := y - s.MapContainer.GetAbsoluteY()
-	x2 := s.MapContainer.GetWidth() / 2
-	y2 := s.MapContainer.GetHeight() / 2
-	dY := y2 - y1
-	dX := x2 - x1
-	dA := (math.Atan2(float64(dY), float64(dX)) * 180 / math.Pi) + 180
-	return dA
-}
-
 func (s *Game) RunWithMouse(x, y int32) {
-	dA := s.GetViewToMouseAngle(x, y)
+	dA := s.MapWindow.MouseAngleFromView(x, y)
 	if dA >= 315 || dA <= 45 {
 		if s.runDirection != network.East {
 			s.bindings.RunFunction("east run")
@@ -388,8 +376,8 @@ func (s *Game) RunWithMouse(x, y int32) {
 	}
 }
 
-func (s *Game) MoveWithMouse(e MouseInput) {
-	dA := s.GetViewToMouseAngle(e.x, e.y)
+func (s *Game) MoveWithMouse(e elements.MouseInput) {
+	dA := s.MapWindow.MouseAngleFromView(e.X, e.Y)
 	/****
 	    	275
 	  225 		315
@@ -397,7 +385,7 @@ func (s *Game) MoveWithMouse(e MouseInput) {
 	  135 	 	45
 		 		90
 	******/
-	if e.held {
+	if e.Held {
 		s.heldButtons[3] = true
 		if dA >= 315 || dA <= 45 {
 			s.bindings.RunFunction("east run")
@@ -408,7 +396,7 @@ func (s *Game) MoveWithMouse(e MouseInput) {
 		} else if dA > 225 && dA <= 315 {
 			s.bindings.RunFunction("north run")
 		}
-	} else if e.released {
+	} else if e.Released {
 		s.heldButtons[3] = false
 		if dA >= 315 || dA <= 45 {
 			s.bindings.RunFunction("east run stop")
@@ -419,7 +407,7 @@ func (s *Game) MoveWithMouse(e MouseInput) {
 		} else if dA > 225 && dA <= 315 {
 			s.bindings.RunFunction("north run stop")
 		}
-	} else if !e.pressed {
+	} else if !e.Pressed {
 		if dA >= 315 || dA <= 45 {
 			s.bindings.RunFunction("east")
 		} else if dA > 45 && dA <= 135 {

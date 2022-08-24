@@ -63,11 +63,11 @@ func (s *Game) HandleRender(delta time.Duration) {
 		x += (float64(int(o.W)*ctx.tileWidth) * ctx.scale) / 2
 		y += (float64((int(o.H)*s.Client.AnimationsConfig.YStep.Y + (int(o.H) * ctx.tileHeight))) * ctx.scale) / 2
 		// Center within the map container.
-		x -= float64(s.MapContainer.GetWidth()) / 2
-		y -= float64(s.MapContainer.GetHeight()) / 2
+		x -= float64(s.MapWindow.Container.GetWidth()) / 2
+		y -= float64(s.MapWindow.Container.GetHeight()) / 2
 
 		batchMessages.add(ui.BatchUpdateMessage{
-			Target: &s.MapContainer,
+			Target: &s.MapWindow.Container,
 			Update: ui.UpdateScroll{
 				Left: ui.Number{Value: x},
 				Top:  ui.Number{Value: y},
@@ -102,7 +102,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 		msg := s.mapMessages[i]
 		if !msg.destroyTime.Equal(time.Time{}) && now.After(msg.destroyTime) {
 			batchMessages.add(ui.BatchDisownMessage{
-				Parent: &s.MapContainer,
+				Parent: &s.MapWindow.Container,
 				Target: msg.el,
 			})
 			batchMessages.add(ui.BatchDestroyMessage{
@@ -357,7 +357,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 			})
 		}
 		uiMessages.add(ui.BatchAdoptMessage{
-			Parent: &s.MapContainer,
+			Parent: &s.MapWindow.Container,
 			Target: o.Element,
 		})
 	} else {
@@ -491,7 +491,7 @@ func (s *Game) RenderObjectShadows(ctx RenderContext, o *world.Object, m *world.
 		})
 		//s.MapContainer.GetAdoptChannel() <- s.objectShadows[o.ID]
 		uiMessages.add(ui.BatchAdoptMessage{
-			Parent: &s.MapContainer,
+			Parent: &s.MapWindow.Container,
 			Target: o.ShadowElement,
 		})
 	} else {

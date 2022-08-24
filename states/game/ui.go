@@ -34,19 +34,6 @@ type KeyInput struct {
 	repeat    bool
 }
 
-// MouseInput is the UserInput for mouse events.
-type MouseInput struct {
-	x, y     int32
-	button   uint8
-	pressed  bool
-	held     bool
-	released bool
-}
-
-type MouseMoveInput struct {
-	x, y int32
-}
-
 type GroundCell struct {
 	element ui.Container
 	image   ui.ElementI
@@ -87,62 +74,8 @@ func (s *Game) SetupUI() (err error) {
 	s.GameContainer.Focus()
 	s.Client.RootWindow.AdoptChannel <- s.GameContainer.This
 
-	// Sub-window: map
-	err = s.MapContainer.Setup(ui.ContainerConfig{
-		Style: MapContainerStyle,
-		Events: ui.Events{
-			OnMouseButtonDown: func(buttonID uint8, x int32, y int32) bool {
-				s.inputChan <- MouseInput{
-					button:  buttonID,
-					pressed: false,
-					x:       x,
-					y:       y,
-				}
-				return true
-			},
-			OnMouseButtonUp: func(buttonID uint8, x int32, y int32) bool {
-				s.inputChan <- MouseInput{
-					button:  buttonID,
-					pressed: true,
-					x:       x,
-					y:       y,
-				}
-				return true
-			},
-			OnMouseMove: func(x, y int32) bool {
-				s.inputChan <- MouseMoveInput{
-					x: x,
-					y: y,
-				}
-				return true
-			},
-			OnHold: func(buttonID uint8, x, y int32) bool {
-				s.inputChan <- MouseInput{
-					button:  buttonID,
-					pressed: true,
-					held:    true,
-					x:       x,
-					y:       y,
-				}
-				return true
-			},
-			OnUnhold: func(buttonID uint8, x, y int32) bool {
-				s.inputChan <- MouseInput{
-					button:   buttonID,
-					pressed:  true,
-					released: true,
-					x:        x,
-					y:        y,
-				}
-				return true
-			},
-		},
-	})
-	mapText := ui.NewTextElement(ui.TextElementConfig{
-		Value: "Map",
-	})
-	s.MapContainer.AdoptChannel <- mapText
-	s.GameContainer.AdoptChannel <- s.MapContainer.This
+	container, err := s.MapWindow.Setup(MapContainerStyle, s.inputChan)
+	s.GameContainer.AdoptChannel <- container.This
 
 	// Sub-window: chat
 	s.ChatWindow.Setup(ui.ContainerConfig{
@@ -221,7 +154,7 @@ func (s *Game) SetupUI() (err error) {
 	})
 	s.GameContainer.AdoptChannel <- s.InventoryWindow.This
 	// Sub-window: ground
-	container, err := s.GroundWindow.Setup(GroundWindowStyle, s.inputChan)
+	container, err = s.GroundWindow.Setup(GroundWindowStyle, s.inputChan)
 	s.GameContainer.AdoptChannel <- container.This
 	// Sub-window: stats
 	err = s.StatsWindow.Setup(ui.ContainerConfig{
@@ -259,7 +192,7 @@ func (s *Game) SetupUI() (err error) {
 			},
 		},
 	})
-	s.MapContainer.AdoptChannel <- s.focusedImage
+	s.MapWindow.Container.AdoptChannel <- s.focusedImage
 
 	return err
 }
@@ -334,7 +267,7 @@ func (s *Game) UpdateMessagesWindow() {
 						// TODO: Print some sort of error.
 					}
 					s.mapMessages = append(s.mapMessages, mapMessage)
-					s.MapContainer.GetAdoptChannel() <- mapMessage.el
+					s.MapWindow.Container.GetAdoptChannel() <- mapMessage.el
 				}
 				// FIXME: Replace wtih GetPlayerObject()
 				if o == s.world.GetViewObject() {
