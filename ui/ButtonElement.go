@@ -72,5 +72,7 @@ func (b *ButtonElement) HandleUpdate(update UpdateI) {
 	switch u := update.(type) {
 	case UpdateValue:
 		b.SetValue(u.Value)
+	default:
+		b.BaseElement.HandleUpdate(update)
 	}
 }
