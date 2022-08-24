@@ -27,6 +27,26 @@ type ChatEvent struct {
 	Body string
 }
 
+// GroundMode is the type for indicating the current ground mode.
+type GroundMode int
+
+const (
+	GroundModeNearby = iota
+	GroundModeExact
+)
+
+func (g GroundMode) String() string {
+	if g == GroundModeExact {
+		return "exact"
+	}
+	return "nearby"
+}
+
+// GroundModeEvent is used to change the ground/nearby items mode.
+type GroundModeEvent struct {
+	Mode GroundMode
+}
+
 // DisconnectEvent is used to tell the client to disconnect.
 type DisconnectEvent struct{}
 
@@ -229,6 +249,31 @@ func (s *Game) SetupUI() (err error) {
 		Value: "Ground",
 		Style: GroundWindowStyle,
 	})
+	s.groundModeButton = ui.NewButtonElement(ui.ButtonElementConfig{
+		Value: `nearby`,
+		Style: `
+			X 0
+			Y 0
+			W 64
+			MinH 20
+		`,
+		NoFocus: true,
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x, y int32) bool {
+				var mode GroundMode
+				if s.GroundMode == GroundModeNearby {
+					mode = GroundModeExact
+				} else {
+					mode = GroundModeNearby
+				}
+				s.inputChan <- GroundModeEvent{
+					Mode: mode,
+				}
+				return false
+			},
+		},
+	})
+	s.GroundWindow.GetAdoptChannel() <- s.groundModeButton
 	s.GameContainer.AdoptChannel <- s.GroundWindow.This
 	// Sub-window: stats
 	err = s.StatsWindow.Setup(ui.ContainerConfig{
