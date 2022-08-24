@@ -25,24 +25,36 @@ func (g GroundMode) String() string {
 	return "nearby"
 }
 
-// GroundModeEvent is used to change the ground/nearby items mode.
-type GroundModeEvent struct {
+// GroundModeChangeEvent is used to change the ground/nearby items mode.
+type GroundModeChangeEvent struct {
 	Mode GroundMode
+}
+
+// GroundModeComboEvent toggles the aggregate item collection.
+type GroundModeComboEvent struct {
+}
+
+type ObjectReference struct {
+	count  int
+	object *world.Object
 }
 
 type ObjectContainer struct {
 	container *ui.Container
 	image     ui.ElementI
+	count     ui.ElementI
 }
 
 type GroundModeWindow struct {
 	mode             GroundMode
-	objects          []*world.Object
+	aggregate        bool
+	objects          []ObjectReference
 	Container        ui.Container
 	objectsList      ui.Container
 	objectContainers []ObjectContainer
-	toggleButton     ui.ElementI
+	nearbyButton     ui.ElementI
 	underfootButton  ui.ElementI
+	aggregateButton  ui.ElementI
 }
 
 func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.Container, error) {
@@ -57,7 +69,7 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.C
 			H 90%
 		`,
 	})
-	g.toggleButton = ui.NewButtonElement(ui.ButtonElementConfig{
+	g.nearbyButton = ui.NewButtonElement(ui.ButtonElementConfig{
 		Value: "nearby",
 		Style: `
 			X 0
@@ -68,7 +80,7 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.C
 		NoFocus: true,
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x, y int32) bool {
-				inputChan <- GroundModeEvent{
+				inputChan <- GroundModeChangeEvent{
 					Mode: GroundModeNearby,
 				}
 				return false
@@ -86,19 +98,38 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.C
 		NoFocus: true,
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x, y int32) bool {
-				inputChan <- GroundModeEvent{
+				inputChan <- GroundModeChangeEvent{
 					Mode: GroundModeUnderfoot,
 				}
 				return false
 			},
 		},
 	})
+	g.aggregateButton = ui.NewButtonElement(ui.ButtonElementConfig{
+		Value: "C",
+		Style: `
+			X 0
+			Y 0
+			Origin Right
+			W 32
+			H 10%
+		`,
+		NoFocus: true,
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x, y int32) bool {
+				inputChan <- GroundModeComboEvent{}
+				return false
+			},
+		},
+	})
 
 	g.Container.GetAdoptChannel() <- g.objectsList.This
-	g.Container.GetAdoptChannel() <- g.toggleButton
+	g.Container.GetAdoptChannel() <- g.nearbyButton
 	g.Container.GetAdoptChannel() <- g.underfootButton
+	g.Container.GetAdoptChannel() <- g.aggregateButton
 
 	g.SyncMode(g.mode)
+	g.ToggleCombo()
 
 	return g.Container, nil
 }
@@ -109,11 +140,24 @@ func (g *GroundModeWindow) SyncMode(mode GroundMode) {
 	activeColor := color.NRGBA{139, 139, 186, 128}
 	g.mode = mode
 	if g.mode == GroundModeNearby {
-		g.toggleButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
+		g.nearbyButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
 		g.underfootButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
 	} else if g.mode == GroundModeUnderfoot {
 		g.underfootButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
-		g.toggleButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
+		g.nearbyButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
+	}
+}
+
+func (g *GroundModeWindow) ToggleCombo() {
+	// FIXME: Load these from some sort of passed in Stylesheet global
+	inactiveColor := color.NRGBA{64, 64, 111, 128}
+	activeColor := color.NRGBA{139, 139, 186, 128}
+
+	g.aggregate = !g.aggregate
+	if g.aggregate {
+		g.aggregateButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
+	} else {
+		g.aggregateButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
 	}
 }
 
@@ -133,7 +177,6 @@ func (g *GroundModeWindow) SyncObjects() {
 					W %d
 					H %d
 					BackgroundColor 0 0 255 32
-					Resize ToContent
 				`, w, h),
 			})
 			box := ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
@@ -153,12 +196,25 @@ func (g *GroundModeWindow) SyncObjects() {
 					Y 50%
 				`,
 			})
+			count := ui.NewTextElement(ui.TextElementConfig{
+				Value: "egg",
+				Style: `
+					X 0
+					Y 0
+					PaddingTop -4
+					PaddingLeft 1
+					Resize ToContent
+					OutlineColor 255 255 255 128
+				`,
+			})
 			g.objectContainers = append(g.objectContainers, ObjectContainer{
 				container: el,
 				image:     img,
+				count:     count,
 			})
 			el.GetAdoptChannel() <- box
 			el.GetAdoptChannel() <- img
+			el.GetAdoptChannel() <- count
 			g.objectsList.GetAdoptChannel() <- el.This
 		}
 	}
@@ -178,17 +234,22 @@ func (g *GroundModeWindow) SyncObjects() {
 		c.container.GetUpdateChannel() <- ui.UpdateX{Number: ui.Number{Value: float64(x - col)}}
 		c.container.GetUpdateChannel() <- ui.UpdateY{Number: ui.Number{Value: float64(y - row)}}
 
-		if g.objects[i].FrameImageID > 0 {
-			bounds := g.objects[i].Image.Bounds()
+		if g.objects[i].object.FrameImageID > 0 {
+			bounds := g.objects[i].object.Image.Bounds()
 			c.image.GetUpdateChannel() <- ui.UpdateDimensions{
 				X: c.image.GetStyle().X,
 				Y: c.image.GetStyle().Y,
 				W: ui.Number{Value: float64(bounds.Dx() * 2)},
 				H: ui.Number{Value: float64(bounds.Dy() * 2)},
 			}
-			c.image.GetUpdateChannel() <- ui.UpdateImageID(g.objects[i].FrameImageID)
+			c.image.GetUpdateChannel() <- ui.UpdateImageID(g.objects[i].object.FrameImageID)
 		}
 
+		if g.objects[i].count == 1 {
+			c.count.GetUpdateChannel() <- ui.UpdateValue{Value: ""}
+		} else {
+			c.count.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("%d", g.objects[i].count)}
+		}
 		// TODO: If focusedObjectID == g.objects[i].ID, set background
 
 		x += w
@@ -198,7 +259,7 @@ func (g *GroundModeWindow) SyncObjects() {
 	g.Container.GetUpdateChannel() <- ui.UpdateDirt(true)
 }
 
-// Refresh assigns the view to a 3D slice of tiles.
+// Refresh assigns the view to a slice of tiles.
 func (g *GroundModeWindow) RefreshFromWorld(w *world.World) {
 	vo := w.GetViewObject()
 	m := w.GetCurrentMap()
@@ -227,16 +288,36 @@ func (g *GroundModeWindow) RefreshFromWorld(w *world.World) {
 		// Reassign type filter if we're looking underfoot.
 		typeFilter = append(typeFilter, data.ArchetypeBlock.AsUint8(), data.ArchetypeTile.AsUint8())
 	}
-	//
 	// 1. Collect a slice of all notable objects in range.
-	var objects []*world.Object
+	var objects []ObjectReference
 	for xs := minX; xs < maxX; xs++ {
 		for zs := minZ; zs < maxZ; zs++ {
 			for ys := minY; ys < maxY; ys++ {
 				if t := m.GetTile(vo.Y+ys, vo.X+xs, vo.Z+zs); t != nil {
 					for _, o := range t.Objects() {
 						if slices.Contains(typeFilter, o.Type) {
-							objects = append(objects, o)
+							if g.aggregate {
+								found := false
+								for oi, or := range objects {
+									// FIXME: It doesn't seem correct to use animation and face IDs to identify same object types. Perhaps the archetype's underlying ID should also be passed with the standard object creation network data?
+									if or.object.AnimationID == o.AnimationID && or.object.FaceID == o.FaceID {
+										objects[oi].count++
+										found = true
+										break
+									}
+								}
+								if !found {
+									objects = append(objects, ObjectReference{
+										object: o,
+										count:  1,
+									})
+								}
+							} else {
+								objects = append(objects, ObjectReference{
+									object: o,
+									count:  1,
+								})
+							}
 						}
 					}
 				}
