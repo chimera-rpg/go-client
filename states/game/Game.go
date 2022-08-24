@@ -177,6 +177,8 @@ func (s *Game) Loop() {
 				}
 			case elements.GroundModeEvent:
 				s.GroundWindow.SyncMode(e.Mode)
+				// Resync the ground window to the world
+				s.GroundWindow.RefreshFromWorld(&s.world)
 			case MouseInput:
 				if e.button == 3 {
 					s.MoveWithMouse(e)
