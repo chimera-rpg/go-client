@@ -73,6 +73,8 @@ func (s *Game) HandleRender(delta time.Duration) {
 				Top:  ui.Number{Value: y},
 			},
 		})
+
+		s.RenderObject(ctx, viewObject, o, m, delta, &batchMessages)
 	}
 
 	// Iterate over world objects.
