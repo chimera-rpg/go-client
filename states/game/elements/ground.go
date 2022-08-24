@@ -2,6 +2,7 @@ package elements
 
 import (
 	"fmt"
+	"image/color"
 
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
@@ -14,12 +15,12 @@ type GroundMode int
 
 const (
 	GroundModeNearby = iota
-	GroundModeExact
+	GroundModeUnderfoot
 )
 
 func (g GroundMode) String() string {
-	if g == GroundModeExact {
-		return "exact"
+	if g == GroundModeUnderfoot {
+		return "underfoot"
 	}
 	return "nearby"
 }
@@ -41,6 +42,7 @@ type GroundModeWindow struct {
 	objectsList      ui.Container
 	objectContainers []ObjectContainer
 	toggleButton     ui.ElementI
+	underfootButton  ui.ElementI
 }
 
 func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.Container, error) {
@@ -56,7 +58,7 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.C
 		`,
 	})
 	g.toggleButton = ui.NewButtonElement(ui.ButtonElementConfig{
-		Value: g.mode.String(),
+		Value: "nearby",
 		Style: `
 			X 0
 			Y 0
@@ -66,28 +68,53 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (ui.C
 		NoFocus: true,
 		Events: ui.Events{
 			OnMouseButtonUp: func(button uint8, x, y int32) bool {
-				var mode GroundMode
-				if g.mode == GroundModeNearby {
-					mode = GroundModeExact
-				} else {
-					mode = GroundModeNearby
-				}
 				inputChan <- GroundModeEvent{
-					Mode: mode,
+					Mode: GroundModeNearby,
 				}
 				return false
 			},
 		},
 	})
+	g.underfootButton = ui.NewButtonElement(ui.ButtonElementConfig{
+		Value: `underfoot`,
+		Style: `
+			X 64
+			Y 0
+			W 96
+			H 10%
+		`,
+		NoFocus: true,
+		Events: ui.Events{
+			OnMouseButtonUp: func(button uint8, x, y int32) bool {
+				inputChan <- GroundModeEvent{
+					Mode: GroundModeUnderfoot,
+				}
+				return false
+			},
+		},
+	})
+
 	g.Container.GetAdoptChannel() <- g.objectsList.This
 	g.Container.GetAdoptChannel() <- g.toggleButton
+	g.Container.GetAdoptChannel() <- g.underfootButton
+
+	g.SyncMode(g.mode)
 
 	return g.Container, nil
 }
 
 func (g *GroundModeWindow) SyncMode(mode GroundMode) {
+	// FIXME: Load these from some sort of passed in Stylesheet global
+	inactiveColor := color.NRGBA{64, 64, 111, 128}
+	activeColor := color.NRGBA{139, 139, 186, 128}
 	g.mode = mode
-	g.toggleButton.GetUpdateChannel() <- ui.UpdateValue{Value: mode.String()}
+	if g.mode == GroundModeNearby {
+		g.toggleButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
+		g.underfootButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
+	} else if g.mode == GroundModeUnderfoot {
+		g.underfootButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
+		g.toggleButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
+	}
 }
 
 func (g *GroundModeWindow) SyncObjects() {
@@ -186,8 +213,21 @@ func (g *GroundModeWindow) RefreshFromWorld(w *world.World) {
 		minZ -= int(vo.D)
 	}
 	maxZ := reach
-	//
+
+	// Default type filter.
 	typeFilter := []uint8{data.ArchetypeArmor.AsUint8(), data.ArchetypeWeapon.AsUint8(), data.ArchetypeItem.AsUint8(), data.ArchetypeGeneric.AsUint8(), data.ArchetypeShield.AsUint8(), data.ArchetypeFood.AsUint8()}
+
+	if g.mode == GroundModeUnderfoot {
+		minY = -1
+		maxY = 1
+		minX = 0
+		maxX = int(vo.W)
+		minZ = 0
+		maxZ = int(vo.D)
+		// Reassign type filter if we're looking underfoot.
+		typeFilter = append(typeFilter, data.ArchetypeBlock.AsUint8(), data.ArchetypeTile.AsUint8())
+	}
+	//
 	// 1. Collect a slice of all notable objects in range.
 	var objects []*world.Object
 	for xs := minX; xs < maxX; xs++ {
