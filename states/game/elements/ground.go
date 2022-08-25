@@ -35,8 +35,9 @@ type GroundModeComboEvent struct {
 }
 
 type ObjectReference struct {
-	count  int
-	object *world.Object
+	count     int
+	object    *world.Object
+	objectIDs []uint32
 }
 
 type ObjectContainer struct {
@@ -48,6 +49,7 @@ type ObjectContainer struct {
 }
 
 type GroundModeWindow struct {
+	game             game
 	mode             GroundMode
 	aggregate        bool
 	objects          []ObjectReference
@@ -57,9 +59,11 @@ type GroundModeWindow struct {
 	nearbyButton     ui.ElementI
 	underfootButton  ui.ElementI
 	aggregateButton  ui.ElementI
+	focusedContainer *ui.Container
 }
 
-func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (*ui.Container, error) {
+func (g *GroundModeWindow) Setup(game game, style string, inputChan chan interface{}) (*ui.Container, error) {
+	g.game = game
 	var err error
 	g.Container, err = ui.NewContainerElement(ui.ContainerConfig{
 		Value: "Ground",
@@ -140,7 +144,57 @@ func (g *GroundModeWindow) Setup(style string, inputChan chan interface{}) (*ui.
 	g.SyncMode(g.mode)
 	g.ToggleCombo()
 
+	game.HookEvent(GroundModeComboEvent{}, func(e interface{}) {
+		g.ToggleCombo()
+		g.Refresh()
+	})
+	game.HookEvent(GroundModeChangeEvent{}, func(e interface{}) {
+		g.SyncMode(e.(GroundModeChangeEvent).Mode)
+		g.Refresh()
+	})
+	game.HookEvent(FocusObjectEvent{}, func(e interface{}) {
+		g.RefreshFocus()
+	})
+
 	return g.Container, nil
+}
+
+func (g *GroundModeWindow) RefreshFocus() {
+	found := false
+	for ori, or := range g.objects {
+		for _, id := range or.objectIDs {
+			if id == g.game.FocusedObjectID() {
+				if g.focusedContainer != nil {
+					g.focusedContainer.GetUpdateChannel() <- ui.UpdateBackgroundColor{
+						R: 0,
+						G: 0,
+						B: 255,
+						A: 32,
+					}
+				}
+				g.focusedContainer = g.objectContainers[ori].container
+
+				g.focusedContainer.GetUpdateChannel() <- ui.UpdateBackgroundColor{
+					R: 0,
+					G: 255,
+					B: 0,
+					A: 64,
+				}
+				found = true
+			}
+		}
+	}
+	if !found {
+		if g.focusedContainer != nil {
+			g.focusedContainer.GetUpdateChannel() <- ui.UpdateBackgroundColor{
+				R: 0,
+				G: 0,
+				B: 255,
+				A: 32,
+			}
+			g.focusedContainer = nil
+		}
+	}
 }
 
 func (g *GroundModeWindow) SyncMode(mode GroundMode) {
@@ -324,7 +378,8 @@ func (g *GroundModeWindow) SyncObjects() {
 }
 
 // Refresh assigns the view to a slice of tiles.
-func (g *GroundModeWindow) RefreshFromWorld(w *world.World) {
+func (g *GroundModeWindow) Refresh() {
+	w := g.game.World()
 	vo := w.GetViewObject()
 	m := w.GetCurrentMap()
 	// FIXME: We need the view object's Reach value!
@@ -366,20 +421,23 @@ func (g *GroundModeWindow) RefreshFromWorld(w *world.World) {
 									// FIXME: It doesn't seem correct to use animation and face IDs to identify same object types. Perhaps the archetype's underlying ID should also be passed with the standard object creation network data?
 									if or.object.AnimationID == o.AnimationID && or.object.FaceID == o.FaceID {
 										objects[oi].count++
+										objects[oi].objectIDs = append(objects[oi].objectIDs, o.ID)
 										found = true
 										break
 									}
 								}
 								if !found {
 									objects = append(objects, ObjectReference{
-										object: o,
-										count:  1,
+										object:    o,
+										count:     1,
+										objectIDs: []uint32{o.ID},
 									})
 								}
 							} else {
 								objects = append(objects, ObjectReference{
-									object: o,
-									count:  1,
+									object:    o,
+									count:     1,
+									objectIDs: []uint32{o.ID},
 								})
 							}
 						}
@@ -391,4 +449,6 @@ func (g *GroundModeWindow) RefreshFromWorld(w *world.World) {
 	g.objects = objects
 	// 2. Synchronize objects.
 	g.SyncObjects()
+	// 3. Refresh focus in case something went out of range.
+	g.RefreshFocus()
 }

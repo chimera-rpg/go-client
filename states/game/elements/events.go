@@ -12,3 +12,16 @@ type MouseInput struct {
 type MouseMoveInput struct {
 	X, Y int32
 }
+
+// FocusObject
+type FocusObjectEvent struct {
+	ID uint32
+}
+
+// ResizeEvent is used to notify the UI of a resize change.
+type ResizeEvent struct{}
+
+// ChatEvent is used to send an input chat to the main loop.
+type ChatEvent struct {
+	Body string
+}

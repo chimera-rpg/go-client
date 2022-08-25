@@ -44,6 +44,7 @@ type Game struct {
 	messageElements      []ui.ElementI
 	CommandContainer     ui.ElementI
 	InventoryWindow      ui.Container
+	InspectorWindow      elements.InspectorWindow
 	MapWindow            elements.MapWindow
 	GroundWindow         elements.GroundModeWindow
 	StatsWindow          ui.Container
@@ -64,6 +65,7 @@ type Game struct {
 	pendingMusicCommands []network.CommandMusic // Pending music, for sounds that have not loaded yet.
 	focusedObjectID      uint32
 	focusedImage         ui.ElementI
+	eventHooks           map[interface{}][]func(e interface{})
 }
 
 // Init our Game state.
@@ -78,6 +80,7 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 	s.CommandMode = CommandModeChat
 	// Initialize our world.
 	s.world.Init(s.Client.DataManager, s.Client.Log)
+	s.eventHooks = make(map[interface{}][]func(e interface{}))
 
 	// This is lazy(tm), but we're just resending all pendingNoiseCommands on receipt of a sound or audio network command.
 	s.Client.DataManager.SetHandleCallback(func(netID int, cmd network.Command) {
@@ -139,7 +142,7 @@ func (s *Game) Loop() {
 			return
 		case inp := <-s.inputChan:
 			switch e := inp.(type) {
-			case ResizeEvent:
+			case elements.ResizeEvent:
 				s.UpdateMessagesWindow()
 			case KeyInput:
 				if !e.pressed {
@@ -156,7 +159,7 @@ func (s *Game) Loop() {
 				if e.pressed && e.repeat {
 					s.repeatingKeys[e.code]++
 				}
-			case ChatEvent:
+			case elements.ChatEvent:
 				if s.isChatCommand(e.Body) {
 					s.processChatCommand(e.Body)
 				} else {
@@ -174,12 +177,13 @@ func (s *Game) Loop() {
 					}
 				}
 			case elements.GroundModeChangeEvent:
-				s.GroundWindow.SyncMode(e.Mode)
-				// Resync the ground window to the world
-				s.GroundWindow.RefreshFromWorld(&s.world)
+				for _, cb := range s.eventHooks[elements.GroundModeChangeEvent{}] {
+					cb(e)
+				}
 			case elements.GroundModeComboEvent:
-				s.GroundWindow.ToggleCombo()
-				s.GroundWindow.RefreshFromWorld(&s.world)
+				for _, cb := range s.eventHooks[elements.GroundModeComboEvent{}] {
+					cb(e)
+				}
 			case elements.MouseInput:
 				if e.Button == 3 {
 					s.MoveWithMouse(e)
@@ -188,8 +192,11 @@ func (s *Game) Loop() {
 				if s.heldButtons[3] {
 					s.RunWithMouse(e.X, e.Y)
 				}
-			case FocusObject:
-				s.focusObject(e)
+			case elements.FocusObjectEvent:
+				s.FocusObject(e.ID)
+				for _, cb := range s.eventHooks[elements.FocusObjectEvent{}] {
+					cb(e)
+				}
 			case ChangeCommandMode:
 				s.CommandMode++
 				if s.CommandMode >= len(CommandModeStrings) {
@@ -419,7 +426,7 @@ func (s *Game) MoveWithMouse(e elements.MouseInput) {
 	}
 }
 
-func (s *Game) focusObject(e uint32) {
+func (s *Game) FocusObject(e uint32) {
 	if o := s.world.GetObject(s.focusedObjectID); o != nil {
 		if o.Element != nil {
 			o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
@@ -436,4 +443,27 @@ func (s *Game) focusObject(e uint32) {
 
 func (s *Game) getObjectShadow(id uint32) ui.ElementI {
 	return s.objectShadows[id]
+}
+
+func (s *Game) World() *world.World {
+	return &s.world
+}
+
+func (s *Game) FocusedImage() ui.ElementI {
+	return s.focusedImage
+}
+
+func (s *Game) FocusedObject() *world.Object {
+	return s.world.GetObject(s.focusedObjectID)
+}
+
+func (s *Game) FocusedObjectID() uint32 {
+	return s.focusedObjectID
+}
+
+func (s *Game) HookEvent(k interface{}, cb func(e interface{})) {
+	if _, ok := s.eventHooks[k]; !ok {
+		s.eventHooks[k] = make([]func(e interface{}), 0)
+	}
+	s.eventHooks[k] = append(s.eventHooks[k], cb)
 }

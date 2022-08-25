@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 
+	"github.com/chimera-rpg/go-client/states/game/elements"
 	"github.com/chimera-rpg/go-client/ui"
 	cdata "github.com/chimera-rpg/go-common/data"
 	"github.com/chimera-rpg/go-common/network"
@@ -11,17 +12,6 @@ import (
 
 // ChangeCommandMode notifies the UI to change the command mode.
 type ChangeCommandMode struct{}
-
-// FocusObject
-type FocusObject = uint32
-
-// ResizeEvent is used to notify the UI of a resize change.
-type ResizeEvent struct{}
-
-// ChatEvent is used to send an input chat to the main loop.
-type ChatEvent struct {
-	Body string
-}
 
 // DisconnectEvent is used to tell the client to disconnect.
 type DisconnectEvent struct{}
@@ -82,7 +72,7 @@ func (s *Game) SetupUI() (err error) {
 		Style: ChatWindowStyle,
 		Events: ui.Events{
 			OnWindowResized: func(w, h int32) {
-				s.inputChan <- ResizeEvent{}
+				s.inputChan <- elements.ResizeEvent{}
 			},
 		},
 	})
@@ -92,7 +82,7 @@ func (s *Game) SetupUI() (err error) {
 		Style: MessagesWindowStyle,
 		Events: ui.Events{
 			OnWindowResized: func(w, h int32) {
-				s.inputChan <- ResizeEvent{}
+				s.inputChan <- elements.ResizeEvent{}
 			},
 		},
 	})
@@ -126,7 +116,7 @@ func (s *Game) SetupUI() (err error) {
 				if str == "" {
 					return true
 				}
-				s.inputChan <- ChatEvent{
+				s.inputChan <- elements.ChatEvent{
 					Body: str,
 				}
 				return true
@@ -153,8 +143,15 @@ func (s *Game) SetupUI() (err error) {
 		Style: InventoryWindowStyle,
 	})
 	s.GameContainer.AdoptChannel <- s.InventoryWindow.This
+	// Sub-window: inspector
+	inspectorContainer, err := s.InspectorWindow.Setup(InspectorWindowStyle, s.inputChan)
+	if err != nil {
+		panic(err)
+	}
+	s.GameContainer.AdoptChannel <- inspectorContainer.This
+
 	// Sub-window: ground
-	groundContainer, err := s.GroundWindow.Setup(GroundWindowStyle, s.inputChan)
+	groundContainer, err := s.GroundWindow.Setup(s, GroundWindowStyle, s.inputChan)
 	if err != nil {
 		panic(err)
 	}

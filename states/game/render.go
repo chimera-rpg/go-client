@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/chimera-rpg/go-client/data"
+	"github.com/chimera-rpg/go-client/states/game/elements"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
 	cdata "github.com/chimera-rpg/go-common/data"
@@ -90,7 +91,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 	if viewObject != nil {
 		// FIXME: We should keep track of tile mod time, then tell our ground window to refresh its tiles if any of those tiles have changed.
 		if len(objects) > 0 {
-			s.GroundWindow.RefreshFromWorld(&s.world)
+			s.GroundWindow.Refresh()
 		}
 	}
 
@@ -324,7 +325,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 							return true
 						}
 						if o.Element.PixelHit(x, y) {
-							s.inputChan <- FocusObject(o.ID)
+							s.inputChan <- elements.FocusObjectEvent{ID: o.ID}
 							return false
 						}
 						return true
@@ -348,7 +349,7 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 							return true
 						}
 						if o.Element.PixelHit(x, y) {
-							s.inputChan <- FocusObject(o.ID)
+							s.inputChan <- elements.FocusObjectEvent{ID: o.ID}
 							return false
 						}
 						return true

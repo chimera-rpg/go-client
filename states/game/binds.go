@@ -721,7 +721,7 @@ func (s *Game) SetupBinds() {
 	})
 
 	s.bindings.SetFunction("clear focus", func(i ...interface{}) {
-		s.focusObject(0)
+		s.FocusObject(0)
 	})
 
 	s.bindings.SetFunction("focus chat", func(i ...interface{}) {

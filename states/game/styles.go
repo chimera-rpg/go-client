@@ -59,6 +59,14 @@ var InventoryWindowStyle string = `
 	BackgroundColor 0 128 0 128
 `
 
+var InspectorWindowStyle string = `
+	X 0
+	Y 50%
+	W 20%
+	H 30%
+	BackgroundColor 128 128 0 128
+`
+
 var GroundWindowStyle string = `
 	X 0
 	Y 70%
