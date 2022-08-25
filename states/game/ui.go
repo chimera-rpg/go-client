@@ -144,7 +144,7 @@ func (s *Game) SetupUI() (err error) {
 	})
 	s.GameContainer.AdoptChannel <- s.InventoryWindow.This
 	// Sub-window: inspector
-	inspectorContainer, err := s.InspectorWindow.Setup(InspectorWindowStyle, s.inputChan)
+	inspectorContainer, err := s.InspectorWindow.Setup(s, InspectorWindowStyle, s.inputChan)
 	if err != nil {
 		panic(err)
 	}

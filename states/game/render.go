@@ -92,6 +92,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 		// FIXME: We should keep track of tile mod time, then tell our ground window to refresh its tiles if any of those tiles have changed.
 		if len(objects) > 0 {
 			s.GroundWindow.Refresh()
+			s.InspectorWindow.Refresh()
 		}
 	}
 
