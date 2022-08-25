@@ -25,6 +25,7 @@ type ImageElement struct {
 	grayscale        bool
 	tw               int32 // Texture width
 	th               int32 // Texture height
+	invalidated      bool
 }
 
 // Destroy destroys the underlying ImageElement.
@@ -46,6 +47,13 @@ func (i *ImageElement) Destroy() {
 
 // Render renders the ImageElement to the screen.
 func (i *ImageElement) Render() {
+	if i.invalidated {
+		if i.OutlineTexture != nil {
+			i.OutlineTexture.Destroy()
+			i.OutlineTexture = nil
+		}
+		i.UpdateOutline()
+	}
 	if i.IsHidden() || i.Image == nil {
 		i.BaseElement.Render()
 		return
@@ -128,14 +136,9 @@ func (i *ImageElement) SetImageID(id uint32) {
 		i.Style.W.Set(float64(imgTextures.width))
 		i.Style.H.Set(float64(imgTextures.height))
 	}
-	// (re)create our outline if we should.
-	if i.OutlineTexture != nil {
-		i.OutlineTexture.Destroy()
-		i.OutlineTexture = nil
-	}
-	i.UpdateOutline()
 
 	i.Dirty = true
+	i.invalidated = true
 }
 
 // SetImage sets the underlying texture to the passed go Image.
@@ -170,14 +173,9 @@ func (i *ImageElement) SetImage(img image.Image) {
 		i.Style.W.Set(float64(img.Bounds().Dx()))
 		i.Style.H.Set(float64(img.Bounds().Dy()))
 	}
-	// (re)create our outline if we should.
-	if i.OutlineTexture != nil {
-		i.OutlineTexture.Destroy()
-		i.OutlineTexture = nil
-	}
-	i.UpdateOutline()
 
 	i.Dirty = true
+	i.invalidated = true
 }
 
 func (i *ImageElement) createTexture(img image.Image) (tex *sdl.Texture, gray *sdl.Texture, err error) {
