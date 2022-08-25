@@ -467,3 +467,7 @@ func (s *Game) HookEvent(k interface{}, cb func(e interface{})) {
 	}
 	s.eventHooks[k] = append(s.eventHooks[k], cb)
 }
+
+func (s *Game) InputChan() chan interface{} {
+	return s.inputChan
+}

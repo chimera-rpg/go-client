@@ -241,33 +241,42 @@ func (g *GroundModeWindow) SyncObjects() {
 	}
 	if len(g.objectContainers) < len(g.objects) {
 		for i := len(g.objectContainers); i < len(g.objects); i++ {
-			el, _ := ui.NewContainerElement(ui.ContainerConfig{
-				Style: fmt.Sprintf(`
+			func(i int) {
+				el, _ := ui.NewContainerElement(ui.ContainerConfig{
+					Style: fmt.Sprintf(`
 					W %d
 					H %d
 					BackgroundColor 0 0 255 32
 				`, w, h),
-			})
-			box := ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
-				Shape: ui.RectangleShape,
-				Style: `
+					Events: ui.Events{
+						OnMouseButtonUp: func(button uint8, x, y int32) bool {
+							g.game.InputChan() <- FocusObjectEvent{
+								ID: g.objects[i].objectIDs[0],
+							}
+							return false
+						},
+					},
+				})
+				box := ui.NewPrimitiveElement(ui.PrimitiveElementConfig{
+					Shape: ui.RectangleShape,
+					Style: `
 					X 0
 					Y 0
 					W 100%
 					H 100%
 					OutlineColor 0 0 0 255
 				`,
-			})
-			img := ui.NewImageElement(ui.ImageElementConfig{
-				Style: `
+				})
+				img := ui.NewImageElement(ui.ImageElementConfig{
+					Style: `
 					Origin CenterX CenterY
 					X 50%
 					Y 50%
 				`,
-			})
-			count := ui.NewTextElement(ui.TextElementConfig{
-				Value: "egg",
-				Style: `
+				})
+				count := ui.NewTextElement(ui.TextElementConfig{
+					Value: "egg",
+					Style: `
 					X 0
 					Y 0
 					PaddingTop -4
@@ -275,29 +284,30 @@ func (g *GroundModeWindow) SyncObjects() {
 					Resize ToContent
 					OutlineColor 255 255 255 128
 				`,
-			})
-			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
-				Parent: g.objectsList,
-				Target: el,
-			})
+				})
+				batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+					Parent: g.objectsList,
+					Target: el,
+				})
 
-			g.objectContainers = append(g.objectContainers, ObjectContainer{
-				container: el,
-				image:     img,
-				count:     count,
-			})
-			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
-				Parent: el,
-				Target: box,
-			})
-			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
-				Parent: el,
-				Target: img,
-			})
-			batchMessages = append(batchMessages, ui.BatchAdoptMessage{
-				Parent: el,
-				Target: count,
-			})
+				g.objectContainers = append(g.objectContainers, ObjectContainer{
+					container: el,
+					image:     img,
+					count:     count,
+				})
+				batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+					Parent: el,
+					Target: box,
+				})
+				batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+					Parent: el,
+					Target: img,
+				})
+				batchMessages = append(batchMessages, ui.BatchAdoptMessage{
+					Parent: el,
+					Target: count,
+				})
+			}(i)
 		}
 	}
 	x := 0
@@ -365,7 +375,6 @@ func (g *GroundModeWindow) SyncObjects() {
 			}
 			c.lastCount = g.objects[i].count
 		}
-		// TODO: If focusedObjectID == g.objects[i].ID, set background
 
 		x += w
 		col++

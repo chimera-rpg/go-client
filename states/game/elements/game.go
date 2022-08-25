@@ -13,4 +13,5 @@ type game interface {
 	FocusedObject() *world.Object
 	FocusObject(uint32)
 	HookEvent(interface{}, func(e interface{}))
+	InputChan() chan interface{}
 }
