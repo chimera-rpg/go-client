@@ -11,6 +11,7 @@ type InspectorWindow struct {
 	game            game
 	container       *ui.Container
 	object          ObjectReference
+	imageContainer  *ui.Container
 	image           ui.ElementI
 	count           ui.ElementI
 	name            ui.ElementI
@@ -28,6 +29,28 @@ func (w *InspectorWindow) Setup(game game, style string, inputChan chan interfac
 	if err != nil {
 		return nil, err
 	}
+
+	w.imageContainer, err = ui.NewContainerElement(ui.ContainerConfig{
+		Style: fmt.Sprintf(`
+			W %d
+			H %d
+			BackgroundColor 32 32 32 255
+		`, 64, 64),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	w.image = ui.NewImageElement(ui.ImageElementConfig{
+		Style: `
+			Origin CenterX CenterY
+			X 50%
+			Y 50%
+			OutlineColor 255 255 0 150
+		`,
+	})
+	w.container.GetAdoptChannel() <- w.imageContainer
+	w.imageContainer.GetAdoptChannel() <- w.image
 
 	w.game.HookEvent(FocusObjectEvent{}, func(e interface{}) {
 		w.Refresh()
@@ -56,6 +79,16 @@ func (w *InspectorWindow) Refresh() {
 		}
 		if w.focusedObjectID != w.game.FocusedObjectID() {
 			fmt.Println("TODO: Show basic information about the object.")
+			if o.Image != nil {
+				w.image.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
+				bounds := o.Image.Bounds()
+				w.image.GetUpdateChannel() <- ui.UpdateDimensions{
+					X: w.image.GetStyle().X,
+					Y: w.image.GetStyle().Y,
+					W: ui.Number{Value: float64(bounds.Dx() * 3)},
+					H: ui.Number{Value: float64(bounds.Dy() * 3)},
+				}
+			}
 		}
 	}
 	w.focusedObjectID = w.game.FocusedObjectID()
