@@ -6,6 +6,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
+	cdata "github.com/chimera-rpg/go-common/data"
 )
 
 // Object represents an arbitrary map object.
@@ -44,6 +45,9 @@ type Object struct {
 	AdjustX, AdjustY                                                                               int
 	FinalRenderX, FinalRenderOffsetX, FinalRenderY, FinalRenderOffsetY, FinalRenderW, FinalRenderH int  // Represents the _final_ rendering positions, including scaling.
 	RecalculateFinalRender                                                                         bool // If the final render position should be recalculated.
+	HasInfo                                                                                        bool
+	InfoChange                                                                                     bool
+	Info                                                                                           []cdata.ObjectInfo
 }
 
 // ObjectsFilter returns a new slice containing all Objects in the slice that satisfy the predicate f.

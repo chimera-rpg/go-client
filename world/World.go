@@ -186,6 +186,8 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 		w.viewDepth = int(p.Depth)
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
+	case network.CommandObjectPayloadInfo:
+		w.UpdateObjectInfo(cmd.ObjectID, p.Info)
 	default:
 		w.Log.WithFields(logrus.Fields{
 			"payload": p,
@@ -318,6 +320,20 @@ func (w *World) ClearDeletedObjects() {
 		}
 	}
 	w.deletedObjects = make([]uint32, 0)
+}
+
+func (w *World) UpdateObjectInfo(oID uint32, infos []cdata.ObjectInfo) {
+	o := w.GetObject(oID)
+	if o == nil {
+		// Oops, somehow we got object info for something we don't know about.
+		return
+	}
+	// TODO: Probably some sort of intelligent/zero replace merge strategy.
+	o.Info = infos
+	o.InfoChange = true
+	o.HasInfo = true
+	o.Changed = true
+	w.changedObjects = append(w.changedObjects, o)
 }
 
 // GetObjects returns an array of all objects the client knows about.

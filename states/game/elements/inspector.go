@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/chimera-rpg/go-client/ui"
+	"github.com/chimera-rpg/go-common/network"
 )
 
 type InspectorWindow struct {
@@ -49,6 +50,20 @@ func (w *InspectorWindow) Setup(game game, style string, inputChan chan interfac
 			OutlineColor 255 255 0 150
 		`,
 	})
+
+	w.name = ui.NewTextElement(ui.TextElementConfig{
+		Value: "",
+		Style: `
+			X 64
+			Y 0
+			PaddingLeft 2
+			PaddingTop 2
+			ForegroundColor 255 255 255 255
+			OutlineColor 0 0 0 200
+		`,
+	})
+
+	w.container.GetAdoptChannel() <- w.name
 	w.container.GetAdoptChannel() <- w.imageContainer
 	w.imageContainer.GetAdoptChannel() <- w.image
 
@@ -62,8 +77,9 @@ func (w *InspectorWindow) Setup(game game, style string, inputChan chan interfac
 func (w *InspectorWindow) Refresh() {
 	o := w.game.World().GetObject(w.game.FocusedObjectID())
 	if o == nil {
-		//
+		// TODO: Hide/blank out stuff?
 	} else {
+		var refresh bool
 		vo := w.game.World().GetViewObject()
 		if vo != nil {
 			// FIXME: This is an incorrect calculation. We need to actually check against each point of reach from the view object -- how far from each side(left, right, back, front, as well as up and down reduced), basically.
@@ -71,6 +87,11 @@ func (w *InspectorWindow) Refresh() {
 			if distance <= 5 {
 				if !w.inRange {
 					fmt.Println("TODO: Show detailed information about the object.")
+					if !o.HasInfo {
+						w.game.SendNetMessage(network.CommandInspect{
+							ObjectID: w.game.FocusedObjectID(),
+						})
+					}
 				}
 				w.inRange = true
 			} else {
@@ -78,6 +99,11 @@ func (w *InspectorWindow) Refresh() {
 			}
 		}
 		if w.focusedObjectID != w.game.FocusedObjectID() {
+			if !o.HasInfo {
+				w.game.SendNetMessage(network.CommandInspect{
+					ObjectID: w.game.FocusedObjectID(),
+				})
+			}
 			fmt.Println("TODO: Show basic information about the object.")
 			if o.Image != nil {
 				w.image.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
@@ -89,6 +115,20 @@ func (w *InspectorWindow) Refresh() {
 					H: ui.Number{Value: float64(bounds.Dy() * 3)},
 				}
 			}
+			refresh = true
+		}
+		if o.InfoChange || o.HasInfo {
+			o.InfoChange = false
+			refresh = true
+		}
+		if refresh {
+			name := "?"
+			for _, info := range o.Info {
+				if info.Name != "" {
+					name = info.Name
+				}
+			}
+			w.name.GetUpdateChannel() <- ui.UpdateValue{Value: name}
 		}
 	}
 	w.focusedObjectID = w.game.FocusedObjectID()

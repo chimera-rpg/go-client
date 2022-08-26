@@ -25,3 +25,8 @@ type ResizeEvent struct{}
 type ChatEvent struct {
 	Body string
 }
+
+// InspectRequestEvent sends an inspect request for an object.
+type InspectRequestEvent struct {
+	ID uint32
+}
