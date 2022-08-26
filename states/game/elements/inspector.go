@@ -86,8 +86,7 @@ func (w *InspectorWindow) Refresh() {
 			distance := math.Abs(float64(vo.Y-o.Y)) + math.Abs(float64(vo.X-o.X)) + math.Abs(float64(vo.Z-o.Z))
 			if distance <= 5 {
 				if !w.inRange {
-					fmt.Println("TODO: Show detailed information about the object.")
-					if !o.HasInfo {
+					if len(o.Info) < 1 || !o.Info[0].Near {
 						w.game.SendNetMessage(network.CommandInspect{
 							ObjectID: w.game.FocusedObjectID(),
 						})
@@ -104,7 +103,14 @@ func (w *InspectorWindow) Refresh() {
 					ObjectID: w.game.FocusedObjectID(),
 				})
 			}
-			fmt.Println("TODO: Show basic information about the object.")
+			refresh = true
+		}
+		if o.InfoChange || o.HasInfo {
+			o.InfoChange = false
+			refresh = true
+		}
+		if refresh {
+			// Refresh image.
 			if o.Image != nil {
 				w.image.GetUpdateChannel() <- ui.UpdateImageID(o.FrameImageID)
 				bounds := o.Image.Bounds()
@@ -115,13 +121,7 @@ func (w *InspectorWindow) Refresh() {
 					H: ui.Number{Value: float64(bounds.Dy() * 3)},
 				}
 			}
-			refresh = true
-		}
-		if o.InfoChange || o.HasInfo {
-			o.InfoChange = false
-			refresh = true
-		}
-		if refresh {
+			// Refresh information.
 			name := "?"
 			for _, info := range o.Info {
 				if info.Name != "" {
