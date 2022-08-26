@@ -471,3 +471,7 @@ func (s *Game) HookEvent(k interface{}, cb func(e interface{})) {
 func (s *Game) InputChan() chan interface{} {
 	return s.inputChan
 }
+
+func (s *Game) SendNetMessage(cmd network.Command) {
+	s.Client.Send(cmd)
+}
