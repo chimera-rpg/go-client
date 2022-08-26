@@ -18,6 +18,7 @@ type InspectorWindow struct {
 	description     ui.ElementI
 	focusedObjectID uint32
 	inRange         bool
+	blank           bool
 }
 
 func (w *InspectorWindow) Setup(game game, style string, inputChan chan interface{}) (*ui.Container, error) {
@@ -76,8 +77,17 @@ func (w *InspectorWindow) Setup(game game, style string, inputChan chan interfac
 func (w *InspectorWindow) Refresh() {
 	o := w.game.World().GetObject(w.game.FocusedObjectID())
 	if o == nil {
-		// TODO: Hide/blank out stuff?
+		if !w.blank {
+			w.blank = true
+			w.image.GetUpdateChannel() <- ui.UpdateHidden(true)
+			w.name.GetUpdateChannel() <- ui.UpdateHidden(true)
+		}
 	} else {
+		if w.blank {
+			w.image.GetUpdateChannel() <- ui.UpdateHidden(false)
+			w.name.GetUpdateChannel() <- ui.UpdateHidden(false)
+		}
+		w.blank = false
 		var refresh bool
 		vo := w.game.World().GetViewObject()
 		if vo != nil {
