@@ -2,7 +2,6 @@ package elements
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
@@ -82,9 +81,14 @@ func (w *InspectorWindow) Refresh() {
 		var refresh bool
 		vo := w.game.World().GetViewObject()
 		if vo != nil {
-			// FIXME: This is an incorrect calculation. We need to actually check against each point of reach from the view object -- how far from each side(left, right, back, front, as well as up and down reduced), basically.
-			distance := math.Abs(float64(vo.Y-o.Y)) + math.Abs(float64(vo.X-o.X)) + math.Abs(float64(vo.Z-o.Z))
-			if distance <= 5 {
+			minY := vo.Y - int(vo.Reach)
+			maxY := vo.Y + int(vo.H) + int(vo.Reach)
+			minX := vo.X - int(vo.Reach)
+			maxX := vo.X + int(vo.W) + int(vo.Reach)
+			minZ := vo.Z - int(vo.Reach)
+			maxZ := vo.Z + int(vo.D) + int(vo.Reach)
+
+			if o.Y >= minY && o.Y < maxY && o.X >= minX && o.X < maxX && o.Z >= minZ && o.Z < maxZ {
 				if !w.inRange {
 					if len(o.Info) < 1 || !o.Info[0].Near {
 						w.game.SendNetMessage(network.CommandInspect{
