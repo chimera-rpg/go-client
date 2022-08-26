@@ -397,9 +397,9 @@ func (g *GroundModeWindow) Refresh() {
 
 	// Use our reach cube per default.
 	cube := w.ReachCube
-	reachX := w.Reach
-	reachY := w.Reach
-	reachZ := w.Reach
+	reachX := int(vo.Reach)
+	reachY := int(vo.Reach)
+	reachZ := int(vo.Reach)
 
 	// Otherwise use the bottom-1 of our intersect cube.
 	if g.mode == GroundModeUnderfoot {

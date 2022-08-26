@@ -21,7 +21,6 @@ type World struct {
 	objects                          []*Object
 	changedObjects                   []*Object
 	ReachCube                        [][][]struct{}
-	Reach                            int
 	IntersectCube                    [][][]struct{}
 	PendingObjectAnimations          map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID                     uint32
@@ -238,6 +237,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			H:           int8(p.Height),
 			W:           int8(p.Width),
 			D:           int8(p.Depth),
+			Reach:       p.Reach,
 			Opaque:      p.Opaque,
 		}
 		// Get randomized frame start if we have the associated animation.
@@ -783,11 +783,10 @@ func (w *World) updateCubes() {
 	if vo == nil {
 		return
 	}
-	w.Reach = 2
 	// Calculate reach cube.
-	maxY := int(vo.H) + w.Reach*2
-	maxX := int(vo.W) + w.Reach*2
-	maxZ := w.Reach * 2
+	maxY := int(vo.H) + int(vo.Reach)*2
+	maxX := int(vo.W) + int(vo.Reach)*2
+	maxZ := int(vo.Reach) * 2
 	if vo.D > 1 {
 		maxZ += int(vo.D)
 	}
@@ -799,7 +798,6 @@ func (w *World) updateCubes() {
 			w.ReachCube[y][x] = make([]struct{}, maxZ)
 		}
 	}
-	fmt.Println("Made cube", maxY, maxX, maxZ, w.ReachCube)
 
 	// Calculate intersect cube.
 	maxY = int(vo.H)
