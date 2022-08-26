@@ -411,6 +411,9 @@ func (i *ImageElement) RenderPost() {
 }
 
 func (i *ImageElement) PixelHit(x, y int32) bool {
+	if i.IsHidden() {
+		return false
+	}
 	// Pure SDL texture method. Instable, probably have to lock pixels.
 	/*texWidth := i.w
 	texHeight := i.h

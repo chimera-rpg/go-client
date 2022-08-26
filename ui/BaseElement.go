@@ -193,6 +193,9 @@ func (b *BaseElement) Hit(x int32, y int32) bool {
 
 // PixelHit detects if a pixel-perfect hit is made. Only usable with Image, all others use Hit to resolve.
 func (b *BaseElement) PixelHit(x int32, y int32) bool {
+	if b.IsHidden() {
+		return false
+	}
 	return b.Hit(x, y)
 }
 
