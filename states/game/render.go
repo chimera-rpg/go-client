@@ -346,6 +346,11 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 						}
 						return true
 					},
+					OnMouseOut: func(x int32, y int32) bool {
+						// Always unhover if the mouse leaves the object.
+						s.inputChan <- elements.UnhoverObjectEvent{ID: o.ID}
+						return true
+					},
 				},
 			})
 		} else {
