@@ -64,6 +64,7 @@ type Game struct {
 	pendingNoiseCommands []network.CommandNoise // Pending noises, for sounds that have not loaded yet.
 	pendingMusicCommands []network.CommandMusic // Pending music, for sounds that have not loaded yet.
 	focusedObjectID      uint32
+	hoveredObjectID      uint32
 	focusedImage         ui.ElementI
 	eventHooks           map[interface{}][]func(e interface{})
 }
@@ -197,6 +198,13 @@ func (s *Game) Loop() {
 				for _, cb := range s.eventHooks[elements.FocusObjectEvent{}] {
 					cb(e)
 				}
+			case elements.HoverObjectEvent:
+				s.HoverObject(e.ID)
+				for _, cb := range s.eventHooks[elements.HoverObjectEvent{}] {
+					cb(e)
+				}
+			case elements.UnhoverObjectEvent:
+				s.UnhoverObject(e.ID)
 			case ChangeCommandMode:
 				s.CommandMode++
 				if s.CommandMode >= len(CommandModeStrings) {
@@ -426,8 +434,19 @@ func (s *Game) MoveWithMouse(e elements.MouseInput) {
 	}
 }
 
+func (s *Game) getObjectShadow(id uint32) ui.ElementI {
+	return s.objectShadows[id]
+}
+
+func (s *Game) World() *world.World {
+	return &s.world
+}
+
 func (s *Game) FocusObject(e uint32) {
-	if o := s.world.GetObject(s.focusedObjectID); o != nil {
+	if s.focusedObjectID == s.hoveredObjectID && e != s.hoveredObjectID {
+		s.focusedObjectID = e
+		s.HoverObject(s.focusedObjectID)
+	} else if o := s.world.GetObject(s.focusedObjectID); o != nil {
 		if o.Element != nil {
 			o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
 		}
@@ -437,16 +456,7 @@ func (s *Game) FocusObject(e uint32) {
 			o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{255, 255, 0, 128}
 		}
 	}
-
 	s.focusedObjectID = e
-}
-
-func (s *Game) getObjectShadow(id uint32) ui.ElementI {
-	return s.objectShadows[id]
-}
-
-func (s *Game) World() *world.World {
-	return &s.world
 }
 
 func (s *Game) FocusedImage() ui.ElementI {
@@ -459,6 +469,46 @@ func (s *Game) FocusedObject() *world.Object {
 
 func (s *Game) FocusedObjectID() uint32 {
 	return s.focusedObjectID
+}
+
+func (s *Game) HoverObject(e uint32) {
+	if e == s.focusedObjectID || e == s.hoveredObjectID {
+		return
+	}
+	if s.hoveredObjectID != s.focusedObjectID {
+		if o := s.world.GetObject(s.hoveredObjectID); o != nil {
+			if o.Element != nil {
+				o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
+			}
+		}
+	}
+	if o := s.world.GetObject(e); o != nil {
+		if o.Element != nil {
+			o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{200, 200, 200, 128}
+		}
+	}
+
+	s.hoveredObjectID = e
+}
+
+func (s *Game) UnhoverObject(e uint32) {
+	if e == s.focusedObjectID || e != s.hoveredObjectID {
+		return
+	}
+	if o := s.world.GetObject(s.hoveredObjectID); o != nil {
+		if o.Element != nil {
+			o.Element.GetUpdateChannel() <- ui.UpdateOutlineColor{0, 0, 0, 0}
+		}
+	}
+	s.hoveredObjectID = 0
+}
+
+func (s *Game) HoveredObject() *world.Object {
+	return s.world.GetObject(s.hoveredObjectID)
+}
+
+func (s *Game) HoveredObjectID() uint32 {
+	return s.hoveredObjectID
 }
 
 func (s *Game) HookEvent(k interface{}, cb func(e interface{})) {

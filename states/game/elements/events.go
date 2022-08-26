@@ -18,6 +18,16 @@ type FocusObjectEvent struct {
 	ID uint32
 }
 
+// HoverObjectEvent
+type HoverObjectEvent struct {
+	ID uint32
+}
+
+// UnhoverObjectEvent
+type UnhoverObjectEvent struct {
+	ID uint32
+}
+
 // ResizeEvent is used to notify the UI of a resize change.
 type ResizeEvent struct{}
 

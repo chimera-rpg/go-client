@@ -331,6 +331,21 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 						}
 						return true
 					},
+					OnMouseMove: func(x int32, y int32) bool {
+						if o.Element.GetStyle().Alpha.Value <= 0.1 {
+							return true
+						}
+						// Ignore elements that are blocks or tiles.
+						if o.Type == cdata.ArchetypeBlock.AsUint8() || o.Type == cdata.ArchetypeTile.AsUint8() {
+							return true
+						}
+						if o.Element.PixelHit(x, y) {
+							s.inputChan <- elements.HoverObjectEvent{ID: o.ID}
+						} else {
+							s.inputChan <- elements.UnhoverObjectEvent{ID: o.ID}
+						}
+						return true
+					},
 				},
 			})
 		} else {
