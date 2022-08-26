@@ -391,37 +391,33 @@ func (g *GroundModeWindow) Refresh() {
 	w := g.game.World()
 	vo := w.GetViewObject()
 	m := w.GetCurrentMap()
-	// FIXME: We need the view object's Reach value!
-	reach := 2
-	minY := -reach
-	maxY := int(vo.H) + reach
-	minX := -reach
-	maxX := int(vo.W) + reach
-	minZ := -reach
-	if vo.D > 1 {
-		minZ -= int(vo.D)
-	}
-	maxZ := reach
 
 	// Default type filter.
 	typeFilter := []uint8{data.ArchetypeArmor.AsUint8(), data.ArchetypeWeapon.AsUint8(), data.ArchetypeItem.AsUint8(), data.ArchetypeGeneric.AsUint8(), data.ArchetypeShield.AsUint8(), data.ArchetypeFood.AsUint8()}
 
+	// Use our reach cube per default.
+	cube := w.ReachCube
+	reachX := w.Reach
+	reachY := w.Reach
+	reachZ := w.Reach
+
+	// Otherwise use the bottom-1 of our intersect cube.
 	if g.mode == GroundModeUnderfoot {
-		minY = -1
-		maxY = 1
-		minX = 0
-		maxX = int(vo.W)
-		minZ = 0
-		maxZ = int(vo.D)
 		// Reassign type filter if we're looking underfoot.
 		typeFilter = append(typeFilter, data.ArchetypeBlock.AsUint8(), data.ArchetypeTile.AsUint8())
+		cube = w.IntersectCube[:1]
+		cube = append(cube, cube...)
+		reachX = 0
+		reachZ = 0
+		reachY = 1
 	}
+
 	// 1. Collect a slice of all notable objects in range.
 	var objects []ObjectReference
-	for xs := minX; xs < maxX; xs++ {
-		for zs := minZ; zs < maxZ; zs++ {
-			for ys := minY; ys < maxY; ys++ {
-				if t := m.GetTile(vo.Y+ys, vo.X+xs, vo.Z+zs); t != nil {
+	for ys := range cube {
+		for xs := range cube[ys] {
+			for zs := range cube[ys][xs] {
+				if t := m.GetTile(vo.Y+ys-reachY, vo.X+xs-reachX, vo.Z+zs-reachZ); t != nil {
 					for _, o := range t.Objects() {
 						if slices.Contains(typeFilter, o.Type) {
 							if g.aggregate {
@@ -451,6 +447,7 @@ func (g *GroundModeWindow) Refresh() {
 							}
 						}
 					}
+
 				}
 			}
 		}

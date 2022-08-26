@@ -20,6 +20,9 @@ type World struct {
 	currentMap                       data.StringID
 	objects                          []*Object
 	changedObjects                   []*Object
+	ReachCube                        [][][]struct{}
+	Reach                            int
+	IntersectCube                    [][][]struct{}
 	PendingObjectAnimations          map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
 	viewObjectID                     uint32
 	viewObject                       *Object
@@ -184,6 +187,7 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 		w.viewHeight = int(p.Height)
 		w.viewWidth = int(p.Width)
 		w.viewDepth = int(p.Depth)
+		w.updateCubes()
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
 	case network.CommandObjectPayloadInfo:
@@ -254,6 +258,14 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 			w.PendingObjectAnimations[p.AnimationID] = append(w.PendingObjectAnimations[p.AnimationID], oID)
 		}
 		w.AddObject(o)
+		// FIXME: This is stupid to check this each time here. Make sure that when PayloadViewTarget is sent, the player's object is sent first.
+		if w.viewObjectID == oID {
+			w.viewObject = w.GetObject(oID)
+			w.updateCubes()
+			w.updateVisibleTiles()
+			w.updateVisionUnblocking()
+		}
+
 	}
 
 	// Ensure our shadow gets created.
@@ -762,5 +774,42 @@ func (w *World) CheckPendingObjectAnimations(animationID uint32) {
 			}
 		}
 		delete(w.PendingObjectAnimations, animationID)
+	}
+}
+
+// UpdateCubes updates the reach and intersect cubes.
+func (w *World) updateCubes() {
+	vo := w.viewObject
+	if vo == nil {
+		return
+	}
+	w.Reach = 2
+	// Calculate reach cube.
+	maxY := int(vo.H) + w.Reach*2
+	maxX := int(vo.W) + w.Reach*2
+	maxZ := w.Reach * 2
+	if vo.D > 1 {
+		maxZ += int(vo.D)
+	}
+
+	w.ReachCube = make([][][]struct{}, maxY)
+	for y := range w.ReachCube {
+		w.ReachCube[y] = make([][]struct{}, maxX)
+		for x := range w.ReachCube[y] {
+			w.ReachCube[y][x] = make([]struct{}, maxZ)
+		}
+	}
+	fmt.Println("Made cube", maxY, maxX, maxZ, w.ReachCube)
+
+	// Calculate intersect cube.
+	maxY = int(vo.H)
+	maxX = int(vo.W)
+	maxZ = int(vo.D)
+	w.IntersectCube = make([][][]struct{}, maxY)
+	for y := range w.IntersectCube {
+		w.IntersectCube[y] = make([][]struct{}, maxX)
+		for x := range w.IntersectCube[y] {
+			w.IntersectCube[y][x] = make([]struct{}, maxZ)
+		}
 	}
 }
