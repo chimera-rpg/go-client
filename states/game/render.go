@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"math"
-	"os"
 	"time"
 
 	"github.com/chimera-rpg/go-client/data"
@@ -286,11 +285,12 @@ func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *worl
 
 func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.DynamicMap, frame *data.AnimationFrame, x, y, zIndex, w, h int, uiMessages *BatchMessages) {
 	if o.Image == nil {
-		var err error
+		/*var err error
 		o.Image, err = s.Client.DataManager.GetCachedImage(frame.ImageID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
-		}
+		}*/
+		o.Image, _ = s.Client.DataManager.GetCachedImage(frame.ImageID)
 	}
 
 	if o.Element == nil {
