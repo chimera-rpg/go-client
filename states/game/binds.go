@@ -731,139 +731,142 @@ func (s *Game) SetupBinds() {
 		s.ChatInput.GetUpdateChannel() <- ui.UpdateFocus{}
 		s.ChatInput.GetUpdateChannel() <- ui.UpdateValue{Value: "/"}
 	})
-	if !s.bindings.HasKeygroupsForName("clear commands") {
-		s.bindings.AddKeygroup("clear commands", defaultClearCommands)
-	}
-	if !s.bindings.HasKeygroupsForName("north") {
-		s.bindings.AddKeygroup("north", defaultNorth1)
-		s.bindings.AddKeygroup("north", defaultNorth2)
-	}
-	if !s.bindings.HasKeygroupsForName("north run") {
-		s.bindings.AddKeygroup("north run", defaultNorthRun1)
-		s.bindings.AddKeygroup("north run", defaultNorthRun2)
-	}
-	if !s.bindings.HasKeygroupsForName("north run stop") {
-		s.bindings.AddKeygroup("north run stop", defaultNorthRunStop1)
-		s.bindings.AddKeygroup("north run stop", defaultNorthRunStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("south") {
-		s.bindings.AddKeygroup("south", defaultSouth1)
-		s.bindings.AddKeygroup("south", defaultSouth2)
-	}
-	if !s.bindings.HasKeygroupsForName("south run") {
-		s.bindings.AddKeygroup("south run", defaultSouthRun1)
-		s.bindings.AddKeygroup("south run", defaultSouthRun2)
-	}
-	if !s.bindings.HasKeygroupsForName("south run stop") {
-		s.bindings.AddKeygroup("south run stop", defaultSouthRunStop1)
-		s.bindings.AddKeygroup("south run stop", defaultSouthRunStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("west") {
-		s.bindings.AddKeygroup("west", defaultWest1)
-		s.bindings.AddKeygroup("west", defaultWest2)
-	}
-	if !s.bindings.HasKeygroupsForName("west run") {
-		s.bindings.AddKeygroup("west run", defaultWestRun1)
-		s.bindings.AddKeygroup("west run", defaultWestRun2)
-	}
-	if !s.bindings.HasKeygroupsForName("west run stop") {
-		s.bindings.AddKeygroup("west run stop", defaultWestRunStop1)
-		s.bindings.AddKeygroup("west run stop", defaultWestRunStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("east") {
-		s.bindings.AddKeygroup("east", defaultEast1)
-		s.bindings.AddKeygroup("east", defaultEast2)
-	}
-	if !s.bindings.HasKeygroupsForName("east run") {
-		s.bindings.AddKeygroup("east run", defaultEastRun1)
-		s.bindings.AddKeygroup("east run", defaultEastRun2)
-	}
-	if !s.bindings.HasKeygroupsForName("east run stop") {
-		s.bindings.AddKeygroup("east run stop", defaultEastRunStop1)
-		s.bindings.AddKeygroup("east run stop", defaultEastRunStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("up") {
-		s.bindings.AddKeygroup("up", defaultUp1)
-		s.bindings.AddKeygroup("up", defaultUp2)
-	}
-	if !s.bindings.HasKeygroupsForName("up run") {
-		s.bindings.AddKeygroup("up run", defaultUpRun1)
-		s.bindings.AddKeygroup("up run", defaultUpRun2)
-	}
-	if !s.bindings.HasKeygroupsForName("up run stop") {
-		s.bindings.AddKeygroup("up run stop", defaultUpRunStop1)
-		s.bindings.AddKeygroup("up run stop", defaultUpRunStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("down") {
-		s.bindings.AddKeygroup("down", defaultDown1)
-		s.bindings.AddKeygroup("down", defaultDown2)
-	}
-	if !s.bindings.HasKeygroupsForName("down run") {
-		s.bindings.AddKeygroup("down run", defaultDownRun1)
-		s.bindings.AddKeygroup("down run", defaultDownRun2)
-	}
-	if !s.bindings.HasKeygroupsForName("down run stop") {
-		s.bindings.AddKeygroup("down run stop", defaultDownRunStop1)
-		s.bindings.AddKeygroup("down run stop", defaultDownRunStop2)
-	}
 
-	if !s.bindings.HasKeygroupsForName("north attack repeat") {
-		s.bindings.AddKeygroup("north attack repeat", defaultNorthAttackRepeat1)
-		s.bindings.AddKeygroup("north attack repeat", defaultNorthAttackRepeat2)
-	}
-	if !s.bindings.HasKeygroupsForName("north attack stop") {
-		s.bindings.AddKeygroup("north attack stop", defaultNorthAttackStop1)
-		s.bindings.AddKeygroup("north attack stop", defaultNorthAttackStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("south attack repeat") {
-		s.bindings.AddKeygroup("south attack repeat", defaultSouthAttackRepeat1)
-		s.bindings.AddKeygroup("south attack repeat", defaultSouthAttackRepeat2)
-	}
-	if !s.bindings.HasKeygroupsForName("south attack stop") {
-		s.bindings.AddKeygroup("south attack stop", defaultSouthAttackStop1)
-		s.bindings.AddKeygroup("south attack stop", defaultSouthAttackStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("west attack repeat") {
-		s.bindings.AddKeygroup("west attack repeat", defaultWestAttackRepeat1)
-		s.bindings.AddKeygroup("west attack repeat", defaultWestAttackRepeat2)
-	}
-	if !s.bindings.HasKeygroupsForName("west attack stop") {
-		s.bindings.AddKeygroup("west attack stop", defaultWestAttackStop1)
-		s.bindings.AddKeygroup("west attack stop", defaultWestAttackStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("east attack repeat") {
-		s.bindings.AddKeygroup("east attack repeat", defaultEastAttackRepeat1)
-		s.bindings.AddKeygroup("east attack repeat", defaultEastAttackRepeat2)
-	}
-	if !s.bindings.HasKeygroupsForName("east attack stop") {
-		s.bindings.AddKeygroup("east attack stop", defaultEastAttackStop1)
-		s.bindings.AddKeygroup("east attack stop", defaultEastAttackStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("up attack repeat") {
-		s.bindings.AddKeygroup("up attack repeat", defaultUpAttackRepeat1)
-		s.bindings.AddKeygroup("up attack repeat", defaultUpAttackRepeat2)
-	}
-	if !s.bindings.HasKeygroupsForName("up attack stop") {
-		s.bindings.AddKeygroup("up attack stop", defaultUpAttackStop1)
-		s.bindings.AddKeygroup("up attack stop", defaultUpAttackStop2)
-	}
-	if !s.bindings.HasKeygroupsForName("down attack repeat") {
-		s.bindings.AddKeygroup("down attack repeat", defaultDownAttackRepeat1)
-		s.bindings.AddKeygroup("down attack repeat", defaultDownAttackRepeat2)
-	}
-	if !s.bindings.HasKeygroupsForName("down attack stop") {
-		s.bindings.AddKeygroup("down attack stop", defaultDownAttackStop1)
-		s.bindings.AddKeygroup("down attack stop", defaultDownAttackStop2)
-	}
+	if len(s.bindings.Keygroups) == 0 {
+		if !s.bindings.HasKeygroupsForName("clear commands") {
+			s.bindings.AddKeygroup("clear commands", defaultClearCommands)
+		}
+		if !s.bindings.HasKeygroupsForName("north") {
+			s.bindings.AddKeygroup("north", defaultNorth1)
+			s.bindings.AddKeygroup("north", defaultNorth2)
+		}
+		if !s.bindings.HasKeygroupsForName("north run") {
+			s.bindings.AddKeygroup("north run", defaultNorthRun1)
+			s.bindings.AddKeygroup("north run", defaultNorthRun2)
+		}
+		if !s.bindings.HasKeygroupsForName("north run stop") {
+			s.bindings.AddKeygroup("north run stop", defaultNorthRunStop1)
+			s.bindings.AddKeygroup("north run stop", defaultNorthRunStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("south") {
+			s.bindings.AddKeygroup("south", defaultSouth1)
+			s.bindings.AddKeygroup("south", defaultSouth2)
+		}
+		if !s.bindings.HasKeygroupsForName("south run") {
+			s.bindings.AddKeygroup("south run", defaultSouthRun1)
+			s.bindings.AddKeygroup("south run", defaultSouthRun2)
+		}
+		if !s.bindings.HasKeygroupsForName("south run stop") {
+			s.bindings.AddKeygroup("south run stop", defaultSouthRunStop1)
+			s.bindings.AddKeygroup("south run stop", defaultSouthRunStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("west") {
+			s.bindings.AddKeygroup("west", defaultWest1)
+			s.bindings.AddKeygroup("west", defaultWest2)
+		}
+		if !s.bindings.HasKeygroupsForName("west run") {
+			s.bindings.AddKeygroup("west run", defaultWestRun1)
+			s.bindings.AddKeygroup("west run", defaultWestRun2)
+		}
+		if !s.bindings.HasKeygroupsForName("west run stop") {
+			s.bindings.AddKeygroup("west run stop", defaultWestRunStop1)
+			s.bindings.AddKeygroup("west run stop", defaultWestRunStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("east") {
+			s.bindings.AddKeygroup("east", defaultEast1)
+			s.bindings.AddKeygroup("east", defaultEast2)
+		}
+		if !s.bindings.HasKeygroupsForName("east run") {
+			s.bindings.AddKeygroup("east run", defaultEastRun1)
+			s.bindings.AddKeygroup("east run", defaultEastRun2)
+		}
+		if !s.bindings.HasKeygroupsForName("east run stop") {
+			s.bindings.AddKeygroup("east run stop", defaultEastRunStop1)
+			s.bindings.AddKeygroup("east run stop", defaultEastRunStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("up") {
+			s.bindings.AddKeygroup("up", defaultUp1)
+			s.bindings.AddKeygroup("up", defaultUp2)
+		}
+		if !s.bindings.HasKeygroupsForName("up run") {
+			s.bindings.AddKeygroup("up run", defaultUpRun1)
+			s.bindings.AddKeygroup("up run", defaultUpRun2)
+		}
+		if !s.bindings.HasKeygroupsForName("up run stop") {
+			s.bindings.AddKeygroup("up run stop", defaultUpRunStop1)
+			s.bindings.AddKeygroup("up run stop", defaultUpRunStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("down") {
+			s.bindings.AddKeygroup("down", defaultDown1)
+			s.bindings.AddKeygroup("down", defaultDown2)
+		}
+		if !s.bindings.HasKeygroupsForName("down run") {
+			s.bindings.AddKeygroup("down run", defaultDownRun1)
+			s.bindings.AddKeygroup("down run", defaultDownRun2)
+		}
+		if !s.bindings.HasKeygroupsForName("down run stop") {
+			s.bindings.AddKeygroup("down run stop", defaultDownRunStop1)
+			s.bindings.AddKeygroup("down run stop", defaultDownRunStop2)
+		}
 
-	if !s.bindings.HasKeygroupsForName("clear focus") {
-		s.bindings.AddKeygroup("clear focus", defaultClearFocus)
-	}
+		if !s.bindings.HasKeygroupsForName("north attack repeat") {
+			s.bindings.AddKeygroup("north attack repeat", defaultNorthAttackRepeat1)
+			s.bindings.AddKeygroup("north attack repeat", defaultNorthAttackRepeat2)
+		}
+		if !s.bindings.HasKeygroupsForName("north attack stop") {
+			s.bindings.AddKeygroup("north attack stop", defaultNorthAttackStop1)
+			s.bindings.AddKeygroup("north attack stop", defaultNorthAttackStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("south attack repeat") {
+			s.bindings.AddKeygroup("south attack repeat", defaultSouthAttackRepeat1)
+			s.bindings.AddKeygroup("south attack repeat", defaultSouthAttackRepeat2)
+		}
+		if !s.bindings.HasKeygroupsForName("south attack stop") {
+			s.bindings.AddKeygroup("south attack stop", defaultSouthAttackStop1)
+			s.bindings.AddKeygroup("south attack stop", defaultSouthAttackStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("west attack repeat") {
+			s.bindings.AddKeygroup("west attack repeat", defaultWestAttackRepeat1)
+			s.bindings.AddKeygroup("west attack repeat", defaultWestAttackRepeat2)
+		}
+		if !s.bindings.HasKeygroupsForName("west attack stop") {
+			s.bindings.AddKeygroup("west attack stop", defaultWestAttackStop1)
+			s.bindings.AddKeygroup("west attack stop", defaultWestAttackStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("east attack repeat") {
+			s.bindings.AddKeygroup("east attack repeat", defaultEastAttackRepeat1)
+			s.bindings.AddKeygroup("east attack repeat", defaultEastAttackRepeat2)
+		}
+		if !s.bindings.HasKeygroupsForName("east attack stop") {
+			s.bindings.AddKeygroup("east attack stop", defaultEastAttackStop1)
+			s.bindings.AddKeygroup("east attack stop", defaultEastAttackStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("up attack repeat") {
+			s.bindings.AddKeygroup("up attack repeat", defaultUpAttackRepeat1)
+			s.bindings.AddKeygroup("up attack repeat", defaultUpAttackRepeat2)
+		}
+		if !s.bindings.HasKeygroupsForName("up attack stop") {
+			s.bindings.AddKeygroup("up attack stop", defaultUpAttackStop1)
+			s.bindings.AddKeygroup("up attack stop", defaultUpAttackStop2)
+		}
+		if !s.bindings.HasKeygroupsForName("down attack repeat") {
+			s.bindings.AddKeygroup("down attack repeat", defaultDownAttackRepeat1)
+			s.bindings.AddKeygroup("down attack repeat", defaultDownAttackRepeat2)
+		}
+		if !s.bindings.HasKeygroupsForName("down attack stop") {
+			s.bindings.AddKeygroup("down attack stop", defaultDownAttackStop1)
+			s.bindings.AddKeygroup("down attack stop", defaultDownAttackStop2)
+		}
 
-	if !s.bindings.HasKeygroupsForName("focus chat") {
-		s.bindings.AddKeygroup("focus chat", defaultFocusChat)
-	}
-	if !s.bindings.HasKeygroupsForName("focus cmd") {
-		s.bindings.AddKeygroup("focus cmd", defaultFocusCommand)
+		if !s.bindings.HasKeygroupsForName("clear focus") {
+			s.bindings.AddKeygroup("clear focus", defaultClearFocus)
+		}
+
+		if !s.bindings.HasKeygroupsForName("focus chat") {
+			s.bindings.AddKeygroup("focus chat", defaultFocusChat)
+		}
+		if !s.bindings.HasKeygroupsForName("focus cmd") {
+			s.bindings.AddKeygroup("focus cmd", defaultFocusCommand)
+		}
 	}
 }
