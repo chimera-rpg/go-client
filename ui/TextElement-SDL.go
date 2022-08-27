@@ -22,6 +22,7 @@ func (t *TextElement) Destroy() {
 	if t.SDLTexture != nil {
 		t.SDLTexture.Destroy()
 	}
+	t.BaseElement.Destroy()
 }
 
 // Render renders our base styling before rendering its text texture using

@@ -1,3 +1,4 @@
+//go:build mobile
 // +build mobile
 
 package ui
@@ -46,13 +47,8 @@ func (w *Container) CalculateStyle() {
 
 // Destroy the window, clearing the SDL context and destroying the SDLWindow if it is a top-level window.
 func (w *Container) Destroy() {
-	w.Parent.DisownChild(w)
-
 	if w.Context.GLContext.IsTexture(w.GLTexture) {
 		w.Context.GLContext.DeleteTexture(w.GLTexture)
 	}
-
-	for _, child := range w.Children {
-		child.Destroy()
-	}
+	b.BaseElement.Destroy()
 }

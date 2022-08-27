@@ -85,6 +85,9 @@ func (b *BaseElement) Destroy() {
 	for _, child := range b.Children {
 		child.Destroy()
 	}
+	if GlobalInstance.FocusedElement == b.This {
+		b.Blur()
+	}
 }
 
 // Render handled the rendering of all children and the clearing of the Dirty flag.

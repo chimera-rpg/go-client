@@ -96,10 +96,7 @@ func (w *Window) Render() {
 
 // Destroy the window, clearing the SDL context and destroying the SDLWindow if it is a top-level window.
 func (w *Window) Destroy() {
-	for _, child := range w.Children {
-		child.Destroy()
-	}
-
 	w.SDLWindow.Destroy()
 	w.Context.Renderer.Destroy()
+	w.BaseElement.Destroy()
 }

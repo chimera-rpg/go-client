@@ -32,6 +32,7 @@ func (i *InputElement) Destroy() {
 	if i.SDLTexture != nil {
 		i.SDLTexture.Destroy()
 	}
+	i.BaseElement.Destroy()
 }
 
 // Render renders the InputElement to the rendering context, with various

@@ -21,6 +21,7 @@ func (b *ButtonElement) Destroy() {
 	if b.SDLTexture != nil {
 		b.SDLTexture.Destroy()
 	}
+	b.BaseElement.Destroy()
 }
 
 // Render draws the button and its state using the element's renderer contexb.
