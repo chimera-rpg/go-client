@@ -55,6 +55,7 @@ type GameConfig struct {
 	Graphics      GameGraphicsConfig
 	CommandPrefix string
 	Bindings      binds.Bindings
+	Ground        GroundConfig
 }
 
 // GameGraphicsConfig is the configuration for the game's graphics.
@@ -75,4 +76,9 @@ type WindowConfig struct {
 	Width, Height int
 	X, Y          int
 	Fullscreen    bool
+}
+
+type GroundConfig struct {
+	Mode      int
+	Aggregate bool
 }

@@ -1,6 +1,7 @@
 package elements
 
 import (
+	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
 	"github.com/chimera-rpg/go-common/network"
@@ -16,4 +17,5 @@ type game interface {
 	HookEvent(interface{}, func(e interface{}))
 	InputChan() chan interface{}
 	SendNetMessage(network.Command)
+	Config() *config.Config
 }

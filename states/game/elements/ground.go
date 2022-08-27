@@ -50,8 +50,6 @@ type ObjectContainer struct {
 
 type GroundModeWindow struct {
 	game             game
-	mode             GroundMode
-	aggregate        bool
 	objects          []ObjectReference
 	Container        *ui.Container
 	objectsList      *ui.Container
@@ -141,8 +139,8 @@ func (g *GroundModeWindow) Setup(game game, style string, inputChan chan interfa
 	g.Container.GetAdoptChannel() <- g.underfootButton
 	g.Container.GetAdoptChannel() <- g.aggregateButton
 
-	g.SyncMode(g.mode)
-	g.ToggleCombo()
+	g.SyncMode(GroundMode(g.game.Config().Game.Ground.Mode))
+	g.RefreshCombo()
 
 	game.HookEvent(GroundModeComboEvent{}, func(e interface{}) {
 		g.ToggleCombo()
@@ -201,23 +199,27 @@ func (g *GroundModeWindow) SyncMode(mode GroundMode) {
 	// FIXME: Load these from some sort of passed in Stylesheet global
 	inactiveColor := color.NRGBA{64, 64, 111, 128}
 	activeColor := color.NRGBA{139, 139, 186, 128}
-	g.mode = mode
-	if g.mode == GroundModeNearby {
+	g.game.Config().Game.Ground.Mode = int(mode)
+	if mode == GroundModeNearby {
 		g.nearbyButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
 		g.underfootButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
-	} else if g.mode == GroundModeUnderfoot {
+	} else if mode == GroundModeUnderfoot {
 		g.underfootButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
 		g.nearbyButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
 	}
 }
 
 func (g *GroundModeWindow) ToggleCombo() {
+	g.game.Config().Game.Ground.Aggregate = !g.game.Config().Game.Ground.Aggregate
+	g.RefreshCombo()
+}
+
+func (g *GroundModeWindow) RefreshCombo() {
 	// FIXME: Load these from some sort of passed in Stylesheet global
 	inactiveColor := color.NRGBA{64, 64, 111, 128}
 	activeColor := color.NRGBA{139, 139, 186, 128}
 
-	g.aggregate = !g.aggregate
-	if g.aggregate {
+	if g.game.Config().Game.Ground.Aggregate {
 		g.aggregateButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(activeColor)
 	} else {
 		g.aggregateButton.GetUpdateChannel() <- ui.UpdateBackgroundColor(inactiveColor)
@@ -402,7 +404,7 @@ func (g *GroundModeWindow) Refresh() {
 	reachZ := int(vo.Reach)
 
 	// Otherwise use the bottom-1 of our intersect cube.
-	if g.mode == GroundModeUnderfoot {
+	if g.game.Config().Game.Ground.Mode == GroundModeUnderfoot {
 		// Reassign type filter if we're looking underfoot.
 		typeFilter = append(typeFilter, data.ArchetypeBlock.AsUint8(), data.ArchetypeTile.AsUint8())
 		cube = w.IntersectCube[:1]
@@ -420,7 +422,7 @@ func (g *GroundModeWindow) Refresh() {
 				if t := m.GetTile(vo.Y+ys-reachY, vo.X+xs-reachX, vo.Z+zs-reachZ); t != nil {
 					for _, o := range t.Objects() {
 						if slices.Contains(typeFilter, o.Type) {
-							if g.aggregate {
+							if g.game.Config().Game.Ground.Aggregate {
 								found := false
 								for oi, or := range objects {
 									// FIXME: It doesn't seem correct to use animation and face IDs to identify same object types. Perhaps the archetype's underlying ID should also be passed with the standard object creation network data?

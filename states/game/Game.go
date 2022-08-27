@@ -8,6 +8,7 @@ import (
 	"github.com/chimera-rpg/go-client/audio"
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/client"
+	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/states/game/elements"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
@@ -527,4 +528,8 @@ func (s *Game) InputChan() chan interface{} {
 
 func (s *Game) SendNetMessage(cmd network.Command) {
 	s.Client.Send(cmd)
+}
+
+func (s *Game) Config() *config.Config {
+	return &s.Client.DataManager.Config
 }

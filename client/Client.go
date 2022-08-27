@@ -51,11 +51,12 @@ func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, aud *audio.
 	return
 }
 
-// Destroy cleans up the client and its last sate.
+// Destroy cleans up the client, its last state, and saves out the config.
 func (c *Client) Destroy() {
 	c.isRunning = false
 	c.Close()
 	c.CloseState(c.State())
+	c.DataManager.Config.Write()
 }
 
 // Print provides an interface to Log that is instantiated to the Client itself.
