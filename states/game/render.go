@@ -294,178 +294,146 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 	}
 
 	if o.Element == nil {
-		if o.Image != nil {
-			bounds := o.Image.Bounds()
-			w = int(float64(bounds.Max.X) * ctx.scale)
-			h = int(float64(bounds.Max.Y) * ctx.scale)
-			if (o.H > 1 || o.D > 1) && bounds.Max.Y > ctx.tileHeight {
-				y -= h - ctx.tileHeightScaled
-			}
-			o.Element = ui.NewImageElement(ui.ImageElementConfig{
-				Style: fmt.Sprintf(`
+		o.Element = ui.NewImageElement(ui.ImageElementConfig{
+			Style: fmt.Sprintf(`
 							X %d
 							Y %d
 							W %d
 							H %d
 							ZIndex %d
 						`, x, y, w, h, zIndex),
-				ImageID:     frame.ImageID,
-				PostOutline: true,
-				Events: ui.Events{
-					OnPressed: func(button uint8, x, y int32) bool {
-						if button != 1 {
-							return true
-						}
-						// Ignore elements with an alpha less than or equal 0.1.
-						if o.Element.GetStyle().Alpha.Value <= 0.1 {
-							return true
-						}
-						// Ignore elements that are blocks or tiles.
-						// TODO: Ignore if shift is held.
-						if o.Type == cdata.ArchetypeBlock.AsUint8() || o.Type == cdata.ArchetypeTile.AsUint8() {
-							return true
-						}
-						if o.Element.PixelHit(x, y) {
-							s.inputChan <- elements.FocusObjectEvent{ID: o.ID}
-							return false
-						}
+			ImageID:     frame.ImageID,
+			PostOutline: true,
+			Events: ui.Events{
+				OnPressed: func(button uint8, x, y int32) bool {
+					if button != 1 {
 						return true
-					},
-					OnMouseMove: func(x int32, y int32) bool {
-						if o.Element.GetStyle().Alpha.Value <= 0.1 {
-							return true
-						}
-						// Ignore elements that are blocks or tiles.
-						if o.Type == cdata.ArchetypeBlock.AsUint8() || o.Type == cdata.ArchetypeTile.AsUint8() {
-							return true
-						}
-						if o.Element.PixelHit(x, y) {
-							s.inputChan <- elements.HoverObjectEvent{ID: o.ID}
-						} else {
-							s.inputChan <- elements.UnhoverObjectEvent{ID: o.ID}
-						}
+					}
+					// Ignore elements with an alpha less than or equal 0.1.
+					if o.Element.GetStyle().Alpha.Value <= 0.1 {
 						return true
-					},
-					OnMouseOut: func(x int32, y int32) bool {
-						// Always unhover if the mouse leaves the object.
+					}
+					// Ignore elements that are blocks or tiles.
+					// TODO: Ignore if shift is held.
+					if o.Type == cdata.ArchetypeBlock.AsUint8() || o.Type == cdata.ArchetypeTile.AsUint8() {
+						return true
+					}
+					if o.Element.PixelHit(x, y) {
+						s.inputChan <- elements.FocusObjectEvent{ID: o.ID}
+						return false
+					}
+					return true
+				},
+				OnMouseMove: func(x int32, y int32) bool {
+					if o.Element.GetStyle().Alpha.Value <= 0.1 {
+						return true
+					}
+					// Ignore elements that are blocks or tiles.
+					if o.Type == cdata.ArchetypeBlock.AsUint8() || o.Type == cdata.ArchetypeTile.AsUint8() {
+						return true
+					}
+					if o.Element.PixelHit(x, y) {
+						s.inputChan <- elements.HoverObjectEvent{ID: o.ID}
+					} else {
 						s.inputChan <- elements.UnhoverObjectEvent{ID: o.ID}
-						return true
-					},
+					}
+					return true
 				},
-			})
-		} else {
-			o.Element = ui.NewImageElement(ui.ImageElementConfig{
-				Style: fmt.Sprintf(`
-							X %d
-							Y %d
-							W %d
-							H %d
-							ZIndex %d
-						`, x, y, w, h, zIndex),
-				ImageID:     frame.ImageID,
-				PostOutline: true,
-				Events: ui.Events{
-					OnPressed: func(button uint8, x, y int32) bool {
-						if button != 1 {
-							return true
-						}
-						if o.Element.PixelHit(x, y) {
-							s.inputChan <- elements.FocusObjectEvent{ID: o.ID}
-							return false
-						}
-						return true
-					},
+				OnMouseOut: func(x int32, y int32) bool {
+					// Always unhover if the mouse leaves the object.
+					s.inputChan <- elements.UnhoverObjectEvent{ID: o.ID}
+					return true
 				},
-			})
-		}
+			},
+		})
 		uiMessages.add(ui.BatchAdoptMessage{
 			Parent: &s.MapWindow.Container,
 			Target: o.Element,
 		})
-	} else {
-		if o.Image != nil {
-			if o.UnblockedChange {
-				if o.Unblocked {
-					uiMessages.add(ui.BatchUpdateMessage{
-						Target: o.Element,
-						Update: ui.UpdateAlpha(0.1),
-					})
-				} else {
-					uiMessages.add(ui.BatchUpdateMessage{
-						Target: o.Element,
-						Update: ui.UpdateAlpha(1.0),
-					})
-				}
-				o.UnblockedChange = false
-			}
-			if o.VisibilityChange {
-				if o.Visible {
-					uiMessages.add(ui.BatchUpdateMessage{
-						Target: o.Element,
-						Update: ui.UpdateGrayscale(false),
-					})
-				} else {
-					uiMessages.add(ui.BatchUpdateMessage{
-						Target: o.Element,
-						Update: ui.UpdateGrayscale(true),
-					})
-				}
-				o.VisibilityChange = false
-			}
-			if o.LightingChange {
-				uiMessages.add(ui.BatchUpdateMessage{
-					Target: o.Element,
-					Update: ui.UpdateColorMod{
-						R: uint8(255 * o.Brightness),
-						G: uint8(255 * o.Brightness),
-						B: uint8(255 * o.Brightness),
-						A: 255},
-				})
-				o.LightingChange = false
-			}
-			//
-			if o.Changed {
-				bounds := o.Image.Bounds()
-				w = int(float64(bounds.Max.X) * ctx.scale)
-				h = int(float64(bounds.Max.Y) * ctx.scale)
+	}
 
-				var sw, sh float64
-				sw = float64(w)
-				sh = float64(h)
-				if o.Squeezing {
-					sw = math.Max(float64(w-w/4), float64(ctx.tileWidthScaled))
-				}
-				if o.Crouching {
-					sh = math.Max(float64(h-h/3), float64(ctx.tileHeightScaled))
-				}
-
-				if (o.H > 1 || o.D > 1) && bounds.Max.Y > ctx.tileHeight {
-					y -= int(sh) - ctx.tileHeightScaled
-				}
-
+	if o.Image != nil {
+		if o.UnblockedChange {
+			if o.Unblocked {
 				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
-					Update: ui.UpdateDimensions{
-						X: ui.Number{Value: float64(x)},
-						Y: ui.Number{Value: float64(y)},
-						W: ui.Number{Value: sw},
-						H: ui.Number{Value: sh},
-					},
+					Update: ui.UpdateAlpha(0.1),
 				})
+			} else {
 				uiMessages.add(ui.BatchUpdateMessage{
 					Target: o.Element,
-					Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
-				})
-				o.Changed = false
-			}
-			// Only update the image if the image ID has changed.
-			if o.FrameImageID != frame.ImageID {
-				o.FrameImageID = frame.ImageID
-				uiMessages.add(ui.BatchUpdateMessage{
-					Target: o.Element,
-					Update: ui.UpdateImageID(o.FrameImageID),
+					Update: ui.UpdateAlpha(1.0),
 				})
 			}
+			o.UnblockedChange = false
+		}
+		if o.VisibilityChange {
+			if o.Visible {
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateGrayscale(false),
+				})
+			} else {
+				uiMessages.add(ui.BatchUpdateMessage{
+					Target: o.Element,
+					Update: ui.UpdateGrayscale(true),
+				})
+			}
+			o.VisibilityChange = false
+		}
+		if o.LightingChange {
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateColorMod{
+					R: uint8(255 * o.Brightness),
+					G: uint8(255 * o.Brightness),
+					B: uint8(255 * o.Brightness),
+					A: 255},
+			})
+			o.LightingChange = false
+		}
+		//
+		if o.Changed {
+			bounds := o.Image.Bounds()
+			w = int(float64(bounds.Max.X) * ctx.scale)
+			h = int(float64(bounds.Max.Y) * ctx.scale)
+
+			var sw, sh float64
+			sw = float64(w)
+			sh = float64(h)
+			if o.Squeezing {
+				sw = math.Max(float64(w-w/4), float64(ctx.tileWidthScaled))
+			}
+			if o.Crouching {
+				sh = math.Max(float64(h-h/3), float64(ctx.tileHeightScaled))
+			}
+
+			if (o.H > 1 || o.D > 1) && bounds.Max.Y > ctx.tileHeight {
+				y -= int(sh) - ctx.tileHeightScaled
+			}
+
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateDimensions{
+					X: ui.Number{Value: float64(x)},
+					Y: ui.Number{Value: float64(y)},
+					W: ui.Number{Value: sw},
+					H: ui.Number{Value: sh},
+				},
+			})
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateZIndex{Number: ui.Number{Value: float64(zIndex)}},
+			})
+			o.Changed = false
+		}
+		// Only update the image if the image ID has changed.
+		if o.FrameImageID != frame.ImageID {
+			o.FrameImageID = frame.ImageID
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateImageID(o.FrameImageID),
+			})
 		}
 	}
 	return

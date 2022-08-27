@@ -23,6 +23,7 @@ type World struct {
 	ReachCube                        [][][]struct{}
 	IntersectCube                    [][][]struct{}
 	PendingObjectAnimations          map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
+	PendingObjectImages              map[uint32][]uint32        // Map of images to objects waiting.
 	viewObjectID                     uint32
 	viewObject                       *Object
 	viewHeight, viewWidth, viewDepth int
@@ -42,6 +43,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.visibleTiles = make([]bool, 0)
 	w.unblockedTiles = make([][][]bool, 0)
 	w.PendingObjectAnimations = make(map[uint32][]uint32)
+	w.PendingObjectImages = make(map[uint32][]uint32)
 	w.currentMap = 0
 }
 
@@ -252,6 +254,15 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 				o.Frame = &(face.Frames[o.FrameIndex])
 			} else {
 				fmt.Fprintf(os.Stderr, "missing frame %d\n", p.AnimationID)
+			}
+			// Check if we have an image to load.
+			if o.Frame != nil {
+				img, err := w.dataManager.GetCachedImage(o.Frame.ImageID)
+				if err != nil {
+					w.PendingObjectImages[o.Frame.ImageID] = append(w.PendingObjectImages[o.Frame.ImageID], oID)
+				} else {
+					o.Image = img
+				}
 			}
 		} else {
 			// Animation does not yet exist, add it to the pending.
@@ -770,10 +781,36 @@ func (w *World) CheckPendingObjectAnimations(animationID uint32) {
 				} else {
 					fmt.Fprintf(os.Stderr, "missing frame %d\n", animationID)
 				}
+				if o.Frame != nil {
+					img, err := w.dataManager.GetCachedImage(o.Frame.ImageID)
+					if err != nil {
+						w.PendingObjectImages[o.Frame.ImageID] = append(w.PendingObjectImages[o.Frame.ImageID], o.ID)
+					} else {
+						o.Image = img
+					}
+				}
+
 				w.changedObjects = append(w.changedObjects, o)
+				o.Changed = true
 			}
 		}
 		delete(w.PendingObjectAnimations, animationID)
+	}
+}
+
+func (w *World) CheckPendingObjectImageIDs(imageID uint32) {
+	if pending, ok := w.PendingObjectImages[imageID]; ok {
+		img, err := w.dataManager.GetCachedImage(imageID)
+		if err == nil {
+			for _, objectID := range pending {
+				if o := w.GetObject(objectID); o != nil {
+					w.changedObjects = append(w.changedObjects, o)
+					o.Image = img
+					o.Changed = true
+				}
+			}
+			delete(w.PendingObjectImages, imageID)
+		}
 	}
 }
 

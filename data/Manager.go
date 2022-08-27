@@ -24,8 +24,9 @@ import (
 )
 
 type ImageRef struct {
-	ID  uint32
-	img image.Image
+	ID    uint32
+	Ready bool
+	img   image.Image
 }
 
 // Manager handles access to files on the system.
@@ -187,7 +188,7 @@ func (m *Manager) collectCachedImages() (err error) {
 					m.Log.Warn("[Manager] ", err)
 					return nil
 				}
-				m.SetCachedImage(i, img, true)
+				m.SetCachedImage(i, img, true, true)
 			}
 		}
 		return nil
@@ -335,7 +336,7 @@ func (m *Manager) GetCachedImage(iID uint32) (img image.Image, err error) {
 	m.imageLock.Lock()
 	defer m.imageLock.Unlock()
 	for _, ref := range m.images {
-		if ref.ID == iID {
+		if ref.ID == iID && ref.Ready {
 			return ref.img, nil
 		}
 	}
@@ -346,20 +347,23 @@ func (m *Manager) GetCachedImage(iID uint32) (img image.Image, err error) {
 	return nil, errors.New("loading")
 }
 
-func (m *Manager) SetCachedImage(iID uint32, img image.Image, override bool) {
+func (m *Manager) SetCachedImage(iID uint32, img image.Image, override bool, ready bool) {
 	m.imageLock.Lock()
 	defer m.imageLock.Unlock()
-	for _, ref := range m.images {
+	for i, ref := range m.images {
 		if ref.ID == iID {
 			if override {
 				ref.img = img
+				ref.Ready = ready
 			}
+			m.images[i] = ref
 			return
 		}
 	}
 	m.images = append(m.images, ImageRef{
-		ID:  iID,
-		img: img,
+		ID:    iID,
+		img:   img,
+		Ready: ready,
 	})
 }
 
@@ -474,9 +478,9 @@ func (m *Manager) EnsureImage(iID uint32) {
 	if !exists {
 		imageData, err := m.GetImage(m.GetDataPath("ui/loading.png"))
 		if err != nil {
-			m.SetCachedImage(iID, image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}}), false)
+			m.SetCachedImage(iID, image.NewNRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}}), false, false)
 		} else {
-			m.SetCachedImage(iID, imageData, false)
+			m.SetCachedImage(iID, imageData, false, false)
 		}
 
 		// Send request.
@@ -505,9 +509,9 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 		// FIXME: We should have some sort of "missing image" reference here.
 		imageData, err := m.GetImage(m.GetDataPath("ui/missing.png"))
 		if err != nil {
-			m.SetCachedImage(cmd.GraphicsID, image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}}), true)
+			m.SetCachedImage(cmd.GraphicsID, image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{8, 8}}), true, false)
 		} else {
-			m.SetCachedImage(cmd.GraphicsID, imageData, true)
+			m.SetCachedImage(cmd.GraphicsID, imageData, true, false)
 		}
 	} else if cmd.Type == network.Set {
 		if cmd.DataType == network.GraphicsPng {
@@ -515,7 +519,7 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 			if img, _, err := image.Decode(bytes.NewReader(cmd.Data)); err != nil {
 				m.Log.Warn("[Manager] Could not Decode Image")
 			} else {
-				m.SetCachedImage(cmd.GraphicsID, img, true)
+				m.SetCachedImage(cmd.GraphicsID, img, true, true)
 			}
 			// Also write the image to disk for future use.
 			if err := m.WriteImage(cmd.GraphicsID, cmd.DataType, cmd.Data); err != nil {

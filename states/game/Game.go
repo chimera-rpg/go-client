@@ -103,6 +103,9 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 		} else if netID == network.TypeAnimation {
 			c := cmd.(network.CommandAnimation)
 			s.world.CheckPendingObjectAnimations(c.AnimationID)
+		} else if netID == network.TypeGraphics {
+			c := cmd.(network.CommandGraphics)
+			s.world.CheckPendingObjectImageIDs(c.GraphicsID)
 		}
 	})
 
