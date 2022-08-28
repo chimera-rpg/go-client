@@ -45,7 +45,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 
 	viewObject := s.world.GetViewObject()
 	if o := viewObject; o != nil && o.Changed {
-		renderX, renderY, _ := s.GetRenderPosition(ctx, m, o.Y, o.X, o.Z)
+		renderX, renderY, _ := s.GetObjectRenderPosition(ctx, m, o)
 
 		// Calculate object-specific offsets.
 		offsetX := 0
@@ -178,6 +178,31 @@ func (s *Game) HandleRender(delta time.Duration) {
 	return
 }
 
+// GetObjectRenderPosition works like GetRenderPosition but also takes into account the object's depth.
+func (s *Game) GetObjectRenderPosition(ctx RenderContext, m *world.DynamicMap, o *world.Object) (targetX, targetY, targetZ int) {
+	originX := 0
+	originY := int(m.GetHeight()) * -s.Client.AnimationsConfig.YStep.Y
+	originX += o.Y * s.Client.AnimationsConfig.YStep.X
+	originY += o.Y * s.Client.AnimationsConfig.YStep.Y
+	originX += o.X * ctx.tileWidth
+	originY += o.Z * ctx.tileHeight
+
+	indexZ := int(o.Z)
+	indexX := int(o.X)
+	indexY := int(o.Y)
+
+	if o.H > 1 {
+		indexY += int(o.H - 1)
+	}
+
+	targetZ = (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX)
+
+	// Calculate our scaled pixel position at which to render.
+	targetX = int(float64(originX)*ctx.scale) + 100
+	targetY = int(float64(originY)*ctx.scale) + 100
+	return
+}
+
 // GetRenderPosition gets world to pixel coordinate positions for a given tile location.
 func (s *Game) GetRenderPosition(ctx RenderContext, m *world.DynamicMap, y, x, z int) (targetX, targetY, targetZ int) {
 	originX := 0
@@ -231,8 +256,7 @@ func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *worl
 
 	// Get and cache our render position.
 	if o.Changed {
-		o.RenderX, o.RenderY, o.RenderZ = s.GetRenderPosition(ctx, m, o.Y, o.X, o.Z)
-		o.RenderZ += o.Index
+		o.RenderX, o.RenderY, o.RenderZ = s.GetObjectRenderPosition(ctx, m, o)
 		o.RecalculateFinalRender = true
 	}
 
