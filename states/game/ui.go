@@ -138,11 +138,11 @@ func (s *Game) SetupUI() (err error) {
 	s.CommandContainer.GetAdoptChannel() <- s.ChatInput
 	s.GameContainer.AdoptChannel <- s.ChatWindow.This
 	// Sub-window: inventory
-	err = s.InventoryWindow.Setup(ui.ContainerConfig{
-		Value: "Inventory",
-		Style: InventoryWindowStyle,
-	})
-	s.GameContainer.AdoptChannel <- s.InventoryWindow.This
+	inventoryContainer, err := s.InventoryWindow.Setup(s, InventoryWindowStyle, s.inputChan)
+	if err != nil {
+		panic(err)
+	}
+	s.GameContainer.AdoptChannel <- inventoryContainer.This
 	// Sub-window: inspector
 	inspectorContainer, err := s.InspectorWindow.Setup(s, InspectorWindowStyle, s.inputChan)
 	if err != nil {

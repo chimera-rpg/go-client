@@ -44,7 +44,7 @@ type Game struct {
 	ChatWindow           ui.Container
 	messageElements      []ui.ElementI
 	CommandContainer     ui.ElementI
-	InventoryWindow      ui.Container
+	InventoryWindow      elements.ContainerWindow
 	InspectorWindow      elements.InspectorWindow
 	MapWindow            elements.MapWindow
 	GroundWindow         elements.GroundModeWindow
