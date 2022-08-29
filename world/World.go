@@ -65,9 +65,13 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 			w.maps[cmd.MapID].Init()
 		}*/
 	w.maps[cmd.MapID] = &DynamicMap{
-		height: cmd.Height,
-		width:  cmd.Width,
-		depth:  cmd.Depth,
+		height:            cmd.Height,
+		width:             cmd.Width,
+		depth:             cmd.Depth,
+		outdoor:           cmd.Outdoor,
+		outdoorBrightness: cmd.OutdoorBrightness,
+		ambientHue:        cmd.AmbientHue,
+		ambientBrightness: cmd.AmbientBrightness,
 	}
 	w.maps[cmd.MapID].Init()
 
@@ -163,11 +167,32 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 		return errors.New("cannot set tile light, as no map exists")
 	}
 	w.maps[w.currentMap].SetTileLight(int(cmd.Y), int(cmd.X), int(cmd.Z), cmd.Brightness)
+	w.maps[w.currentMap].SetTileHue(int(cmd.Y), int(cmd.X), int(cmd.Z), float32(cmd.Hue))
+	w.maps[w.currentMap].RecalculateLightingAt(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	if t != nil {
 		for _, o := range t.objects {
 			o.LightingChange = true
-			o.Brightness = t.brightness
+			o.Brightness = t.finalBrightness
+			o.Hue = t.finalHue
+			w.changedObjects = append(w.changedObjects, o)
+		}
+	}
+	return nil
+}
+
+func (w *World) HandleTileSkyCommand(cmd network.CommandTileSky) error {
+	if _, ok := w.maps[w.currentMap]; !ok {
+		return errors.New("cannot set tile light, as no map exists")
+	}
+	w.maps[w.currentMap].SetTileSky(int(cmd.Y), int(cmd.X), int(cmd.Z), float32(cmd.Sky))
+	w.maps[w.currentMap].RecalculateLightingAt(int(cmd.Y), int(cmd.X), int(cmd.Z))
+	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
+	if t != nil {
+		for _, o := range t.objects {
+			o.LightingChange = true
+			o.Brightness = t.finalBrightness
+			o.Hue = t.finalHue
 			w.changedObjects = append(w.changedObjects, o)
 		}
 	}

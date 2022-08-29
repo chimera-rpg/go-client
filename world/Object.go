@@ -35,7 +35,8 @@ type Object struct {
 	Unblocked                                                                                      bool        // Represents if the object is unblocked (should be alpha).
 	UnblockedChange                                                                                bool        // Used to record if the unblocked state of the object has changed since last render.
 	LightingChange                                                                                 bool        // Used to represent if the lighting of the object has changed.
-	Brightness                                                                                     float32     // How much additional brightness should be applied...?
+	Brightness                                                                                     float64     // How much additional brightness should be applied...?
+	Hue                                                                                            float64     // Th' hue
 	Element                                                                                        ui.ElementI // This is kind of bad, but it's simpler for rendering if we pair the ui element with the object directly.
 	HasShadow                                                                                      bool        // Used to indicate that the object should have a shadow. Defined on object creation based upon its archetype type.
 	ShadowElement                                                                                  ui.ElementI // This is also kind of bad.

@@ -2,8 +2,11 @@ package world
 
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
-	tiles                []DynamicMapTile
-	height, width, depth int
+	tiles                         []DynamicMapTile
+	height, width, depth          int
+	outdoor                       bool
+	outdoorBrightness             float64
+	ambientHue, ambientBrightness float64
 }
 
 // Init initializes the DynamicMap.
@@ -43,6 +46,42 @@ func (d *DynamicMap) SetTileLight(y, x, z int, brightness float32) {
 		return
 	}
 	d.tiles[d.Index(y, x, z)].brightness = brightness
+}
+
+func (d *DynamicMap) SetTileHue(y, x, z int, hue float32) {
+	if y < 0 || y >= d.height || x < 0 || x >= d.width || z < 0 || z >= d.depth {
+		return
+	}
+	d.tiles[d.Index(y, x, z)].hue = hue
+}
+
+func (d *DynamicMap) SetTileSky(y, x, z int, sky float32) {
+	if y < 0 || y >= d.height || x < 0 || x >= d.width || z < 0 || z >= d.depth {
+		return
+	}
+	d.tiles[d.Index(y, x, z)].sky = sky
+}
+
+func (d *DynamicMap) RecalculateLightingAt(y, x, z int) {
+	t := d.At(y, x, z)
+	t.finalBrightness = d.BrightnessAt(y, x, z)
+	t.finalHue = d.HueAt(y, x, z)
+}
+
+func (d *DynamicMap) BrightnessAt(y, x, z int) float64 {
+	brightness := d.ambientBrightness
+	if d.outdoor {
+		brightness += d.outdoorBrightness * float64(d.tiles[d.Index(y, x, z)].sky)
+	}
+	brightness += float64(d.tiles[d.Index(y, x, z)].brightness)
+
+	return brightness
+}
+
+func (d *DynamicMap) HueAt(y, x, z int) float64 {
+	hue := d.ambientHue
+	hue += float64(d.tiles[d.Index(y, x, z)].hue)
+	return hue
 }
 
 // GetHeight gets height.
