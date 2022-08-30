@@ -365,6 +365,10 @@ func (s *Game) SetupBinds() {
 	// Set up bindings.
 	s.bindings = &s.Client.DataManager.Config.Game.Bindings
 	s.bindings.Init()
+	// Debug
+	s.bindings.SetFunction("debug", func(i ...interface{}) {
+		s.DebugWindow.Toggle()
+	})
 	// Movement
 	s.bindings.SetFunction("north", func(i ...interface{}) {
 		s.runDirection = network.North

@@ -48,6 +48,7 @@ type Game struct {
 	InspectorWindow      elements.InspectorWindow
 	MapWindow            elements.MapWindow
 	GroundWindow         elements.GroundModeWindow
+	DebugWindow          elements.DebugWindow
 	StatsWindow          ui.Container
 	StateWindow          ui.Container
 	statusElements       map[cdata.StatusType]ui.ElementI

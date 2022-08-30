@@ -92,6 +92,7 @@ func (s *Game) HandleRender(delta time.Duration) {
 		if len(objects) > 0 {
 			s.GroundWindow.Refresh()
 			s.InspectorWindow.Refresh()
+			s.DebugWindow.Refresh()
 		}
 	}
 

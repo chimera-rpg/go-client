@@ -156,6 +156,13 @@ func (s *Game) SetupUI() (err error) {
 		panic(err)
 	}
 	s.GameContainer.AdoptChannel <- groundContainer.This
+	// Sub-window: debug
+	debugContainer, err := s.DebugWindow.Setup(s, DebugWindowStyle, s.inputChan)
+	if err != nil {
+		panic(err)
+	}
+	s.GameContainer.AdoptChannel <- debugContainer.This
+
 	// Sub-window: stats
 	err = s.StatsWindow.Setup(ui.ContainerConfig{
 		Value: "Stats",

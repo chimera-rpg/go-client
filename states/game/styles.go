@@ -15,6 +15,15 @@ var MapContainerStyle string = `
 	Origin CenterY
 `
 
+var DebugWindowStyle string = `
+X 20%
+Y 0
+W 80%
+H 100%
+BackgroundColor 0 0 0 0
+ZIndex 1
+`
+
 var ChatWindowStyle string = `
 	X 60%
 	Y 0
