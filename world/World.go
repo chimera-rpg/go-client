@@ -888,7 +888,7 @@ func (w *World) updateVisionUnblocking() {
 				if x < 0 || x >= m.width {
 					continue
 				}
-				for z := o.Z; z < o.Z+w.viewDepth/2; z++ {
+				for z := o.Z - 1; z < o.Z+w.viewDepth/2; z++ {
 					if z < 0 || z >= m.depth {
 						continue
 					}
