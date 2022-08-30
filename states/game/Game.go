@@ -266,6 +266,8 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:
 		s.world.HandleObjectCommand(c)
+	case network.CommandTiles:
+		s.world.HandleTilesCommand(c)
 	case network.CommandTile:
 		s.world.HandleTileCommand(c)
 	case network.CommandTileLight:

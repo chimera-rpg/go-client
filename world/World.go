@@ -94,6 +94,19 @@ func (w *World) HandleMapCommand(cmd network.CommandMap) error {
 	return nil
 }
 
+func (w *World) HandleTilesCommand(cmd network.CommandTiles) error {
+	for _, t := range cmd.TileUpdates {
+		w.HandleTileCommand(t)
+	}
+	for _, s := range cmd.SkyUpdates {
+		w.HandleTileSkyCommand(s)
+	}
+	for _, l := range cmd.LightUpdates {
+		w.HandleTileLightCommand(l)
+	}
+	return nil
+}
+
 // HandleTileCommand handles a CommandTile, creating missing objects, updating object positions, and invalidates objects that go missing.
 func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	if _, ok := w.maps[w.currentMap]; !ok {
@@ -166,10 +179,21 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 func (w *World) updateTileLighting(y, x, z int) {
 	t := w.maps[w.currentMap].GetTile(y, x, z)
 	if t != nil {
+		brightness := t.finalBrightness
+		hue := t.finalHue
+		/*if t.opaque {
+			if t2 := w.maps[w.currentMap].GetTile(y+1, x, z); t2 != nil {
+				if !t2.opaque {
+					brightness = (brightness + t2.finalBrightness) / 2
+					hue = (hue + t2.finalHue) / 2
+				}
+			}
+		}*/
+
 		for _, o := range t.objects {
 			o.LightingChange = true
-			o.Brightness = t.finalBrightness
-			o.Hue = t.finalHue
+			o.Brightness = brightness
+			o.Hue = hue
 			o.Changed = true
 			w.changedObjects = append(w.changedObjects, o)
 		}
