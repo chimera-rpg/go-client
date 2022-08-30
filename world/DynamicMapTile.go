@@ -11,6 +11,25 @@ type DynamicMapTile struct {
 	finalHue        float64
 }
 
+func (d *DynamicMapTile) Brightness() float64 {
+	return float64(d.brightness)
+}
+
+func (d *DynamicMapTile) Sky() float64 {
+	return float64(d.sky)
+}
+
+func (d *DynamicMapTile) Hue() float64 {
+	return float64(d.hue)
+}
+func (d *DynamicMapTile) FinalBrightness() float64 {
+	return d.finalBrightness
+}
+
+func (d *DynamicMapTile) FinalHue() float64 {
+	return d.finalHue
+}
+
 func (d *DynamicMapTile) Objects() []*Object {
 	return d.objects
 }

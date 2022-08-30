@@ -1,5 +1,9 @@
 package world
 
+import (
+	"math"
+)
+
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
 	tiles                         []DynamicMapTile
@@ -27,9 +31,7 @@ func (d *DynamicMap) SetTile(y, x, z int, objects []*Object) {
 		return
 	}
 	idx := d.Index(y, x, z)
-	d.tiles[idx] = DynamicMapTile{
-		objects: objects,
-	}
+	d.tiles[idx].objects = objects
 	d.tiles[idx].Refresh()
 }
 
@@ -63,9 +65,13 @@ func (d *DynamicMap) SetTileSky(y, x, z int, sky float32) {
 }
 
 func (d *DynamicMap) RecalculateLightingAt(y, x, z int) {
+	index := d.Index(y, x, z)
+	d.tiles[index].finalBrightness = d.BrightnessAt(y, x, z)
+	d.tiles[index].finalHue = d.HueAt(y, x, z)
+	/*return &d.tiles[]
 	t := d.At(y, x, z)
 	t.finalBrightness = d.BrightnessAt(y, x, z)
-	t.finalHue = d.HueAt(y, x, z)
+	t.finalHue = d.HueAt(y, x, z)*/
 }
 
 func (d *DynamicMap) BrightnessAt(y, x, z int) float64 {
@@ -75,7 +81,7 @@ func (d *DynamicMap) BrightnessAt(y, x, z int) float64 {
 	}
 	brightness += float64(d.tiles[d.Index(y, x, z)].brightness)
 
-	return brightness
+	return math.Max(0, math.Min(brightness, 1.0))
 }
 
 func (d *DynamicMap) HueAt(y, x, z int) float64 {
@@ -97,4 +103,20 @@ func (d *DynamicMap) GetWidth() int {
 // GetDepth gets depth.
 func (d *DynamicMap) GetDepth() int {
 	return d.depth
+}
+
+func (d *DynamicMap) Outdoor() bool {
+	return d.outdoor
+}
+
+func (d *DynamicMap) OutdoorBrightness() float64 {
+	return d.outdoorBrightness
+}
+
+func (d *DynamicMap) AmbientBrightness() float64 {
+	return d.ambientBrightness
+}
+
+func (d *DynamicMap) AmbientHue() float64 {
+	return d.ambientHue
 }

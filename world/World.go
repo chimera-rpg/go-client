@@ -159,7 +159,21 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		w.updateVisibleTiles()
 		w.updateVisionUnblocking()
 	}
+	w.updateTileLighting(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	return nil
+}
+
+func (w *World) updateTileLighting(y, x, z int) {
+	t := w.maps[w.currentMap].GetTile(y, x, z)
+	if t != nil {
+		for _, o := range t.objects {
+			o.LightingChange = true
+			o.Brightness = t.finalBrightness
+			o.Hue = t.finalHue
+			o.Changed = true
+			w.changedObjects = append(w.changedObjects, o)
+		}
+	}
 }
 
 func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
@@ -169,15 +183,7 @@ func (w *World) HandleTileLightCommand(cmd network.CommandTileLight) error {
 	w.maps[w.currentMap].SetTileLight(int(cmd.Y), int(cmd.X), int(cmd.Z), cmd.Brightness)
 	w.maps[w.currentMap].SetTileHue(int(cmd.Y), int(cmd.X), int(cmd.Z), float32(cmd.Hue))
 	w.maps[w.currentMap].RecalculateLightingAt(int(cmd.Y), int(cmd.X), int(cmd.Z))
-	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
-	if t != nil {
-		for _, o := range t.objects {
-			o.LightingChange = true
-			o.Brightness = t.finalBrightness
-			o.Hue = t.finalHue
-			w.changedObjects = append(w.changedObjects, o)
-		}
-	}
+	w.updateTileLighting(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	return nil
 }
 
@@ -187,15 +193,7 @@ func (w *World) HandleTileSkyCommand(cmd network.CommandTileSky) error {
 	}
 	w.maps[w.currentMap].SetTileSky(int(cmd.Y), int(cmd.X), int(cmd.Z), float32(cmd.Sky))
 	w.maps[w.currentMap].RecalculateLightingAt(int(cmd.Y), int(cmd.X), int(cmd.Z))
-	t := w.maps[w.currentMap].GetTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
-	if t != nil {
-		for _, o := range t.objects {
-			o.LightingChange = true
-			o.Brightness = t.finalBrightness
-			o.Hue = t.finalHue
-			w.changedObjects = append(w.changedObjects, o)
-		}
-	}
+	w.updateTileLighting(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	return nil
 }
 
