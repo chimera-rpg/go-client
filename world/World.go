@@ -31,6 +31,11 @@ type World struct {
 	visibleTiles                     []bool
 	unblockedTiles                   [][][]bool
 	Log                              *logrus.Logger
+	//
+	LeftBlocked  bool
+	FrontBlocked bool
+	AboveBlocked bool
+	InRoom       bool
 }
 
 // Init initializes the given world object with the passed client.
@@ -717,24 +722,161 @@ func (w *World) updateVisionUnblocking() {
 		}
 	}
 
-	for y := o.Y + 1; y < o.Y+16; y++ {
-		if y < 0 || y >= m.height {
-			continue
+	inRoom := func() bool {
+		oY := float64(o.Y) + float64(o.H)/2
+		oX := float64(o.X) + float64(o.W)/2
+		oZ := float64(o.Z)
+
+		// Now let's shoot some rays via Amanatides & Woo.
+		hits := 0
+		rays := [][2][3]float64{
+			{{oY, oX, oZ}, {oY + 15, oX, oZ}},
+			{{oY, oX, oZ}, {oY, oX - 25, oZ}},
+			{{oY, oX, oZ}, {oY, oX + 25, oZ}},
+			{{oY, oX, oZ}, {oY, oX, oZ - 25}},
+			{{oY, oX, oZ}, {oY, oX, oZ + 25}},
 		}
-		for x := o.X - 10; x < o.X+10; x++ {
-			if x < 0 || x >= m.width {
+		w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
+			if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+				hits++
+				return true
+			}
+			return false
+		})
+		return hits >= 4
+	}
+
+	isAboveBlocked := func() bool {
+		oY := float64(o.Y) + float64(o.H)/2
+		oX := float64(o.X) + float64(o.W)/2
+		oZ := float64(o.Z)
+
+		// Now let's shoot some rays via Amanatides & Woo.
+		hits := 0
+		rays := [][2][3]float64{
+			{{oY, oX, oZ}, {oY + 16, oX, oZ}},
+		}
+		w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
+			if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+				hits++
+				return true
+			}
+			return false
+		})
+		return hits >= 1
+	}
+
+	isLeftBlocked := func() bool {
+		oY := float64(o.Y) + float64(o.H)/2
+		oX := float64(o.X) + float64(o.W)/2
+		oZ := float64(o.Z)
+
+		// Now let's shoot some rays via Amanatides & Woo.
+		hits := 0
+		rays := [][2][3]float64{
+			{{oY, oX, oZ}, {oY, oX - 2, oZ}},
+			{{oY, oX, oZ}, {oY, oX - 2, oZ + 1}},
+			{{oY, oX, oZ}, {oY, oX - 2, oZ + 2}},
+			{{oY, oX, oZ}, {oY, oX - 2, oZ + 3}},
+		}
+		w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
+			if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+				hits++
+				return true
+			}
+			return false
+		})
+		return hits >= 2
+	}
+
+	isFrontBlocked := func() bool {
+		oY := float64(o.Y) + float64(o.H)/2
+		oX := float64(o.X) + float64(o.W)/2
+		oZ := float64(o.Z)
+
+		// Now let's shoot some rays via Amanatides & Woo.
+		hits := 0
+		rays := [][2][3]float64{
+			{{oY, oX, oZ}, {oY, oX, oZ + 6}},
+			{{oY, oX, oZ}, {oY, oX - 1, oZ + 8}},
+			{{oY, oX, oZ}, {oY, oX - 2, oZ + 8}},
+			{{oY, oX, oZ}, {oY, oX - 3, oZ + 8}},
+			{{oY, oX, oZ}, {oY, oX + 1, oZ + 8}},
+			{{oY, oX, oZ}, {oY, oX + 2, oZ + 8}},
+			{{oY, oX, oZ}, {oY, oX + 3, oZ + 8}},
+		}
+		w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
+			if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+				hits++
+				return true
+			}
+			return false
+		})
+		return hits >= 3
+	}
+
+	w.InRoom = inRoom()
+	w.LeftBlocked = isLeftBlocked()
+	w.FrontBlocked = isFrontBlocked()
+	w.AboveBlocked = isAboveBlocked()
+
+	if w.InRoom {
+		for y := o.Y + 1; y < o.Y+16; y++ {
+			if y < 0 || y >= m.height {
 				continue
 			}
-			for z := o.Z; z < o.Z+20; z++ {
-				if z < 0 || z >= m.depth {
+			for x := o.X - w.viewWidth/2; x < o.X+w.viewWidth/2; x++ {
+				if x < 0 || x >= m.width {
 					continue
 				}
-				if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
-					unblockedTiles[y][x][z] = true
+				for z := o.Z - w.viewDepth/2; z < o.Z+w.viewDepth/2; z++ {
+					if z < 0 || z >= m.depth {
+						continue
+					}
+					if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+						unblockedTiles[y][x][z] = true
+					}
 				}
 			}
 		}
-
+	} else if w.AboveBlocked || w.FrontBlocked {
+		for y := o.Y; y < o.Y+16; y++ {
+			if y < 0 || y >= m.height {
+				continue
+			}
+			for x := o.X - w.viewWidth/2; x < o.X+w.viewWidth/2; x++ {
+				if x < 0 || x >= m.width {
+					continue
+				}
+				for z := o.Z; z < o.Z+w.viewDepth/2; z++ {
+					if z < 0 || z >= m.depth {
+						continue
+					}
+					if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+						unblockedTiles[y][x][z] = true
+					}
+				}
+			}
+		}
+	} else if w.LeftBlocked {
+		for y := o.Y; y < o.Y+16; y++ {
+			if y < 0 || y >= m.height {
+				continue
+			}
+			for x := o.X - w.viewWidth/2; x < o.X; x++ {
+				if x < 0 || x >= m.width {
+					continue
+				}
+				for z := o.Z; z < o.Z+w.viewDepth/2; z++ {
+					if z < 0 || z >= m.depth {
+						continue
+					}
+					if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
+						unblockedTiles[y][x][z] = true
+					}
+				}
+			}
+		}
 	}
 
 	// Collect our end-points for rays
@@ -743,17 +885,15 @@ func (w *World) updateVisionUnblocking() {
 	oZ := float64(o.Z)
 
 	//rays := w.getConeRays(oY, oX, oZ, 16, 16)
-	minY := int(oY) + 6
-	maxY := minY + int(o.H) + 8
-	minX := int(oX) - 9
-	maxX := minX + int(o.W) + 17
-	minZ := int(oZ) + 3
-	maxZ := minZ + int(o.D) + 8
+	minY := int(oY) + 4
+	maxY := minY + int(o.H) + 12
+	minX := int(oX) - 14
+	maxX := minX + int(o.W) + 20
+	minZ := int(oZ)
+	maxZ := minZ + int(o.D) + 20
 	rays := w.getCubeRays(oY, oX, oZ, minY, minX, minZ, maxY, maxX, maxZ)
 	// TODO: We actually need to use an angled cone, originating from the near view target origin to whatever area we deem as the "camera" area
 	// TODO: Or, we could have 2 "cubes" -- basically 2 flat cubes that create a "right angle bracket"
-
-
 
 	// Now let's shoot some rays via Amanatides & Woo.
 	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {

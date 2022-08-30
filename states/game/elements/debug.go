@@ -15,6 +15,7 @@ type DebugWindow struct {
 	tileLightInfo      ui.ElementI
 	selfLightInfo      ui.ElementI
 	underfootLightInfo ui.ElementI
+	blockedInfo        ui.ElementI
 }
 
 func (c *DebugWindow) Setup(game game, style string, inputChan chan interface{}) (*ui.Container, error) {
@@ -66,12 +67,21 @@ func (c *DebugWindow) Setup(game game, style string, inputChan chan interface{})
 			OutlineColor 0 0 0 255
 		`,
 	})
+	c.blockedInfo = ui.NewTextElement(ui.TextElementConfig{
+		Value: "",
+		Style: `
+			Y 60
+			ForegroundColor 255 255 255 255
+			OutlineColor 0 0 0 255
+		`,
+	})
 
 	c.container.GetAdoptChannel() <- c.worldInfo
 	c.container.GetAdoptChannel() <- c.tileInfo
 	c.container.GetAdoptChannel() <- c.tileLightInfo
 	c.container.GetAdoptChannel() <- c.selfLightInfo
 	c.container.GetAdoptChannel() <- c.underfootLightInfo
+	c.container.GetAdoptChannel() <- c.blockedInfo
 
 	return c.container, nil
 }
@@ -94,6 +104,7 @@ func (c *DebugWindow) Refresh() {
 			}
 		}
 	}
+	c.blockedInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("room %t, left open %t, above open %t, front open %t", c.game.World().InRoom, !c.game.World().LeftBlocked, !c.game.World().AboveBlocked, !c.game.World().FrontBlocked)}
 }
 
 func (c *DebugWindow) Toggle() {
