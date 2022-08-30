@@ -409,9 +409,9 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 		uiMessages.add(ui.BatchUpdateMessage{
 			Target: o.Element,
 			Update: ui.UpdateColorMod{
-				R: uint8(255 * o.Brightness),
-				G: uint8(255 * o.Brightness),
-				B: uint8(255 * o.Brightness),
+				R: o.R,
+				G: o.G,
+				B: o.B,
 				A: 255},
 		})
 		o.LightingChange = false

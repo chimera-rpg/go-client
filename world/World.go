@@ -182,24 +182,44 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 	return nil
 }
 
+// MOVE ME
+func min3(a, b, c float64) float64 {
+	return math.Min(math.Min(a, b), c)
+}
+
+// MOVE ME
+func hueToRGB(h float64) (float64, float64, float64) {
+	kr := math.Mod(5+h*6, 6)
+	kg := math.Mod(3+h*6, 6)
+	kb := math.Mod(1+h*6, 6)
+
+	r := 1 - math.Max(min3(kr, 4-kr, 1), 0)
+	g := 1 - math.Max(min3(kg, 4-kg, 1), 0)
+	b := 1 - math.Max(min3(kb, 4-kb, 1), 0)
+
+	return r, g, b
+}
+
 func (w *World) updateTileLighting(y, x, z int) {
 	t := w.maps[w.currentMap].GetTile(y, x, z)
 	if t != nil {
 		brightness := t.finalBrightness
 		hue := t.finalHue
-		/*if t.opaque {
-			if t2 := w.maps[w.currentMap].GetTile(y+1, x, z); t2 != nil {
-				if !t2.opaque {
-					brightness = (brightness + t2.finalBrightness) / 2
-					hue = (hue + t2.finalHue) / 2
-				}
-			}
-		}*/
+		rb, gb, bb := uint8(255*brightness), uint8(255*brightness), uint8(255*brightness)
+		if hue != 0 {
+			r, g, b := hueToRGB(hue)
+			rb = uint8(r * 255 * brightness)
+			gb = uint8(g * 255 * brightness)
+			bb = uint8(b * 255 * brightness)
+		}
 
 		for _, o := range t.objects {
 			o.LightingChange = true
 			o.Brightness = brightness
 			o.Hue = hue
+			o.R = rb
+			o.G = gb
+			o.B = bb
 			o.Changed = true
 			w.changedObjects = append(w.changedObjects, o)
 		}
