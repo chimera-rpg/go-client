@@ -7,6 +7,7 @@ import (
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
 	tiles                         []DynamicMapTile
+	unblockedTiles                [][][]bool
 	height, width, depth          int
 	outdoor                       bool
 	outdoorBrightness             float64
@@ -16,6 +17,7 @@ type DynamicMap struct {
 // Init initializes the DynamicMap.
 func (d *DynamicMap) Init() {
 	d.tiles = make([]DynamicMapTile, d.height*d.width*d.depth)
+	d.unblockedTiles = make([][][]bool, 0)
 }
 
 func (d *DynamicMap) Index(y, x, z int) int {

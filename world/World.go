@@ -29,7 +29,6 @@ type World struct {
 	viewHeight, viewWidth, viewDepth int
 	deletedObjects                   []uint32 // A list of deleted object IDs. Used and cleared during the render call.
 	visibleTiles                     []bool
-	unblockedTiles                   [][][]bool
 	Log                              *logrus.Logger
 	//
 	LeftBlocked  bool
@@ -46,7 +45,6 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.maps = make(map[data.StringID]*DynamicMap)
 	w.objects = make([]*Object, 0)
 	w.visibleTiles = make([]bool, 0)
-	w.unblockedTiles = make([][][]bool, 0)
 	w.PendingObjectAnimations = make(map[uint32][]uint32)
 	w.PendingObjectImages = make(map[uint32][]uint32)
 	w.currentMap = 0
@@ -178,6 +176,9 @@ func (w *World) HandleTileCommand(cmd network.CommandTile) error {
 		w.updateVisionUnblocking()
 	}
 	w.updateTileLighting(int(cmd.Y), int(cmd.X), int(cmd.Z))
+
+	// Ensure any added objects have their unblocked status set.
+	w.RefreshUnblockedTile(int(cmd.Y), int(cmd.X), int(cmd.Z))
 	return nil
 }
 
@@ -879,35 +880,18 @@ func (w *World) updateVisionUnblocking() {
 		}
 	}
 
-	// Collect our end-points for rays
-	/*oY := float64(o.Y) + float64(o.H)/2
-	oX := float64(o.X) + float64(o.W)/2
-	oZ := float64(o.Z)
+	m.unblockedTiles = unblockedTiles
 
-	//rays := w.getConeRays(oY, oX, oZ, 16, 16)
-	minY := int(oY) + 4
-	maxY := minY + int(o.H) + 12
-	minX := int(oX) - 14
-	maxX := minX + int(o.W) + 20
-	minZ := int(oZ)
-	maxZ := minZ + int(o.D) + 20
-	rays := w.getCubeRays(oY, oX, oZ, minY, minX, minZ, maxY, maxX, maxZ)
-	// TODO: We actually need to use an angled cone, originating from the near view target origin to whatever area we deem as the "camera" area
-	// TODO: Or, we could have 2 "cubes" -- basically 2 flat cubes that create a "right angle bracket"
+	w.RefreshUnblockedTiles()
+}
 
-	// Now let's shoot some rays via Amanatides & Woo.
-	w.rayCasts(rays, float64(m.GetHeight()), float64(m.GetWidth()), float64(m.GetDepth()), func(y, x, z int) bool {
-		if m.tiles[m.height*m.width*z+m.width*y+x].opaque {
-			unblockedTiles[y][x][z] = true
-		}
-		return false
-	})*/
-
+func (w *World) RefreshUnblockedTiles() {
+	m := w.GetCurrentMap()
 	// Set objects no longer Unblocked
-	for y := range unblockedTiles {
-		for x := range unblockedTiles[y] {
-			for z := range unblockedTiles[y][x] {
-				isUnblocked := unblockedTiles[y][x][z]
+	for y := range m.unblockedTiles {
+		for x := range m.unblockedTiles[y] {
+			for z := range m.unblockedTiles[y][x] {
+				isUnblocked := m.unblockedTiles[y][x][z]
 				tiles := m.GetTile(y, x, z)
 				for _, o := range tiles.objects {
 					if !isUnblocked && o.Unblocked {
@@ -923,8 +907,23 @@ func (w *World) updateVisionUnblocking() {
 			}
 		}
 	}
+}
 
-	w.unblockedTiles = unblockedTiles
+func (w *World) RefreshUnblockedTile(y, x, z int) {
+	m := w.GetCurrentMap()
+	isUnblocked := m.unblockedTiles[y][x][z]
+	tiles := m.GetTile(y, x, z)
+	for _, o := range tiles.objects {
+		if !isUnblocked && o.Unblocked {
+			o.Unblocked = false
+			o.UnblockedChange = true
+			w.changedObjects = append(w.changedObjects, o)
+		} else if isUnblocked && !o.Unblocked {
+			o.Unblocked = true
+			o.UnblockedChange = true
+			w.changedObjects = append(w.changedObjects, o)
+		}
+	}
 }
 
 // GetObjectShadowPosition returns the shadow position for the given object. This is calculated from the object's position downward (-Y) until an opaque block is eached.
