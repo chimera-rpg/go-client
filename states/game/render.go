@@ -377,46 +377,47 @@ func (s *Game) RenderObjectImage(ctx RenderContext, o *world.Object, m *world.Dy
 		})
 	}
 
-	if o.Image != nil {
-		if o.UnblockedChange {
-			if o.Unblocked {
-				uiMessages.add(ui.BatchUpdateMessage{
-					Target: o.Element,
-					Update: ui.UpdateAlpha(0.1),
-				})
-			} else {
-				uiMessages.add(ui.BatchUpdateMessage{
-					Target: o.Element,
-					Update: ui.UpdateAlpha(1.0),
-				})
-			}
-			o.UnblockedChange = false
-		}
-		if o.VisibilityChange {
-			if o.Visible {
-				uiMessages.add(ui.BatchUpdateMessage{
-					Target: o.Element,
-					Update: ui.UpdateGrayscale(false),
-				})
-			} else {
-				uiMessages.add(ui.BatchUpdateMessage{
-					Target: o.Element,
-					Update: ui.UpdateGrayscale(true),
-				})
-			}
-			o.VisibilityChange = false
-		}
-		if o.LightingChange {
+	if o.UnblockedChange {
+		if o.Unblocked {
 			uiMessages.add(ui.BatchUpdateMessage{
 				Target: o.Element,
-				Update: ui.UpdateColorMod{
-					R: uint8(255 * o.Brightness),
-					G: uint8(255 * o.Brightness),
-					B: uint8(255 * o.Brightness),
-					A: 255},
+				Update: ui.UpdateAlpha(0.1),
 			})
-			o.LightingChange = false
+		} else {
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateAlpha(1.0),
+			})
 		}
+		o.UnblockedChange = false
+	}
+	if o.VisibilityChange {
+		if o.Visible {
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateGrayscale(false),
+			})
+		} else {
+			uiMessages.add(ui.BatchUpdateMessage{
+				Target: o.Element,
+				Update: ui.UpdateGrayscale(true),
+			})
+		}
+		o.VisibilityChange = false
+	}
+	if o.LightingChange {
+		uiMessages.add(ui.BatchUpdateMessage{
+			Target: o.Element,
+			Update: ui.UpdateColorMod{
+				R: uint8(255 * o.Brightness),
+				G: uint8(255 * o.Brightness),
+				B: uint8(255 * o.Brightness),
+				A: 255},
+		})
+		o.LightingChange = false
+	}
+
+	if o.Image != nil {
 		//
 		if o.Changed {
 			bounds := o.Image.Bounds()
