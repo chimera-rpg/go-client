@@ -26,17 +26,15 @@ type Object struct {
 	Reach                                                                                          uint8
 	Missing                                                                                        bool // Represents if the object is currently in an unknown location. This happens when a Tile that holds an Object no longer holds it and no other Tile has claimed it.
 	WasMissing                                                                                     bool
-	Changed                                                                                        bool    // Represents if the object's position has been changed. Cleared by Game.RenderObject
-	Squeezing                                                                                      bool    // Represents if the object is squeezing. Causes the rendered image to be lightly squashed in the X axis.
-	Crouching                                                                                      bool    // Represents if the object is crouching. Causes the rendered image to be lightly squashed in the Y axis.
-	Opaque                                                                                         bool    // Represents if the object is considered to block vision.
-	Visible                                                                                        bool    // Represents if the object is visible.
-	VisibilityChange                                                                               bool    // Used to record if the visibility of the object has changed since last render.
-	Unblocked                                                                                      bool    // Represents if the object is unblocked (should be alpha).
-	UnblockedChange                                                                                bool    // Used to record if the unblocked state of the object has changed since last render.
-	LightingChange                                                                                 bool    // Used to represent if the lighting of the object has changed.
-	Brightness                                                                                     float64 // How much additional brightness should be applied...?
-	Hue                                                                                            float64 // Th' hue
+	Changed                                                                                        bool // Represents if the object's position has been changed. Cleared by Game.RenderObject
+	Squeezing                                                                                      bool // Represents if the object is squeezing. Causes the rendered image to be lightly squashed in the X axis.
+	Crouching                                                                                      bool // Represents if the object is crouching. Causes the rendered image to be lightly squashed in the Y axis.
+	Opaque                                                                                         bool // Represents if the object is considered to block vision.
+	Visible                                                                                        bool // Represents if the object is visible.
+	VisibilityChange                                                                               bool // Used to record if the visibility of the object has changed since last render.
+	Unblocked                                                                                      bool // Represents if the object is unblocked (should be alpha).
+	UnblockedChange                                                                                bool // Used to record if the unblocked state of the object has changed since last render.
+	LightingChange                                                                                 bool // Used to represent if the lighting of the object has changed.
 	R, G, B                                                                                        uint8
 	Element                                                                                        ui.ElementI // This is kind of bad, but it's simpler for rendering if we pair the ui element with the object directly.
 	HasShadow                                                                                      bool        // Used to indicate that the object should have a shadow. Defined on object creation based upon its archetype type.

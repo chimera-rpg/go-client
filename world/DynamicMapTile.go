@@ -2,32 +2,23 @@ package world
 
 // DynamicMapTile represents a tile.
 type DynamicMapTile struct {
-	objects         []*Object
-	brightness      float32
-	hue             float32
-	sky             float32
-	opaque          bool
-	finalBrightness float64
-	finalHue        float64
+	objects                         []*Object
+	r, g, b                         uint8
+	sky                             float32
+	opaque                          bool
+	finalRed, finalGreen, finalBlue uint8
 }
 
-func (d *DynamicMapTile) Brightness() float64 {
-	return float64(d.brightness)
+func (d *DynamicMapTile) RGB() (uint8, uint8, uint8) {
+	return d.r, d.g, d.b
+}
+
+func (d *DynamicMapTile) FinalRGB() (uint8, uint8, uint8) {
+	return d.finalRed, d.finalGreen, d.finalBlue
 }
 
 func (d *DynamicMapTile) Sky() float64 {
 	return float64(d.sky)
-}
-
-func (d *DynamicMapTile) Hue() float64 {
-	return float64(d.hue)
-}
-func (d *DynamicMapTile) FinalBrightness() float64 {
-	return d.finalBrightness
-}
-
-func (d *DynamicMapTile) FinalHue() float64 {
-	return d.finalHue
 }
 
 func (d *DynamicMapTile) Objects() []*Object {

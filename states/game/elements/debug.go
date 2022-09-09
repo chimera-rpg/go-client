@@ -92,15 +92,21 @@ func (c *DebugWindow) Refresh() {
 		return
 	}
 	if m := c.game.World().GetCurrentMap(); m != nil {
-		c.worldInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("%dx%dx%d, outdoor %t, outdoor brightness %f, ambient brightness %f, ambient hue %f", m.GetHeight(), m.GetWidth(), m.GetDepth(), m.Outdoor(), m.OutdoorBrightness(), m.AmbientBrightness(), m.AmbientHue())}
+		or, og, ob := m.OutdoorRGB()
+		ar, ag, ab := m.AmbientRGB()
+		c.worldInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("%dx%dx%d, outdoor %t, outdoor rgb %d:%d:%d, ambient rgb %d:%d:%d", m.GetHeight(), m.GetWidth(), m.GetDepth(), m.Outdoor(), or, og, ob, ar, ag, ab)}
 		if vo := c.game.World().GetViewObject(); vo != nil {
-			c.selfLightInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("self: brightness %f, hue %f", vo.Brightness, vo.Hue)}
+			c.selfLightInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("self rgb %d:%d:%d", vo.R, vo.G, vo.B)}
 			if t := m.GetTile(vo.Y, vo.X, vo.Z); t != nil {
 				c.tileInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("%dx%dx%d: %d objects", vo.Y, vo.X, vo.Z, len(t.Objects()))}
-				c.tileLightInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("brightness %f, sky %f, finalBrightness %f, finalHue %f", t.Brightness(), t.Sky(), t.FinalBrightness(), t.FinalHue())}
+				tr, tg, tb := t.RGB()
+				fr, fg, fb := t.RGB()
+				c.tileLightInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("rgb %d:%d:%d, sky %f, final rgb %d:%d:%d", tr, tg, tb, t.Sky(), fr, fg, fb)}
 			}
 			if t := m.GetTile(vo.Y-1, vo.X, vo.Z); t != nil {
-				c.underfootLightInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("underfoot: brightness %f(%f), hue %f(%f)\n", t.FinalBrightness(), t.Brightness(), t.FinalHue(), t.Hue())}
+				tr, tg, tb := t.RGB()
+				fr, fg, fb := t.RGB()
+				c.underfootLightInfo.GetUpdateChannel() <- ui.UpdateValue{Value: fmt.Sprintf("underfoot: rgb %d:%d:%d(%d:%d:%d)\n", tr, tg, tb, fr, fg, fb)}
 			}
 		}
 	}

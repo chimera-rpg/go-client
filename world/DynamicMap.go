@@ -1,17 +1,13 @@
 package world
 
-import (
-	"math"
-)
-
 // DynamicMap is the dynamically sized map that contains tiles and current objects.
 type DynamicMap struct {
-	tiles                         []DynamicMapTile
-	unblockedTiles                [][][]bool
-	height, width, depth          int
-	outdoor                       bool
-	outdoorBrightness             float64
-	ambientHue, ambientBrightness float64
+	tiles                                 []DynamicMapTile
+	unblockedTiles                        [][][]bool
+	height, width, depth                  int
+	outdoor                               bool
+	outdoorRed, outdoorGreen, outdoorBlue uint8
+	ambientRed, ambientGreen, ambientBlue uint8
 }
 
 // Init initializes the DynamicMap.
@@ -45,18 +41,14 @@ func (d *DynamicMap) GetTile(y, x, z int) (tiles *DynamicMapTile) {
 	return &d.tiles[d.Index(y, x, z)]
 }
 
-func (d *DynamicMap) SetTileLight(y, x, z int, brightness float32) {
+func (d *DynamicMap) SetTileLight(y, x, z int, r, g, b uint8) {
 	if y < 0 || y >= d.height || x < 0 || x >= d.width || z < 0 || z >= d.depth {
 		return
 	}
-	d.tiles[d.Index(y, x, z)].brightness = brightness
-}
-
-func (d *DynamicMap) SetTileHue(y, x, z int, hue float32) {
-	if y < 0 || y >= d.height || x < 0 || x >= d.width || z < 0 || z >= d.depth {
-		return
-	}
-	d.tiles[d.Index(y, x, z)].hue = hue
+	t := d.GetTile(y, x, z)
+	t.r = r
+	t.g = g
+	t.b = b
 }
 
 func (d *DynamicMap) SetTileSky(y, x, z int, sky float32) {
@@ -68,28 +60,32 @@ func (d *DynamicMap) SetTileSky(y, x, z int, sky float32) {
 
 func (d *DynamicMap) RecalculateLightingAt(y, x, z int) {
 	index := d.Index(y, x, z)
-	d.tiles[index].finalBrightness = d.BrightnessAt(y, x, z)
-	d.tiles[index].finalHue = d.HueAt(y, x, z)
-	/*return &d.tiles[]
-	t := d.At(y, x, z)
-	t.finalBrightness = d.BrightnessAt(y, x, z)
-	t.finalHue = d.HueAt(y, x, z)*/
-}
 
-func (d *DynamicMap) BrightnessAt(y, x, z int) float64 {
-	brightness := d.ambientBrightness
+	r := uint16(d.ambientRed)
+	g := uint16(d.ambientGreen)
+	b := uint16(d.ambientBlue)
 	if d.outdoor {
-		brightness += d.outdoorBrightness * float64(d.tiles[d.Index(y, x, z)].sky)
+		r += uint16(float64(d.outdoorRed) * float64(d.tiles[d.Index(y, x, z)].sky))
+		g += uint16(float64(d.outdoorGreen) * float64(d.tiles[d.Index(y, x, z)].sky))
+		b += uint16(float64(d.outdoorBlue) * float64(d.tiles[d.Index(y, x, z)].sky))
 	}
-	brightness += float64(d.tiles[d.Index(y, x, z)].brightness)
 
-	return math.Max(0, math.Min(brightness, 1.0))
-}
+	r += uint16(d.tiles[index].r)
+	g += uint16(d.tiles[index].g)
+	b += uint16(d.tiles[index].b)
 
-func (d *DynamicMap) HueAt(y, x, z int) float64 {
-	hue := d.ambientHue
-	hue += float64(d.tiles[d.Index(y, x, z)].hue)
-	return hue
+	if r >= 255 {
+		r = 255
+	}
+	if g >= 255 {
+		g = 255
+	}
+	if b >= 255 {
+		b = 255
+	}
+	d.tiles[index].finalRed = uint8(r)
+	d.tiles[index].finalGreen = uint8(g)
+	d.tiles[index].finalBlue = uint8(b)
 }
 
 // GetHeight gets height.
@@ -111,14 +107,10 @@ func (d *DynamicMap) Outdoor() bool {
 	return d.outdoor
 }
 
-func (d *DynamicMap) OutdoorBrightness() float64 {
-	return d.outdoorBrightness
+func (d *DynamicMap) OutdoorRGB() (uint8, uint8, uint8) {
+	return d.outdoorRed, d.outdoorGreen, d.outdoorBlue
 }
 
-func (d *DynamicMap) AmbientBrightness() float64 {
-	return d.ambientBrightness
-}
-
-func (d *DynamicMap) AmbientHue() float64 {
-	return d.ambientHue
+func (d *DynamicMap) AmbientRGB() (uint8, uint8, uint8) {
+	return d.ambientRed, d.ambientGreen, d.ambientBlue
 }
