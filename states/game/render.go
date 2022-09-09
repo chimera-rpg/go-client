@@ -196,6 +196,11 @@ func (s *Game) GetObjectRenderPosition(ctx RenderContext, m *world.DynamicMap, o
 		indexY += int(o.H - 1)
 	}
 
+	// NOTE: This is probably stupid.
+	if o.Type == cdata.ArchetypePC.AsUint8() || o.Type == cdata.ArchetypeNPC.AsUint8() {
+		indexY++
+	}
+
 	targetZ = (indexZ * int(m.GetHeight()) * int(m.GetWidth())) + (int(m.GetDepth()) * indexY) - (indexX)
 
 	// Calculate our scaled pixel position at which to render.
