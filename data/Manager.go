@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"image"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 
 	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-common/network"
@@ -36,7 +38,8 @@ type Manager struct {
 	DataPath   string // Path for client data (fonts, etc.)
 	ConfigPath string // Path for user configuration (style overrides, bindings, etc.)
 	Config     config.Config
-	CachePath  string // Path for local cache (downloaded PNGs, etc.)
+	CachePath  string                       // Path for local cache (downloaded PNGs, etc.)
+	Styles     map[string]map[string]string // Map of UI styles.
 	animations []*Animation
 	audio      map[uint32]Audio
 	//images         map[uint32]image.Image
@@ -104,6 +107,21 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	// Read in our config.
 	if err := m.Config.Read(path.Join(m.ConfigPath, "client.yaml")); err != nil {
 		m.Log.Info(err)
+	}
+
+	// Read in our styles.
+	m.Styles = make(map[string]map[string]string)
+	stylesPath := path.Join(m.DataPath, "styles.yaml")
+	if _, err = os.Stat(stylesPath); err != nil {
+		return err
+	} else {
+		r, err := ioutil.ReadFile(stylesPath)
+		if err != nil {
+			return err
+		}
+		if err = yaml.Unmarshal(r, m.Styles); err != nil {
+			return err
+		}
 	}
 
 	m.animations = make([]*Animation, 0)
