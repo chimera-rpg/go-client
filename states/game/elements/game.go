@@ -18,4 +18,5 @@ type game interface {
 	InputChan() chan interface{}
 	SendNetMessage(network.Command)
 	Config() *config.Config
+	Styles() map[string]map[string]string
 }

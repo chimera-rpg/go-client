@@ -538,3 +538,7 @@ func (s *Game) SendNetMessage(cmd network.Command) {
 func (s *Game) Config() *config.Config {
 	return &s.Client.DataManager.Config
 }
+
+func (s *Game) Styles() map[string]map[string]string {
+	return s.Client.DataManager.Styles
+}
