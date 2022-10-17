@@ -26,35 +26,15 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 
 	err = s.RegisterContainer.Setup(ui.ContainerConfig{
 		Value: "Register",
-		Style: `
-			W 100%
-			H 100%
-			BackgroundColor 139 186 139 255
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["Container"],
 	})
 
 	err = s.InputContainer.Setup(ui.ContainerConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 50%
-			MinW 100
-			W 100%
-			MinH 300
-			H 100%
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["InputsContainer"],
 	})
 
 	s.elUsername = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX
-			X 50%
-			Y 0
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-		`,
+		Style:       s.Client.DataManager.Styles["Register"]["UsernameInput"],
 		Placeholder: "username",
 		Events: ui.Events{
 			OnAdopted: func(parent ui.ElementI) {
@@ -83,27 +63,11 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		},
 	})
 	s.textUsername = ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			Origin CenterX
-			ContentOrigin CenterX CenterY
-			X 50%
-			Y 30
-			H 20
-			W 100%
-			OutlineColor 0 0 0 200
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["UsernameResult"],
 	})
 
 	s.elPassword = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX
-			X 50%
-			Y 60
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-		`,
+		Style:       s.Client.DataManager.Styles["Register"]["PasswordInput"],
 		Password:    true,
 		Placeholder: "password",
 		Events: ui.Events{
@@ -130,15 +94,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		},
 	})
 	s.elPassword2 = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX
-			X 50%
-			Y 110
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-		`,
+		Style:       s.Client.DataManager.Styles["Register"]["PasswordConfirmInput"],
 		Password:    true,
 		Placeholder: "confirm password",
 		Events: ui.Events{
@@ -165,27 +121,11 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		},
 	})
 	s.textPassword = ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			Origin CenterX
-			ContentOrigin CenterX CenterY
-			X 50%
-			Y 140
-			H 20
-			W 100%
-			OutlineColor 0 0 0 200
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["PasswordResult"],
 	})
 
 	s.elEmail = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX
-			X 50%
-			Y 170
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-		`,
+		Style:       s.Client.DataManager.Styles["Register"]["EmailInput"],
 		Placeholder: "email",
 		Events: ui.Events{
 			OnChange: func() bool {
@@ -211,26 +151,11 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 		},
 	})
 	s.textEmail = ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			Origin CenterX
-			ContentOrigin CenterX CenterY
-			X 50%
-			Y 200
-			H 20
-			W 100%
-			OutlineColor 0 0 0 200
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["EmailResult"],
 	})
 
 	elConfirm = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin CenterX
-			X 50%
-			Y 230
-			W 100%
-			MinW 100
-			MaxW 200
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["ConfirmButton"],
 		Value: "Confirm",
 		Events: ui.Events{
 			OnPressed: func(button uint8, x, y int32) bool {
@@ -251,13 +176,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 	})
 
 	elBack = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin Bottom
-			Y 30
-			Margin 5%
-			W 40%
-			MinW 100
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["BackButton"],
 		Value: "Back",
 		Events: ui.Events{
 			OnPressed: func(button uint8, x, y int32) bool {
@@ -268,15 +187,7 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 	})
 
 	s.OutputText = ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			Origin CenterX Bottom
-			ContentOrigin CenterX CenterY
-			ForegroundColor 255 255 255 255
-			BackgroundColor 0 0 0 128
-			Y 0
-			X 50%
-			W 100%
-		`,
+		Style: s.Client.DataManager.Styles["Register"]["OutputText"],
 		Value: " ",
 	})
 
@@ -287,10 +198,10 @@ func (s *Register) Init(v interface{}) (next client.StateI, nextArgs interface{}
 	s.InputContainer.AdoptChannel <- s.textPassword
 	s.InputContainer.AdoptChannel <- s.elEmail
 	s.InputContainer.AdoptChannel <- s.textEmail
-	s.InputContainer.AdoptChannel <- elConfirm
 
 	s.RegisterContainer.AdoptChannel <- s.InputContainer.This
 	s.RegisterContainer.AdoptChannel <- elBack
+	s.RegisterContainer.AdoptChannel <- elConfirm
 	s.RegisterContainer.AdoptChannel <- s.OutputText
 
 	s.Client.RootWindow.AdoptChannel <- s.RegisterContainer.This

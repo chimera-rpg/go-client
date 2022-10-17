@@ -15,37 +15,19 @@ type List struct {
 func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, err error) {
 	err = s.ServersContainer.Setup(ui.ContainerConfig{
 		Value: "Server List",
-		Style: `
-			W 100%
-			H 100%
-		`,
+		Style: s.Client.DataManager.Styles["Servers"]["List"],
 	})
 	s.Client.RootWindow.AdoptChannel <- s.ServersContainer.This
 
 	el := ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			PaddingLeft 5%
-			PaddingRight 5%
-			PaddingTop 5%
-			PaddingBottom 5%
-			Origin CenterX CenterY
-			ContentOrigin CenterX CenterY
-			X 50%
-			Y 10%
-		`,
+		Style: s.Client.DataManager.Styles["Servers"]["ChooseServer"],
 		Value: "Please choose a server.",
 	})
 
 	var elHost, elConnect, elOutputText ui.ElementI
 
 	elHost = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin Bottom
-			X 0%
-			Y 30
-			Margin 5%
-			W 60%
-		`,
+		Style:         s.Client.DataManager.Styles["Servers"]["HostInput"],
 		Value:         s.Client.DataManager.Config.LastServer,
 		Placeholder:   "host:port",
 		SubmitOnEnter: true,
@@ -59,13 +41,7 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 	elHost.Focus()
 
 	elConnect = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin Bottom
-			X 65%
-			Y 30
-			Margin 5%
-			W 25%
-		`,
+		Style: s.Client.DataManager.Styles["Servers"]["ConnectButton"],
 		Value: "CONNECT",
 		Events: ui.Events{
 			OnPressed: func(which uint8, x int32, y int32) bool {
@@ -88,28 +64,14 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 	}
 
 	elOutputText = ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			Origin CenterX Bottom
-			ContentOrigin CenterX CenterY
-			ForegroundColor 255 255 255 128
-			BackgroundColor 0 0 0 128
-			Y 0
-			X 50%
-			W 100%
-		`,
+		Style: s.Client.DataManager.Styles["Servers"]["OutputText"],
 		Value: inString,
 	})
 
 	imageData, err := s.Client.DataManager.GetImage(s.Client.DataManager.GetDataPath("ui/loading.png"))
 
 	elImg := ui.NewImageElement(ui.ImageElementConfig{
-		Style: `
-			X 50%
-			Y 50%
-			W 48
-			H 48
-			Origin CenterX CenterY
-		`,
+		Style: s.Client.DataManager.Styles["Servers"]["SplashImage"],
 		Image: imageData,
 	})
 
@@ -118,16 +80,6 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 	s.ServersContainer.AdoptChannel <- elConnect
 	s.ServersContainer.AdoptChannel <- elOutputText
 	el.GetAdoptChannel() <- elImg
-
-	elTest := ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			X 50%
-			Y 50%
-			Origin CenterX CenterY
-		`,
-		Value: "Test",
-	})
-	elTest.GetAdoptChannel() <- elImg
 
 	return
 }

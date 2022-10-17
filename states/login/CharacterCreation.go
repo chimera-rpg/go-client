@@ -24,34 +24,17 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 
 	err = s.SelectionContainer.Setup(ui.ContainerConfig{
 		Value: "Selection",
-		Style: `
-			W 100%
-			H 100%
-		`,
+		Style: s.Client.DataManager.Styles["Creation"]["Container"],
 	})
 
 	s.CharactersContainer.Setup(ui.ContainerConfig{
-		Style: `
-			W 30%
-			H 100%
-			BackgroundColor 128 128 128 128
-		`,
+		Style: s.Client.DataManager.Styles["Creation"]["Characters"],
 	})
 
 	var elName, elCreate ui.ElementI
 
 	elName = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 10%
-			H 20%
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-			ForegroundColor 255 0 0 255
-		`,
+		Style:       s.Client.DataManager.Styles["Creation"]["CharacterName"],
 		Placeholder: "character name",
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
@@ -64,13 +47,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	})
 
 	elCreate = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 30%
-			W 100%
-			MaxW 200
-		`,
+		Style: s.Client.DataManager.Styles["Creation"]["CreateButton"],
 		Value: "Create Character",
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {
@@ -114,13 +91,7 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 	}
 
 	elChar := ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: fmt.Sprintf(`
-			Origin CenterX CenterY
-			X 50%%
-			Y %d%%
-			W 100%%
-			MaxW 75%%
-		`, 10+offset*10),
+		Style: fmt.Sprintf(s.Client.DataManager.Styles["Creation"]["CharacterEntry_fmt"], 10+offset*10),
 		Value: name,
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {

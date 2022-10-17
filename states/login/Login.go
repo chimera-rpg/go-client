@@ -62,23 +62,13 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 
 	err = s.LoginContainer.Setup(ui.ContainerConfig{
 		Value: "Selection",
-		Style: `
-			W 100%
-			H 100%
-			BackgroundColor 139 186 139 255
-		`,
+		Style: s.Client.DataManager.Styles["Login"]["Container"],
 	})
 
 	var elLogin, elRegister, elDisconnect ui.ElementI
 
 	s.usernameEl = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 10%
-			W 100%
-			MaxW 200
-		`,
+		Style:       s.Client.DataManager.Styles["Login"]["UsernameInput"],
 		Placeholder: "username",
 		Value:       lstate.username,
 		Events: ui.Events{
@@ -95,17 +85,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	})
 
 	s.passwordEl = ui.NewInputElement(ui.InputElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 40%
-			H 20%
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-			ForegroundColor 255 0 0 255
-		`,
+		Style:       s.Client.DataManager.Styles["Login"]["PasswordInput"],
 		Password:    true,
 		Placeholder: "password",
 		Value:       lstate.password,
@@ -124,16 +104,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		remember = "remember: yes"
 	}
 	s.rememberPasswordEl = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 70%
-			Y 40%
-			H 20%
-			W 100%
-			MaxW 200
-			MaxH 30
-			MinH 25
-		`,
+		Style: s.Client.DataManager.Styles["Login"]["RememberButton"],
 		Value: remember,
 		Events: ui.Events{
 			OnPressed: func(button uint8, x, y int32) bool {
@@ -149,13 +120,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	})
 
 	elDisconnect = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin Bottom
-			Y 30
-			Margin 5%
-			W 40%
-			MinW 100
-		`,
+		Style: s.Client.DataManager.Styles["Login"]["DisconnectButton"],
 		Value: "DISCONNECT",
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {
@@ -166,14 +131,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	})
 
 	elRegister = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin Bottom
-			X 50%
-			Y 30
-			Margin 5%
-			W 40%
-			MinW 100
-		`,
+		Style: s.Client.DataManager.Styles["Login"]["RegisterButton"],
 		Value: "REGISTER",
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {
@@ -184,12 +142,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	})
 
 	elLogin = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: `
-			Origin CenterX CenterY
-			X 50%
-			Y 60%
-			W 40%
-		`,
+		Style: s.Client.DataManager.Styles["Login"]["LoginButton"],
 		Value: "LOGIN",
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {
@@ -207,15 +160,7 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 	})
 
 	s.OutputText = ui.NewTextElement(ui.TextElementConfig{
-		Style: `
-			Origin CenterX Bottom
-			ContentOrigin CenterX CenterY
-			ForegroundColor 255 255 255 255
-			BackgroundColor 0 0 0 128
-			Y 0
-			X 50%
-			W 100%
-		`,
+		Style: s.Client.DataManager.Styles["Login"]["OutputText"],
 		Value: lstate.message,
 	})
 

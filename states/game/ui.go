@@ -40,7 +40,7 @@ func (s *Game) SetupUI() (err error) {
 	// Main Container
 	err = s.GameContainer.Setup(ui.ContainerConfig{
 		Value: "Game",
-		Style: GameContainerStyle,
+		Style: s.Styles()["Game"]["Container"],
 		Events: ui.Events{
 			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
 				s.inputChan <- KeyInput{
@@ -64,12 +64,12 @@ func (s *Game) SetupUI() (err error) {
 	s.GameContainer.Focus()
 	s.Client.RootWindow.AdoptChannel <- s.GameContainer.This
 
-	container, err := s.MapWindow.Setup(MapContainerStyle, s.inputChan)
+	container, err := s.MapWindow.Setup(s.Styles()["Game"]["Map"], s.inputChan)
 	s.GameContainer.AdoptChannel <- container.This
 
 	// Sub-window: chat
 	s.ChatWindow.Setup(ui.ContainerConfig{
-		Style: ChatWindowStyle,
+		Style: s.Styles()["Game"]["Chat"],
 		Events: ui.Events{
 			OnWindowResized: func(w, h int32) {
 				s.inputChan <- elements.ResizeEvent{}
@@ -79,7 +79,7 @@ func (s *Game) SetupUI() (err error) {
 
 	err = s.MessagesWindow.Setup(ui.ContainerConfig{
 		Value: "Messages",
-		Style: MessagesWindowStyle,
+		Style: s.Styles()["Game"]["Messages"],
 		Events: ui.Events{
 			OnWindowResized: func(w, h int32) {
 				s.inputChan <- elements.ResizeEvent{}
@@ -88,12 +88,12 @@ func (s *Game) SetupUI() (err error) {
 	})
 
 	s.CommandContainer = ui.NewBaseElement(ui.BaseElementConfig{
-		Style: CommandContainerStyle,
+		Style: s.Styles()["Game"]["CommandContainer"],
 	})
 
 	s.ChatType = ui.NewButtonElement(ui.ButtonElementConfig{
 		Value:   CommandModeStrings[s.CommandMode],
-		Style:   CommandTypeStyle,
+		Style:   s.Styles()["Game"]["CommandType"],
 		NoFocus: true,
 		NoHold:  true,
 		Events: ui.Events{
@@ -106,7 +106,7 @@ func (s *Game) SetupUI() (err error) {
 
 	s.ChatInput = ui.NewInputElement(ui.InputElementConfig{
 		Value:         "",
-		Style:         ChatInputStyle,
+		Style:         s.Styles()["Game"]["ChatInput"],
 		SubmitOnEnter: true,
 		ClearOnSubmit: true,
 		BlurOnSubmit:  true,
@@ -138,26 +138,26 @@ func (s *Game) SetupUI() (err error) {
 	s.CommandContainer.GetAdoptChannel() <- s.ChatInput
 	s.GameContainer.AdoptChannel <- s.ChatWindow.This
 	// Sub-window: inventory
-	inventoryContainer, err := s.InventoryWindow.Setup(s, InventoryWindowStyle, s.inputChan)
+	inventoryContainer, err := s.InventoryWindow.Setup(s, s.Styles()["Game"]["Inventory"], s.inputChan)
 	if err != nil {
 		panic(err)
 	}
 	s.GameContainer.AdoptChannel <- inventoryContainer.This
 	// Sub-window: inspector
-	inspectorContainer, err := s.InspectorWindow.Setup(s, InspectorWindowStyle, s.inputChan)
+	inspectorContainer, err := s.InspectorWindow.Setup(s, s.Styles()["Game"]["Inspector"], s.inputChan)
 	if err != nil {
 		panic(err)
 	}
 	s.GameContainer.AdoptChannel <- inspectorContainer.This
 
 	// Sub-window: ground
-	groundContainer, err := s.GroundWindow.Setup(s, GroundWindowStyle, s.inputChan)
+	groundContainer, err := s.GroundWindow.Setup(s, s.Styles()["Game"]["Ground"], s.inputChan)
 	if err != nil {
 		panic(err)
 	}
 	s.GameContainer.AdoptChannel <- groundContainer.This
 	// Sub-window: debug
-	debugContainer, err := s.DebugWindow.Setup(s, DebugWindowStyle, s.inputChan)
+	debugContainer, err := s.DebugWindow.Setup(s, s.Styles()["Game"]["Debug"], s.inputChan)
 	if err != nil {
 		panic(err)
 	}
@@ -166,26 +166,19 @@ func (s *Game) SetupUI() (err error) {
 	// Sub-window: stats
 	err = s.StatsWindow.Setup(ui.ContainerConfig{
 		Value: "Stats",
-		Style: StatsWindowStyle,
+		Style: s.Styles()["Game"]["Stats"],
 	})
 	s.GameContainer.AdoptChannel <- s.StatsWindow.This
 	// Sub-window: state
 	err = s.StateWindow.Setup(ui.ContainerConfig{
 		Value: "State",
-		Style: StateWindowStyle,
+		Style: s.Styles()["Game"]["State"],
 	})
 	s.GameContainer.AdoptChannel <- s.StateWindow.This
 
 	s.focusedImage = ui.NewImageElement(ui.ImageElementConfig{
 		HideImage: true,
-		Style: `
-			X 0
-			Y 0
-			W 0
-			H 0
-			ZIndex 999999
-			OutlineColor 255 255 0 200
-		`,
+		Style:     s.Styles()["Game"]["FocusedImage"],
 		Events: ui.Events{
 			OnChange: func() bool {
 				if o := s.world.GetObject(s.focusedObjectID); o != nil && o.Element != nil {
@@ -214,10 +207,7 @@ func (s *Game) UpdateMessagesWindow() {
 	addMessage := func(str string) ui.ElementI {
 		e := ui.NewTextElement(ui.TextElementConfig{
 			Value: str,
-			Style: fmt.Sprintf(`
-				ForegroundColor 200 200 200 255
-				OutlineColor 20 20 20 255
-			`),
+			Style: s.Styles()["Game"]["GenericMessage"],
 		})
 		s.messageElements = append(s.messageElements, e)
 		s.MessagesWindow.GetAdoptChannel() <- s.messageElements[len(s.messageElements)-1]
@@ -296,12 +286,7 @@ func (s *Game) UpdateStateWindow() {
 	addStatus := func(status cdata.StatusType) ui.ElementI {
 		e := ui.NewTextElement(ui.TextElementConfig{
 			Value: cdata.StatusMapToString[status],
-			Style: `
-				ForegroundColor 200 200 200 255
-				OutlineColor 20 20 20 255
-				X 50%
-				Origin CenterX
-			`,
+			Style: s.Styles()["Game"]["State__Status"],
 		})
 		s.statusElements[status] = e
 		s.StateWindow.GetAdoptChannel() <- e
