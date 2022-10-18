@@ -14,56 +14,46 @@ import (
 // character.
 type CharacterCreation struct {
 	client.State
-	SelectionContainer  ui.Container
-	CharactersContainer ui.Container
+	layout ui.LayoutEntry
 }
 
 // Init is our CharacterCreation init state.
 func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
 	s.Client.Log.Print("CharacterCreation State")
 
-	err = s.SelectionContainer.Setup(ui.ContainerConfig{
-		Value: "Selection",
-		Style: s.Client.DataManager.Styles["Creation"]["Container"],
-	})
-
-	s.CharactersContainer.Setup(ui.ContainerConfig{
-		Style: s.Client.DataManager.Styles["Creation"]["Characters"],
-	})
-
-	var elName, elCreate ui.ElementI
-
-	elName = ui.NewInputElement(ui.InputElementConfig{
-		Style:       s.Client.DataManager.Styles["Creation"]["CharacterName"],
-		Placeholder: "character name",
-		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
-				if char == 13 { // Enter
-					elCreate.OnPressed(1, 0, 0)
-				}
-				return true
+	s.layout = s.Client.DataManager.Layouts["Creation"][0].Generate(s.Client.DataManager.Styles["Creation"], map[string]interface{}{
+		"Container": ui.ContainerConfig{
+			Value: "Selection",
+		},
+		"Characters": ui.ContainerConfig{
+			Value: "Character",
+		},
+		"CharacterName": ui.InputElementConfig{
+			Placeholder: "character name",
+			Events: ui.Events{
+				OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
+					if char == 13 { // Enter
+						s.layout.Find("CreateButton").Element.OnPressed(1, 0, 0)
+					}
+					return true
+				},
+			},
+		},
+		"CreateButton": ui.ButtonElementConfig{
+			Value: "Create Character",
+			Events: ui.Events{
+				OnPressed: func(button uint8, x int32, y int32) bool {
+					s.Client.Send(network.Command(network.CommandCharacter{
+						Type:       network.CreateCharacter,
+						Characters: []string{s.layout.Find("CharacterName").Element.GetValue()},
+					}))
+					return false
+				},
 			},
 		},
 	})
 
-	elCreate = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: s.Client.DataManager.Styles["Creation"]["CreateButton"],
-		Value: "Create Character",
-		Events: ui.Events{
-			OnPressed: func(button uint8, x int32, y int32) bool {
-				s.Client.Send(network.Command(network.CommandCharacter{
-					Type:       network.CreateCharacter,
-					Characters: []string{elName.GetValue()},
-				}))
-				return false
-			},
-		},
-	})
-
-	s.SelectionContainer.AdoptChannel <- elName
-	s.SelectionContainer.AdoptChannel <- elCreate
-	s.SelectionContainer.AdoptChannel <- s.CharactersContainer.This
-	s.Client.RootWindow.AdoptChannel <- s.SelectionContainer.This
+	s.Client.RootWindow.AdoptChannel <- s.layout.Find("Container").Element
 
 	// Let the server know we're ready!
 	s.Client.Send(network.Command(network.CommandCharacter{
@@ -77,7 +67,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 
 // addCharacter adds a button for the provided character name.
 func (s *CharacterCreation) addCharacter(offset int, name string) {
-	children := s.CharactersContainer.GetChildren()
+	children := s.layout.Find("Characters").Element.GetChildren()
 
 	for _, child := range children {
 		if _, ok := child.(*ui.ButtonElement); ok {
@@ -108,20 +98,20 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 	if isFocused {
 		elChar.Focus()
 	}
-	s.CharactersContainer.AdoptChannel <- elChar
+	s.layout.Find("Characters").Element.GetAdoptChannel() <- elChar
 }
 
 // Close our CharacterCreation State.
 func (s *CharacterCreation) Close() {
-	s.SelectionContainer.DestroyChannel <- true
+	s.layout.Find("Container").Element.GetDestroyChannel() <- true
 }
 
 func (s *CharacterCreation) Leave() {
-	s.SelectionContainer.GetUpdateChannel() <- ui.UpdateHidden(true)
+	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
 }
 
 func (s *CharacterCreation) Enter(args ...interface{}) {
-	s.SelectionContainer.GetUpdateChannel() <- ui.UpdateHidden(false)
+	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
 }
 
 // Loop is our loop for managing network activity and beyond.
