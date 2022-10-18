@@ -3,6 +3,7 @@ package data
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	"io/ioutil"
 	"strconv"
@@ -21,6 +22,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/chimera-rpg/go-client/config"
+	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-common/network"
 	"github.com/kettek/apng"
 )
@@ -40,6 +42,7 @@ type Manager struct {
 	Config     config.Config
 	CachePath  string                       // Path for local cache (downloaded PNGs, etc.)
 	Styles     map[string]map[string]string // Map of UI styles.
+	Layouts    map[string]*ui.LayoutEntry
 	animations []*Animation
 	audio      map[uint32]Audio
 	//images         map[uint32]image.Image
@@ -123,6 +126,22 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 			return err
 		}
 	}
+
+	// Read in our layout.
+	m.Layouts = make(map[string]*ui.LayoutEntry)
+	layoutsPath := path.Join(m.DataPath, "layouts.yaml")
+	if _, err = os.Stat(layoutsPath); err != nil {
+		return err
+	} else {
+		r, err := ioutil.ReadFile(layoutsPath)
+		if err != nil {
+			return err
+		}
+		if err = yaml.Unmarshal(r, m.Layouts); err != nil {
+			return err
+		}
+	}
+	fmt.Printf("%+v\n", m.Layouts)
 
 	m.animations = make([]*Animation, 0)
 	m.audio = make(map[uint32]Audio)
