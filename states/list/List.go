@@ -30,7 +30,7 @@ func (s *List) Init(v interface{}) (state client.StateI, nextArgs interface{}, e
 		inString = "Type in an address or select a server from above and connect."
 	}
 
-	s.layout = s.Client.DataManager.Layouts["Servers"].Children[0].Generate(s.Client.DataManager.Styles["Servers"], map[string]interface{}{
+	s.layout = s.Client.DataManager.Layouts["Servers"][0].Generate(s.Client.DataManager.Styles["Servers"], map[string]interface{}{
 		"List": ui.ContainerConfig{
 			Value: "Server List",
 		},

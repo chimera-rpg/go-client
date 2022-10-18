@@ -7,29 +7,10 @@ import (
 
 type LayoutEntry struct {
 	Element  ElementI
-	Type     string
-	Class    string
-	Children []LayoutEntry `yaml:"children"`
-}
-
-func (e *LayoutEntry) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var value map[string]LayoutEntry
-	if err := unmarshal(&value); err != nil {
-		return err
-	}
-	for k, child := range value {
-		parts := strings.SplitN(k, ".", 2)
-		typeString := "Container"
-		classString := parts[0]
-		if len(parts) > 1 {
-			typeString = parts[0]
-			classString = parts[1]
-		}
-		child.Class = classString
-		child.Type = typeString
-		e.Children = append(e.Children, child)
-	}
-	return nil
+	Tag      string        `yaml:"Tag"`
+	Type     string        `yaml:"Type"`
+	Class    string        `yaml:"Class"`
+	Children []LayoutEntry `yaml:"Children"`
 }
 
 func (e LayoutEntry) Generate(styles map[string]string, cfgs map[string]interface{}) LayoutEntry {
@@ -37,12 +18,20 @@ func (e LayoutEntry) Generate(styles map[string]string, cfgs map[string]interfac
 }
 
 func (e LayoutEntry) generate(styles map[string]string, cfgs map[string]interface{}) LayoutEntry {
-	l := LayoutEntry{
-		Class:   e.Class,
-		Element: e.Element,
+	parts := strings.SplitN(e.Tag, ".", 2)
+	typeString := "Container"
+	classString := parts[0]
+	if len(parts) > 1 {
+		typeString = parts[0]
+		classString = parts[1]
 	}
 
-	el, _ := e.Construct(styles[e.Class], cfgs[e.Class])
+	l := LayoutEntry{
+		Class: classString,
+		Type:  typeString,
+	}
+
+	el, _ := l.Construct(styles[l.Class], cfgs[l.Class])
 	l.Element = el
 	for _, child := range e.Children {
 		childEl := child.generate(styles, cfgs)
