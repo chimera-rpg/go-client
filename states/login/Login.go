@@ -15,12 +15,9 @@ import (
 // or recovering an account.
 type Login struct {
 	client.State
-	LoginContainer         ui.Container
-	OutputText             ui.ElementI
-	usernameEl, passwordEl ui.ElementI
-	rememberPasswordEl     ui.ElementI
-	rememberPassword       bool
-	pendingLogin           bool
+	layout           ui.LayoutEntry
+	rememberPassword bool
+	pendingLogin     bool
 }
 
 // StateID represents the current sub state of the Login state.
@@ -60,120 +57,99 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 		lstate = t
 	}
 
-	err = s.LoginContainer.Setup(ui.ContainerConfig{
-		Value: "Selection",
-		Style: s.Client.DataManager.Styles["Login"]["Container"],
-	})
-
-	var elLogin, elRegister, elDisconnect ui.ElementI
-
-	s.usernameEl = ui.NewInputElement(ui.InputElementConfig{
-		Style:       s.Client.DataManager.Styles["Login"]["UsernameInput"],
-		Placeholder: "username",
-		Value:       lstate.username,
-		Events: ui.Events{
-			OnAdopted: func(parent ui.ElementI) {
-				s.usernameEl.Focus()
-			},
-			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
-				if char == 13 { // Enter
-					elLogin.OnPressed(1, 0, 0)
-				}
-				return true
-			},
-		},
-	})
-
-	s.passwordEl = ui.NewInputElement(ui.InputElementConfig{
-		Style:       s.Client.DataManager.Styles["Login"]["PasswordInput"],
-		Password:    true,
-		Placeholder: "password",
-		Value:       lstate.password,
-		Events: ui.Events{
-			OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
-				if char == 13 { // Enter
-					elLogin.OnPressed(1, 0, 0)
-				}
-				return true
-			},
-		},
-	})
-
 	remember := "remember: no"
 	if s.rememberPassword {
 		remember = "remember: yes"
 	}
-	s.rememberPasswordEl = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: s.Client.DataManager.Styles["Login"]["RememberButton"],
-		Value: remember,
-		Events: ui.Events{
-			OnPressed: func(button uint8, x, y int32) bool {
-				s.rememberPassword = !s.rememberPassword
-				if s.rememberPassword {
-					s.rememberPasswordEl.GetUpdateChannel() <- ui.UpdateValue{Value: "remember: yes"}
-				} else {
-					s.rememberPasswordEl.GetUpdateChannel() <- ui.UpdateValue{Value: "remember: no"}
-				}
-				return true
+
+	s.layout = s.Client.DataManager.Layouts["Login"][0].Generate(s.Client.DataManager.Styles["Login"], map[string]interface{}{
+		"Container": ui.ContainerConfig{
+			Value: "Selection",
+		},
+		"UsernameInput": ui.InputElementConfig{
+			Placeholder: "username",
+			Value:       lstate.username,
+			Events: ui.Events{
+				OnAdopted: func(parent ui.ElementI) {
+					s.layout.Find("UsernameInput").Element.Focus()
+				},
+				OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
+					if char == 13 { // Enter
+						s.layout.Find("LoginButton").Element.OnPressed(1, 0, 0)
+					}
+					return true
+				},
 			},
+		},
+		"PasswordInput": ui.InputElementConfig{
+			Password:    true,
+			Placeholder: "password",
+			Value:       lstate.password,
+			Events: ui.Events{
+				OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
+					if char == 13 { // Enter
+						s.layout.Find("LoginButton").Element.OnPressed(1, 0, 0)
+					}
+					return true
+				},
+			},
+		},
+		"RememberButton": ui.ButtonElementConfig{
+			Value: remember,
+			Events: ui.Events{
+				OnPressed: func(button uint8, x, y int32) bool {
+					el := s.layout.Find("RememberButton").Element
+					s.rememberPassword = !s.rememberPassword
+					if s.rememberPassword {
+						el.GetUpdateChannel() <- ui.UpdateValue{Value: "remember: yes"}
+					} else {
+						el.GetUpdateChannel() <- ui.UpdateValue{Value: "remember: no"}
+					}
+					return true
+				},
+			},
+		},
+		"DisconnectButton": ui.ButtonElementConfig{
+			Value: "DISCONNECT",
+			Events: ui.Events{
+				OnPressed: func(button uint8, x int32, y int32) bool {
+					s.Client.Close()
+					return false
+				},
+			},
+		},
+		"RegisterButton": ui.ButtonElementConfig{
+			Value: "REGISTER",
+			Events: ui.Events{
+				OnPressed: func(button uint8, x int32, y int32) bool {
+					s.Client.StateChannel <- client.StateMessage{State: &Register{}, Args: nil}
+					return false
+				},
+			},
+		},
+		"LoginButton": ui.ButtonElementConfig{
+			Style: s.Client.DataManager.Styles["Login"]["LoginButton"],
+			Value: "LOGIN",
+			Events: ui.Events{
+				OnPressed: func(button uint8, x int32, y int32) bool {
+					if !s.pendingLogin {
+						s.pendingLogin = true
+						s.Client.Send(network.Command(network.CommandLogin{
+							Type: network.Login,
+							User: s.layout.Find("UsernameInput").Element.GetValue(),
+							Pass: s.layout.Find("PasswordInput").Element.GetValue(),
+						}))
+					}
+					return false
+				},
+			},
+		},
+		"OutputText": ui.TextElementConfig{
+			Value: lstate.message,
 		},
 	})
 
-	elDisconnect = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: s.Client.DataManager.Styles["Login"]["DisconnectButton"],
-		Value: "DISCONNECT",
-		Events: ui.Events{
-			OnPressed: func(button uint8, x int32, y int32) bool {
-				s.Client.Close()
-				return false
-			},
-		},
-	})
-
-	elRegister = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: s.Client.DataManager.Styles["Login"]["RegisterButton"],
-		Value: "REGISTER",
-		Events: ui.Events{
-			OnPressed: func(button uint8, x int32, y int32) bool {
-				s.Client.StateChannel <- client.StateMessage{State: &Register{}, Args: nil}
-				return false
-			},
-		},
-	})
-
-	elLogin = ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: s.Client.DataManager.Styles["Login"]["LoginButton"],
-		Value: "LOGIN",
-		Events: ui.Events{
-			OnPressed: func(button uint8, x int32, y int32) bool {
-				if !s.pendingLogin {
-					s.pendingLogin = true
-					s.Client.Send(network.Command(network.CommandLogin{
-						Type: network.Login,
-						User: s.usernameEl.GetValue(),
-						Pass: s.passwordEl.GetValue(),
-					}))
-				}
-				return false
-			},
-		},
-	})
-
-	s.OutputText = ui.NewTextElement(ui.TextElementConfig{
-		Style: s.Client.DataManager.Styles["Login"]["OutputText"],
-		Value: lstate.message,
-	})
-
-	s.LoginContainer.AdoptChannel <- s.usernameEl
-	s.LoginContainer.AdoptChannel <- s.passwordEl
-	s.LoginContainer.AdoptChannel <- s.rememberPasswordEl
-	s.LoginContainer.AdoptChannel <- elLogin
-	s.LoginContainer.AdoptChannel <- elDisconnect
-	s.LoginContainer.AdoptChannel <- elRegister
-
-	s.LoginContainer.AdoptChannel <- s.OutputText
-
-	s.Client.RootWindow.AdoptChannel <- s.LoginContainer.This
+	s.Client.RootWindow.AdoptChannel <- s.layout.Find("Container").Element
 
 	go s.Loop()
 
@@ -181,16 +157,16 @@ func (s *Login) Init(v interface{}) (next client.StateI, nextArgs interface{}, e
 }
 
 func (s *Login) Leave() {
-	s.LoginContainer.GetUpdateChannel() <- ui.UpdateHidden(true)
+	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
 }
 
 func (s *Login) Enter(args ...interface{}) {
-	s.LoginContainer.GetUpdateChannel() <- ui.UpdateHidden(false)
+	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
 }
 
 // Close our Login state.
 func (s *Login) Close() {
-	s.LoginContainer.GetDestroyChannel() <- true
+	s.layout.Find("Container").Element.GetDestroyChannel() <- true
 }
 
 // Loop handles our various state channels.
@@ -235,12 +211,12 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 		s.Client.Log.Print("Got basic")
 		if t.Type == network.Reject {
 			msg := fmt.Sprintf("Server rejected us: %s", t.String)
-			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
+			s.layout.Find("OutputText").Element.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
 			s.pendingLogin = false
 		} else if t.Type == network.Okay {
 			msg := fmt.Sprintf("Server accepted us: %s", t.String)
-			s.OutputText.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
+			s.layout.Find("OutputText").Element.GetUpdateChannel() <- ui.UpdateValue{Value: msg}
 			s.Client.Log.Println(msg)
 			// Set our username and password for this server.
 			serverName := s.Client.CurrentServer
@@ -250,9 +226,9 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 			if _, ok := s.Client.DataManager.Config.Servers[serverName]; !ok {
 				s.Client.DataManager.Config.Servers[serverName] = &config.ServerConfig{}
 			}
-			s.Client.DataManager.Config.Servers[serverName].Username = s.usernameEl.GetValue()
+			s.Client.DataManager.Config.Servers[serverName].Username = s.layout.Find("UsernameInput").Element.GetValue()
 			if s.rememberPassword {
-				s.Client.DataManager.Config.Servers[serverName].Password = s.passwordEl.GetValue()
+				s.Client.DataManager.Config.Servers[serverName].Password = s.layout.Find("PasswordInput").Element.GetValue()
 			} else {
 				s.Client.DataManager.Config.Servers[serverName].Password = ""
 			}
