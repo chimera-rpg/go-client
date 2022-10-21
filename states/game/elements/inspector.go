@@ -16,6 +16,7 @@ type InspectorWindow struct {
 	count           ui.ElementI
 	name            ui.ElementI
 	description     ui.ElementI
+	extra           ui.ElementI
 	focusedObjectID uint32
 	inRange         bool
 	blank           bool
@@ -63,7 +64,19 @@ func (w *InspectorWindow) Setup(game game, style string, inputChan chan interfac
 		`,
 	})
 
+	w.extra = ui.NewTextElement(ui.TextElementConfig{
+		Value: "",
+		Style: `
+			X 64
+			Y 20
+			PaddingLeft 2
+			PaddingTop 2
+			ForegroundColor 255 255 255 255
+		`,
+	})
+
 	w.container.GetAdoptChannel() <- w.name
+	w.container.GetAdoptChannel() <- w.extra
 	w.container.GetAdoptChannel() <- w.imageContainer
 	w.imageContainer.GetAdoptChannel() <- w.image
 
@@ -81,11 +94,13 @@ func (w *InspectorWindow) Refresh() {
 			w.blank = true
 			w.image.GetUpdateChannel() <- ui.UpdateHidden(true)
 			w.name.GetUpdateChannel() <- ui.UpdateHidden(true)
+			w.extra.GetUpdateChannel() <- ui.UpdateHidden(true)
 		}
 	} else {
 		if w.blank {
 			w.image.GetUpdateChannel() <- ui.UpdateHidden(false)
 			w.name.GetUpdateChannel() <- ui.UpdateHidden(false)
+			w.extra.GetUpdateChannel() <- ui.UpdateHidden(false)
 		}
 		w.blank = false
 		var refresh bool
@@ -137,12 +152,28 @@ func (w *InspectorWindow) Refresh() {
 			}
 			// Refresh information.
 			name := "?"
+			extra := ""
+			useSlots := make(map[string]int)
 			for _, info := range o.Info {
 				if info.Name != "" {
 					name = info.Name
 				}
+				// Use slots
+				if len(info.Slots.Uses) > 0 {
+					for _, s := range info.Slots.Uses {
+						useSlots[w.game.Slot(s)]++
+					}
+				}
+			}
+			if len(useSlots) > 0 {
+				used := ""
+				for s, i := range useSlots {
+					used += fmt.Sprintf("%d %s", i, s)
+				}
+				extra += used
 			}
 			w.name.GetUpdateChannel() <- ui.UpdateValue{Value: name}
+			w.extra.GetUpdateChannel() <- ui.UpdateValue{Value: extra}
 		}
 	}
 	w.focusedObjectID = w.game.FocusedObjectID()
