@@ -80,6 +80,9 @@ func (s *Handshake) Init(v interface{}) (state client.StateI, nextArgs interface
 		switch t := cmd.(type) {
 		case network.CommandFeatures:
 			s.Client.LoadAnimationsConfig(t.AnimationsConfig)
+			// FIXME: Probably move to a method call for the entire message.
+			s.Client.Slots = t.Slots
+			s.Client.TypeHints = t.TypeHints
 		default:
 			msg := fmt.Sprintf("Server \"%s\" sent non CommandFeatures.", server)
 			s.Client.Log.Print(msg)

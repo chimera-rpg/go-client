@@ -28,6 +28,9 @@ type Client struct {
 	RenderChannel    chan struct{}
 	StateChannel     chan StateMessage
 	AnimationsConfig clientAnimationsConfig
+	// TODO: Probably move this elsewhere.
+	TypeHints map[uint32]string
+	Slots     map[uint32]string
 }
 
 // Setup sets up a Client's base data structures for use.
@@ -44,6 +47,9 @@ func (c *Client) Setup(dataManager *data.Manager, inst *ui.Instance, aud *audio.
 
 	c.RenderChannel = make(chan struct{})
 	c.StateChannel = make(chan StateMessage)
+
+	c.TypeHints = make(map[uint32]string)
+	c.Slots = make(map[uint32]string)
 
 	c.Flags.Parse()
 
