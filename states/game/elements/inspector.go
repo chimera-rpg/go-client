@@ -16,6 +16,7 @@ type InspectorWindow struct {
 	count           ui.ElementI
 	name            ui.ElementI
 	description     ui.ElementI
+	types           ui.ElementI
 	extra           ui.ElementI
 	focusedObjectID uint32
 	inRange         bool
@@ -64,7 +65,7 @@ func (w *InspectorWindow) Setup(game game, style string, inputChan chan interfac
 		`,
 	})
 
-	w.extra = ui.NewTextElement(ui.TextElementConfig{
+	w.types = ui.NewTextElement(ui.TextElementConfig{
 		Value: "",
 		Style: `
 			X 64
@@ -75,7 +76,19 @@ func (w *InspectorWindow) Setup(game game, style string, inputChan chan interfac
 		`,
 	})
 
+	w.extra = ui.NewTextElement(ui.TextElementConfig{
+		Value: "",
+		Style: `
+			X 64
+			Y 40
+			PaddingLeft 2
+			PaddingTop 2
+			ForegroundColor 255 255 255 255
+		`,
+	})
+
 	w.container.GetAdoptChannel() <- w.name
+	w.container.GetAdoptChannel() <- w.types
 	w.container.GetAdoptChannel() <- w.extra
 	w.container.GetAdoptChannel() <- w.imageContainer
 	w.imageContainer.GetAdoptChannel() <- w.image
@@ -94,12 +107,14 @@ func (w *InspectorWindow) Refresh() {
 			w.blank = true
 			w.image.GetUpdateChannel() <- ui.UpdateHidden(true)
 			w.name.GetUpdateChannel() <- ui.UpdateHidden(true)
+			w.types.GetUpdateChannel() <- ui.UpdateHidden(true)
 			w.extra.GetUpdateChannel() <- ui.UpdateHidden(true)
 		}
 	} else {
 		if w.blank {
 			w.image.GetUpdateChannel() <- ui.UpdateHidden(false)
 			w.name.GetUpdateChannel() <- ui.UpdateHidden(false)
+			w.types.GetUpdateChannel() <- ui.UpdateHidden(false)
 			w.extra.GetUpdateChannel() <- ui.UpdateHidden(false)
 		}
 		w.blank = false
@@ -153,10 +168,26 @@ func (w *InspectorWindow) Refresh() {
 			// Refresh information.
 			name := "?"
 			extra := ""
+			typeString := ""
 			useSlots := make(map[string]int)
+			types := make([]string, 0)
 			for _, info := range o.Info {
 				if info.Name != "" {
 					name = info.Name
+				}
+				// Use types.
+				for _, t := range info.TypeHints {
+					s := w.game.TypeHint(t)
+					has := false
+					for _, t2 := range types {
+						if s == t2 {
+							has = true
+							break
+						}
+					}
+					if !has {
+						types = append(types, s)
+					}
 				}
 				// Use slots
 				if len(info.Slots.Uses) > 0 {
@@ -172,7 +203,16 @@ func (w *InspectorWindow) Refresh() {
 				}
 				extra += used
 			}
+			for i, v := range types {
+				if i == 0 {
+					typeString = v
+				} else {
+					typeString += ", " + v
+				}
+			}
+
 			w.name.GetUpdateChannel() <- ui.UpdateValue{Value: name}
+			w.types.GetUpdateChannel() <- ui.UpdateValue{Value: typeString}
 			w.extra.GetUpdateChannel() <- ui.UpdateValue{Value: extra}
 		}
 	}
