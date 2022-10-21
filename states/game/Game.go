@@ -542,3 +542,11 @@ func (s *Game) Config() *config.Config {
 func (s *Game) Styles() map[string]map[string]string {
 	return s.Client.DataManager.Styles
 }
+
+func (s *Game) Slot(id uint32) string {
+	return s.Client.Slots[id]
+}
+
+func (s *Game) TypeHint(id uint32) string {
+	return s.Client.TypeHints[id]
+}

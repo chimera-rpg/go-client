@@ -19,4 +19,6 @@ type game interface {
 	SendNetMessage(network.Command)
 	Config() *config.Config
 	Styles() map[string]map[string]string
+	Slot(uint32) string
+	TypeHint(uint32) string
 }
