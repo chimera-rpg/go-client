@@ -190,10 +190,8 @@ func (w *InspectorWindow) Refresh() {
 					}
 				}
 				// Use slots
-				if len(info.Slots.Uses) > 0 {
-					for _, s := range info.Slots.Uses {
-						useSlots[w.game.Slot(s)]++
-					}
+				for k, v := range info.Slots.Uses {
+					useSlots[w.game.Slot(k)] = v
 				}
 			}
 			if len(useSlots) > 0 {
