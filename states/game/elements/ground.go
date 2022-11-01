@@ -395,7 +395,7 @@ func (g *GroundModeWindow) Refresh() {
 	m := w.GetCurrentMap()
 
 	// Default type filter.
-	typeFilter := []uint8{data.ArchetypeEquippable.AsUint8(), data.ArchetypeItem.AsUint8(), data.ArchetypeGeneric.AsUint8(), data.ArchetypeFood.AsUint8()}
+	typeFilter := []uint8{data.ArchetypeEquipable.AsUint8(), data.ArchetypeItem.AsUint8(), data.ArchetypeGeneric.AsUint8(), data.ArchetypeFood.AsUint8()}
 
 	// Use our reach cube per default.
 	cube := w.ReachCube
