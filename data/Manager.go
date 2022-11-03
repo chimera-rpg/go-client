@@ -22,7 +22,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/network"
+	"github.com/chimera-rpg/go-server/network"
 	"github.com/kettek/apng"
 )
 

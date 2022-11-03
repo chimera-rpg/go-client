@@ -8,7 +8,7 @@ import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/states/login"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/network"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 // Handshake is the state responsible for the initial handshake with a server,

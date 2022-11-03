@@ -9,7 +9,7 @@ import (
 	"github.com/chimera-rpg/go-client/states/game/elements"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
-	cdata "github.com/chimera-rpg/go-common/data"
+	cdata "github.com/chimera-rpg/go-server/data"
 )
 
 type RenderContext struct {

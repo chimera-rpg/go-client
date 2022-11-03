@@ -8,7 +8,7 @@ import (
 	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/states/game"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/network"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 // Login is the state responsible for logging in, registering an account,

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/chimera-rpg/go-common/network"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 // Print prints a local message.

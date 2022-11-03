@@ -6,8 +6,8 @@ import (
 
 	"github.com/chimera-rpg/go-client/binds"
 	"github.com/chimera-rpg/go-client/ui"
-	cdata "github.com/chimera-rpg/go-common/data"
-	"github.com/chimera-rpg/go-common/network"
+	cdata "github.com/chimera-rpg/go-server/data"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 var (

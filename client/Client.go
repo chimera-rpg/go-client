@@ -7,8 +7,8 @@ import (
 	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
-	cdata "github.com/chimera-rpg/go-common/data"
-	"github.com/chimera-rpg/go-common/network"
+	cdata "github.com/chimera-rpg/go-server/data"
+	"github.com/chimera-rpg/go-server/network"
 	"github.com/sirupsen/logrus"
 )
 

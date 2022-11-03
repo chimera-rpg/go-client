@@ -6,8 +6,8 @@ import (
 
 	"github.com/chimera-rpg/go-client/states/game/elements"
 	"github.com/chimera-rpg/go-client/ui"
-	cdata "github.com/chimera-rpg/go-common/data"
-	"github.com/chimera-rpg/go-common/network"
+	cdata "github.com/chimera-rpg/go-server/data"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 // ChangeCommandMode notifies the UI to change the command mode.

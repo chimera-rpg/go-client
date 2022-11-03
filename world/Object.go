@@ -6,7 +6,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/data"
 	"github.com/chimera-rpg/go-client/ui"
-	cdata "github.com/chimera-rpg/go-common/data"
+	cdata "github.com/chimera-rpg/go-server/data"
 )
 
 // Object represents an arbitrary map object.

@@ -7,7 +7,7 @@ import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/states/game"
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/network"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 // CharacterCreation is our State for connecting as, creating, or deleting a

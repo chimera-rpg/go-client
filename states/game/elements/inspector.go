@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/chimera-rpg/go-client/ui"
-	"github.com/chimera-rpg/go-common/network"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 type InspectorWindow struct {

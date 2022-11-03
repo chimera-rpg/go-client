@@ -4,7 +4,7 @@ import (
 	"github.com/chimera-rpg/go-client/config"
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
-	"github.com/chimera-rpg/go-common/network"
+	"github.com/chimera-rpg/go-server/network"
 )
 
 // game is a common interface for elements to access the Game's properties.
