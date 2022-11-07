@@ -16,14 +16,14 @@ import (
 // World is a collection of all the current known client representations of the game world.
 type World struct {
 	dataManager                      *data.Manager
-	maps                             map[data.StringID]*DynamicMap
-	currentMap                       data.StringID
+	maps                             map[cdata.StringID]*DynamicMap
+	currentMap                       cdata.StringID
 	objects                          []*Object
 	changedObjects                   []*Object
 	ReachCube                        [][][]struct{}
 	IntersectCube                    [][][]struct{}
-	PendingObjectAnimations          map[data.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
-	PendingObjectImages              map[uint32][]uint32        // Map of images to objects waiting.
+	PendingObjectAnimations          map[cdata.StringID][]uint32 // Map of animations to objects waiting for their animation exist.
+	PendingObjectImages              map[uint32][]uint32         // Map of images to objects waiting.
 	viewObjectID                     uint32
 	viewObject                       *Object
 	viewHeight, viewWidth, viewDepth int
@@ -42,7 +42,7 @@ func (w *World) Init(manager *data.Manager, l *logrus.Logger) {
 	w.dataManager = manager
 	w.Log = l
 
-	w.maps = make(map[data.StringID]*DynamicMap)
+	w.maps = make(map[cdata.StringID]*DynamicMap)
 	w.objects = make([]*Object, 0)
 	w.visibleTiles = make([]bool, 0)
 	w.PendingObjectAnimations = make(map[uint32][]uint32)
