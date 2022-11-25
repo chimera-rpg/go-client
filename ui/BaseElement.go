@@ -527,8 +527,8 @@ func (b *BaseElement) AdoptChild(c ElementI) {
 	c.OnAdopted(b.This)
 
 	// Recalculate our style after adopting.
-	b.CalculateStyle()
 	b.SetDirty(true)
+	b.CalculateStyle()
 }
 
 // SetHidden sets the Hidden flag to a particular value, signifying if
