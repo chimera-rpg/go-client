@@ -10,20 +10,20 @@ import (
 	"github.com/chimera-rpg/go-server/network"
 )
 
-// CharacterCreation is our State for connecting as, creating, or deleting a
+// CharacterSelection is our State for connecting as, creating, or deleting a
 // character.
-type CharacterCreation struct {
+type CharacterSelection struct {
 	client.State
 	layout ui.LayoutEntry
 }
 
-// Init is our CharacterCreation init state.
-func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
-	s.Client.Log.Print("CharacterCreation State")
+// Init is our CharacterSelection init state.
+func (s *CharacterSelection) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
+	s.Client.Log.Print("CharacterSelection State")
 
-	s.layout = s.Client.DataManager.Layouts["Creation"][0].Generate(s.Client.DataManager.Styles["Creation"], map[string]interface{}{
+	s.layout = s.Client.DataManager.Layouts["Selection"][0].Generate(s.Client.DataManager.Styles["Selection"], map[string]interface{}{
 		"Container": ui.ContainerConfig{
-			Value: "Creation",
+			Value: "Selection",
 		},
 		"Characters": ui.ContainerConfig{
 			Value: "Character",
@@ -43,19 +43,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 			Value: "Create Character",
 			Events: ui.Events{
 				OnPressed: func(button uint8, x int32, y int32) bool {
-					s.Client.Send(network.Command(network.CommandCharacter{
-						Type:       network.CreateCharacter,
-						Characters: []string{s.layout.Find("CharacterName").Element.GetValue()},
-					}))
-					return false
-				},
-			},
-		},
-		"BackButton": ui.ButtonElementConfig{
-			Value: "Back",
-			Events: ui.Events{
-				OnPressed: func(button uint8, x int32, y int32) bool {
-					s.Client.StateChannel <- client.StateMessage{Pop: true}
+					s.Client.StateChannel <- client.StateMessage{Push: true, State: &CharacterCreation{}}
 					return false
 				},
 			},
@@ -75,7 +63,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 }
 
 // addCharacter adds a button for the provided character name.
-func (s *CharacterCreation) addCharacter(offset int, name string) {
+func (s *CharacterSelection) addCharacter(offset int, name string) {
 	children := s.layout.Find("Characters").Element.GetChildren()
 
 	for _, child := range children {
@@ -90,7 +78,7 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 	}
 
 	elChar := ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: fmt.Sprintf(s.Client.DataManager.Styles["Creation"]["CharacterEntry_fmt"], 10+offset*10),
+		Style: fmt.Sprintf(s.Client.DataManager.Styles["Selection"]["CharacterEntry_fmt"], 10+offset*10),
 		Value: name,
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {
@@ -110,21 +98,21 @@ func (s *CharacterCreation) addCharacter(offset int, name string) {
 	s.layout.Find("Characters").Element.GetAdoptChannel() <- elChar
 }
 
-// Close our CharacterCreation State.
-func (s *CharacterCreation) Close() {
+// Close our CharacterSelection State.
+func (s *CharacterSelection) Close() {
 	s.layout.Find("Container").Element.GetDestroyChannel() <- true
 }
 
-func (s *CharacterCreation) Leave() {
+func (s *CharacterSelection) Leave() {
 	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
 }
 
-func (s *CharacterCreation) Enter(args ...interface{}) {
+func (s *CharacterSelection) Enter(args ...interface{}) {
 	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
 }
 
 // Loop is our loop for managing network activity and beyond.
-func (s *CharacterCreation) Loop() {
+func (s *CharacterSelection) Loop() {
 	// Attempt to use provided character.
 	character := flag.Lookup("character")
 	if character.Value.String() != character.DefValue {
@@ -153,7 +141,7 @@ func (s *CharacterCreation) Loop() {
 }
 
 // HandleNet manages our network communications.
-func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
+func (s *CharacterSelection) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
 	case network.CommandBasic:
 		if t.Type == network.Reject {

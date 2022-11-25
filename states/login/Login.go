@@ -233,7 +233,7 @@ func (s *Login) HandleNet(cmd network.Command) bool {
 				s.Client.DataManager.Config.Servers[serverName].Password = ""
 			}
 			s.Client.DataManager.Config.Servers[serverName].RememberPassword = s.rememberPassword
-			s.Client.StateChannel <- client.StateMessage{Push: true, State: &CharacterCreation{}, Args: msg}
+			s.Client.StateChannel <- client.StateMessage{Push: true, State: &CharacterSelection{}, Args: msg}
 			return true
 		}
 	default:
