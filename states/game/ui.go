@@ -87,7 +87,7 @@ func (s *Game) SetupUI() (err error) {
 		},
 	})
 
-	s.CommandContainer = ui.NewBaseElement(ui.BaseElementConfig{
+	s.CommandContainer, err = ui.NewContainerElement(ui.ContainerConfig{
 		Style: s.Styles()["Game"]["CommandContainer"],
 	})
 
