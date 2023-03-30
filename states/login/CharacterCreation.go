@@ -66,7 +66,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 
 	// Let the server know we're ready!
 	s.Client.Send(network.Command(network.CommandCharacter{
-		Type: network.QueryCharacters,
+		Type: network.QueryGenera,
 	}))
 
 	go s.Loop()
