@@ -105,9 +105,6 @@ func (s *Game) Init(t interface{}) (state client.StateI, nextArgs interface{}, e
 		} else if netID == network.TypeAnimation {
 			c := cmd.(network.CommandAnimation)
 			s.world.CheckPendingObjectAnimations(c.AnimationID)
-		} else if netID == network.TypeGraphics {
-			c := cmd.(network.CommandGraphics)
-			s.world.CheckPendingObjectImageIDs(c.GraphicsID)
 		}
 	})
 
@@ -141,8 +138,9 @@ func (s *Game) Loop() {
 			if ret {
 				return
 			}
-		case <-s.Client.DataManager.UpdatedImageIDs:
-			// TODO: Update renderer's image cache and refresh all objects that use this image ID.
+		case id := <-s.Client.DataManager.UpdatedImageIDs:
+			s.Client.UI.ImageClearChan <- ui.UpdateImageID(id)
+			s.world.CheckPendingObjectImageIDs(id)
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
 			ticker.Stop()

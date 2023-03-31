@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/chimera-rpg/go-client/data"
+	"github.com/chimera-rpg/go-client/ui"
 	cdata "github.com/chimera-rpg/go-server/data"
 	"github.com/chimera-rpg/go-server/network"
 	"github.com/sirupsen/logrus"
@@ -985,6 +986,9 @@ func (w *World) CheckPendingObjectImageIDs(imageID uint32) {
 					w.changedObjects = append(w.changedObjects, o)
 					o.Image = img
 					o.Changed = true
+					if o.Element != nil {
+						o.Element.GetUpdateChannel() <- ui.UpdateImageID(imageID)
+					}
 				}
 			}
 			delete(w.PendingObjectImages, imageID)

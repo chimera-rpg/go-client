@@ -22,6 +22,7 @@ func (instance *Instance) Setup(dataManager DataManagerI) (err error) {
 	instance.HeldPendingTimer = make(map[uint8]time.Time)
 	instance.dataManager = dataManager
 	instance.ImageLoadChan = make(chan UpdateImageID, 1000)
+	instance.ImageClearChan = make(chan UpdateImageID, 1000)
 	// Initialize SDL
 	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		return err
@@ -112,6 +113,8 @@ func (instance *Instance) Loop() {
 		select {
 		case id := <-instance.ImageLoadChan:
 			instance.Context.Manager.GetCachedImage(uint32(id))
+		case id := <-instance.ImageClearChan:
+			instance.Context.Manager.ClearCachedImage(uint32(id))
 		default:
 			break
 		}

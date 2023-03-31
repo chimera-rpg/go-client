@@ -15,6 +15,7 @@ type Instance struct {
 	ToBeHeldElements  map[uint8][]ElementI
 	HeldPendingTimer  map[uint8]time.Time
 	ImageLoadChan     chan UpdateImageID
+	ImageClearChan    chan UpdateImageID
 	Running           bool
 	RootWindow        Window
 	Context           Context
