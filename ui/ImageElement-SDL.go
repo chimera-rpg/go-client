@@ -15,27 +15,28 @@ import (
 // ImageElement is the element responsible for rendering an image.
 type ImageElement struct {
 	BaseElement
-	SDLTexture       *sdl.Texture
-	GrayscaleTexture *sdl.Texture
-	OutlineTexture   *sdl.Texture
-	Image            image.Image
-	ImageID          uint32
-	hideImage        bool
-	postOutline      bool
-	grayscale        bool
-	tw               int32 // Texture width
-	th               int32 // Texture height
-	invalidated      bool
+	Textures       *Image
+	OutlineTexture *sdl.Texture
+	Image          image.Image
+	ImageID        uint32
+	hideImage      bool
+	postOutline    bool
+	grayscale      bool
+	tw             int32 // Texture width
+	th             int32 // Texture height
+	invalidated    bool
 }
 
 // Destroy destroys the underlying ImageElement.
 func (i *ImageElement) Destroy() {
 	if i.ImageID == 0 {
-		if i.SDLTexture != nil {
-			i.SDLTexture.Destroy()
-		}
-		if i.GrayscaleTexture != nil {
-			i.GrayscaleTexture.Destroy()
+		if i.Textures != nil {
+			if i.Textures.regularTexture != nil {
+				i.Textures.regularTexture.Destroy()
+			}
+			if i.Textures.grayscaleTexture != nil {
+				i.Textures.grayscaleTexture.Destroy()
+			}
 		}
 	}
 	if i.OutlineTexture != nil {
@@ -58,10 +59,8 @@ func (i *ImageElement) Render() {
 		i.BaseElement.Render()
 		return
 	}
-	if i.SDLTexture == nil {
-		if i.ImageID != 0 {
-			i.SetImageID(i.ImageID)
-		}
+	if i.ImageID == 0 && i.Textures == nil {
+		i.SetImageID(i.ImageID)
 	}
 	if i.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
@@ -82,9 +81,9 @@ func (i *ImageElement) Render() {
 	if !i.hideImage {
 		var texture *sdl.Texture
 		if i.grayscale {
-			texture = i.GrayscaleTexture
+			texture = i.Textures.grayscaleTexture
 		} else {
-			texture = i.SDLTexture
+			texture = i.Textures.regularTexture
 		}
 		if texture != nil {
 			texture.SetColorMod(i.Style.ColorMod.R, i.Style.ColorMod.G, i.Style.ColorMod.B)
@@ -105,14 +104,24 @@ func (i *ImageElement) Render() {
 }
 
 func (i *ImageElement) SetImageID(id uint32) {
+	// Clear textures if the image was directly set.
+	if i.ImageID == 0 && i.Textures != nil {
+		if i.Textures.regularTexture != nil {
+			i.Textures.regularTexture.Destroy()
+		}
+		if i.Textures.grayscaleTexture != nil {
+			i.Textures.grayscaleTexture.Destroy()
+		}
+	}
+
 	i.ImageID = id
 	imgTextures := i.Context.Manager.GetImage(id)
 	if imgTextures == nil {
 		img, err := i.Context.Manager.GetCachedImage(id)
 		i.Image = img
-		if err != nil {
+		/*if err != nil {
 			panic(err)
-		}
+		}*/
 		tex, gray, err := i.createTexture(img)
 		if err != nil {
 			panic(err)
@@ -127,8 +136,7 @@ func (i *ImageElement) SetImageID(id uint32) {
 		i.Image = img
 	}
 
-	i.SDLTexture = imgTextures.regularTexture
-	i.GrayscaleTexture = imgTextures.grayscaleTexture
+	i.Textures = imgTextures
 
 	i.tw = imgTextures.width
 	i.th = imgTextures.height
@@ -149,21 +157,24 @@ func (i *ImageElement) SetImage(img image.Image) {
 	}
 
 	if i.ImageID > 0 {
-		i.SDLTexture = nil
-		i.GrayscaleTexture = nil
+		i.Textures = nil
 	}
 
 	i.ImageID = 0
 	i.Image = img
 
-	if i.SDLTexture != nil {
-		i.SDLTexture.Destroy()
-	}
-	if i.GrayscaleTexture != nil {
-		i.GrayscaleTexture.Destroy()
+	if i.Textures != nil {
+		if i.Textures.regularTexture != nil {
+			i.Textures.regularTexture.Destroy()
+		}
+		if i.Textures.grayscaleTexture != nil {
+			i.Textures.grayscaleTexture.Destroy()
+		}
+	} else {
+		i.Textures = &Image{}
 	}
 
-	i.SDLTexture, i.GrayscaleTexture, err = i.createTexture(img)
+	i.Textures.regularTexture, i.Textures.grayscaleTexture, err = i.createTexture(img)
 	if err != nil {
 		panic(err)
 	}
@@ -320,7 +331,7 @@ func (i *ImageElement) createOutline() error {
 	i.Context.Renderer.SetRenderTarget(tex)
 	i.Context.Renderer.SetDrawColor(0, 0, 0, 0)
 	i.Context.Renderer.Clear()
-	err = i.Context.Renderer.Copy(i.SDLTexture, nil, &sdl.Rect{X: 1, Y: 1, W: i.w, H: i.h})
+	err = i.Context.Renderer.Copy(i.Textures.regularTexture, nil, &sdl.Rect{X: 1, Y: 1, W: i.w, H: i.h})
 	if err != nil {
 		return err
 	}
