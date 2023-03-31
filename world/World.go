@@ -428,6 +428,10 @@ func (w *World) GetObject(oID uint32) *Object {
 	return nil
 }
 
+func (w *World) MarkObjectChanged(o *Object) {
+	w.changedObjects = append(w.changedObjects, o)
+}
+
 // GetViewObject returns a pointer to the object which the view should be centered on.
 func (w *World) GetViewObject() *Object {
 	return w.viewObject
@@ -442,6 +446,22 @@ func (w *World) GetCurrentMap() *DynamicMap {
 func (w *World) HandleNoiseCommand(cmd network.CommandNoise) error {
 	w.dataManager.EnsureAudio(cmd.AudioID)
 	return nil
+}
+
+// VisibleObjects returns all visible objects.
+func (w *World) VisibleObjects() (objects []*Object) {
+	m := w.GetCurrentMap()
+	if m == nil {
+		return
+	}
+	for i, v := range w.visibleTiles {
+		if v {
+			for _, o := range m.tiles[i].objects {
+				objects = append(objects, o)
+			}
+		}
+	}
+	return
 }
 
 func (w *World) getSphereRays(yi, xi, zi int, radius float64) (targets [][2][3]float64) {

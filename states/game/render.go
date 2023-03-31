@@ -77,6 +77,13 @@ func (s *Game) HandleRender(delta time.Duration) {
 		s.RenderObject(ctx, viewObject, o, m, delta, &batchMessages)
 	}
 
+	// Process all visible objects. This should _potentially_ process all objects that need processing, such as animated objects. This action would apply to multiple objects that are supposed to have their animations kept in sync whether or not visible. Alternatively, objects such as those could be synchronized to a universal time, potentially using modulo to determine the frame's time.
+	for _, o := range s.world.VisibleObjects() {
+		if o.Process(delta) {
+			s.world.MarkObjectChanged(o)
+		}
+	}
+
 	// Iterate over world objects.
 	objects := s.world.GetChangedObjects()
 	if len(objects) > 1000 {
@@ -258,7 +265,6 @@ func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *worl
 	if len(o.Face.Frames) == 0 {
 		return
 	}
-	o.Process(dt)
 
 	// Get and cache our render position.
 	if o.Changed {

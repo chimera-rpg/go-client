@@ -63,7 +63,10 @@ func ObjectsFilter(vo []Object, f func(Object) bool) []Object {
 }
 
 // Process is called whenever the object is re-rendered to handle frame advancement and similar.
-func (o *Object) Process(dt time.Duration) {
+func (o *Object) Process(dt time.Duration) (changed bool) {
+	if len(o.Face.Frames) == 0 {
+		return
+	}
 	o.Frame = &(o.Face.Frames[o.FrameIndex])
 
 	// Animate if there are frames and they are visible. NOTE: We *might* want to be able to flag particular animations as requiring having their frames constantly elapsed, or simply record the current real frame and only update the corresponding image render when visibility is restored.
@@ -78,6 +81,8 @@ func (o *Object) Process(dt time.Duration) {
 			o.Frame = &(o.Face.Frames[o.FrameIndex])
 			ft = time.Duration(o.Frame.Time) * time.Millisecond
 			o.RecalculateFinalRender = true
+			changed = true
 		}
 	}
+	return
 }
