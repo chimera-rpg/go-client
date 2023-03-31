@@ -155,6 +155,14 @@ func (s *CharacterCreation) Loop() {
 // HandleNet manages our network communications.
 func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
+	case network.CommandGraphics:
+		s.Client.DataManager.HandleGraphicsCommand(t)
+	case network.CommandAnimation:
+		s.Client.DataManager.HandleAnimationCommand(t)
+	case network.CommandSound:
+		s.Client.DataManager.HandleSoundCommand(t)
+	case network.CommandAudio:
+		s.Client.DataManager.HandleAudioCommand(t)
 	case network.CommandBasic:
 		if t.Type == network.Reject {
 			s.Client.Log.Printf("Server rejected us: %s\n", t.String)
