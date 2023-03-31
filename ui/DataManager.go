@@ -31,6 +31,22 @@ func (m *DataManager) GetCachedImage(iID uint32) (img image.Image, err error) {
 	return
 }
 
+func (m *DataManager) ClearCachedImage(iID uint32) {
+	delete(m.imageCache, iID)
+	if tex, ok := m.imageTextures[iID]; ok {
+		if tex.grayscaleTexture != nil {
+			tex.grayscaleTexture.Destroy()
+		}
+		if tex.outlineTexture != nil {
+			tex.outlineTexture.Destroy()
+		}
+		if tex.regularTexture != nil {
+			tex.regularTexture.Destroy()
+		}
+		delete(m.imageTextures, iID)
+	}
+}
+
 func (m *DataManager) GetImage(iID uint32) *Image {
 	return m.imageTextures[iID]
 }
