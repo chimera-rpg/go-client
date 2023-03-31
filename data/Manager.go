@@ -381,7 +381,7 @@ func (m *Manager) GetCachedImage(iID uint32) (img image.Image, err error) {
 	if err != nil {
 		return imageData, errors.New("missing")
 	}
-	return nil, errors.New("loading")
+	return imageData, errors.New("loading")
 }
 
 func (m *Manager) SetCachedImage(iID uint32, img image.Image, override bool, ready bool) {
