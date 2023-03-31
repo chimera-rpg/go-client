@@ -45,15 +45,17 @@ type Manager struct {
 	animations []*Animation
 	audio      map[uint32]Audio
 	//images         map[uint32]image.Image
-	images         []ImageRef
-	imageLock      sync.Mutex
-	sounds         map[uint32]SoundEntry
-	handleCallback func(netID int, cmd network.Command)
+	images          []ImageRef
+	imageLock       sync.Mutex
+	UpdatedImageIDs chan uint32
+	sounds          map[uint32]SoundEntry
+	handleCallback  func(netID int, cmd network.Command)
 }
 
 // Setup gets the required data/config/cache paths and creates them if needed.
 func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	m.Log = l
+	m.UpdatedImageIDs = make(chan uint32, 1)
 	// Acquire our various paths.
 	if err = m.acquireDataPath(); err != nil {
 		return
@@ -548,6 +550,7 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 		} else {
 			m.SetCachedImage(cmd.GraphicsID, imageData, true, false)
 		}
+		m.UpdatedImageIDs <- cmd.GraphicsID
 	} else if cmd.Type == network.Set {
 		if cmd.DataType == network.GraphicsPng {
 			// Decode PNG
@@ -555,6 +558,7 @@ func (m *Manager) HandleGraphicsCommand(cmd network.CommandGraphics) error {
 				m.Log.Warn("[Manager] Could not Decode Image")
 			} else {
 				m.SetCachedImage(cmd.GraphicsID, img, true, true)
+				m.UpdatedImageIDs <- cmd.GraphicsID
 			}
 			// Also write the image to disk for future use.
 			if err := m.WriteImage(cmd.GraphicsID, cmd.DataType, cmd.Data); err != nil {

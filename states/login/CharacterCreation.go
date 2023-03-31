@@ -144,6 +144,8 @@ func (s *CharacterCreation) Loop() {
 			if ret {
 				return
 			}
+		case <-s.Client.DataManager.UpdatedImageIDs:
+			// TODO: Refresh genus/species/pc image
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
 			s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
@@ -195,10 +197,14 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 		}
 	case network.CommandGenera:
 		s.Client.Log.Println("TODO: Handle CommandGenera", t.Genera)
-		return true
+		for _, genus := range t.Genera {
+			s.Client.DataManager.EnsureAnimation(genus.AnimationID)
+		}
 	case network.CommandSpecies:
 		s.Client.Log.Println("TODO: Handle CommandSpecies", t.Genus, t.Species)
-		return true
+		for _, species := range t.Species {
+			s.Client.DataManager.EnsureAnimation(species.AnimationID)
+		}
 	default:
 		s.Client.Log.Printf("Server sent incorrect Command\n")
 		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}

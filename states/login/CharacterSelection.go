@@ -133,6 +133,8 @@ func (s *CharacterSelection) Loop() {
 		select {
 		case <-s.bail:
 			return
+		case <-s.Client.DataManager.UpdatedImageIDs:
+			// TODO: Refresh character image
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
 			if ret {
@@ -149,6 +151,10 @@ func (s *CharacterSelection) Loop() {
 // HandleNet manages our network communications.
 func (s *CharacterSelection) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
+	case network.CommandGraphics:
+		s.Client.DataManager.HandleGraphicsCommand(t)
+	case network.CommandAnimation:
+		s.Client.DataManager.HandleAnimationCommand(t)
 	case network.CommandBasic:
 		if t.Type == network.Reject {
 			s.Client.Log.Printf("Server rejected us: %s\n", t.String)

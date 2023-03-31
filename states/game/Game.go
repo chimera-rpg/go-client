@@ -141,6 +141,8 @@ func (s *Game) Loop() {
 			if ret {
 				return
 			}
+		case <-s.Client.DataManager.UpdatedImageIDs:
+			// TODO: Update renderer's image cache and refresh all objects that use this image ID.
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
 			ticker.Stop()
