@@ -15,10 +15,12 @@ import (
 type CharacterSelection struct {
 	client.State
 	layout ui.LayoutEntry
+	bail   chan bool
 }
 
 // Init is our CharacterSelection init state.
 func (s *CharacterSelection) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
+	s.bail = make(chan bool)
 	s.Client.Log.Print("CharacterSelection State")
 
 	s.layout = s.Client.DataManager.Layouts["Selection"][0].Generate(s.Client.DataManager.Styles["Selection"], map[string]interface{}{
@@ -43,6 +45,7 @@ func (s *CharacterSelection) Init(t interface{}) (next client.StateI, nextArgs i
 			Value: "Create Character",
 			Events: ui.Events{
 				OnPressed: func(button uint8, x int32, y int32) bool {
+					s.bail <- true
 					s.Client.StateChannel <- client.StateMessage{Push: true, State: &CharacterCreation{}}
 					return false
 				},
@@ -109,6 +112,7 @@ func (s *CharacterSelection) Leave() {
 
 func (s *CharacterSelection) Enter(args ...interface{}) {
 	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+	go s.Loop()
 }
 
 // Loop is our loop for managing network activity and beyond.
@@ -127,6 +131,8 @@ func (s *CharacterSelection) Loop() {
 			continue
 		}
 		select {
+		case <-s.bail:
+			return
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
 			if ret {

@@ -185,8 +185,14 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 		} else {
 			s.Client.Log.Printf("Unhandled CommandCharacter type %d\n", t.Type)
 		}
+	case network.CommandGenera:
+		s.Client.Log.Println("TODO: Handle CommandGenera", t.Genera)
+		return true
+	case network.CommandSpecies:
+		s.Client.Log.Println("TODO: Handle CommandSpecies", t.Genus, t.Species)
+		return true
 	default:
-		s.Client.Log.Printf("Server sent non CommandBasic\n")
+		s.Client.Log.Printf("Server sent incorrect Command\n")
 		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
 		return true
 	}
