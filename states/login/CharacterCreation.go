@@ -12,10 +12,12 @@ import (
 type CharacterCreation struct {
 	client.State
 	layout ui.LayoutEntry
+	bail   chan bool
 }
 
 // Init is our CharacterCreation init state.
 func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
+	s.bail = make(chan bool)
 	s.Client.Log.Print("CharacterCreation State")
 
 	s.layout = s.Client.DataManager.Layouts["Creation"][0].Generate(s.Client.DataManager.Styles["Creation"], map[string]interface{}{
@@ -51,6 +53,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 			Value: "Back",
 			Events: ui.Events{
 				OnPressed: func(button uint8, x int32, y int32) bool {
+					s.bail <- true
 					s.Client.StateChannel <- client.StateMessage{Pop: true}
 					return false
 				},
@@ -115,6 +118,8 @@ func (s *CharacterCreation) Loop() {
 			continue
 		}
 		select {
+		case <-s.bail:
+			return
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
 			if ret {

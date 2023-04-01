@@ -44,8 +44,10 @@ func (s *CharacterSelection) Init(t interface{}) (next client.StateI, nextArgs i
 			Value: "Create Character",
 			Events: ui.Events{
 				OnPressed: func(button uint8, x int32, y int32) bool {
-					s.bail <- true
-					s.Client.StateChannel <- client.StateMessage{Push: true, State: &CharacterCreation{}}
+					go func() {
+						s.bail <- true
+						s.Client.StateChannel <- client.StateMessage{Push: true, State: &CharacterCreation{}}
+					}()
 					return false
 				},
 			},
