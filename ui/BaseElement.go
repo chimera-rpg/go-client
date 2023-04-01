@@ -112,7 +112,7 @@ func (b *BaseElement) RenderPost() {
 
 // SetX gets the cached x value.
 func (b *BaseElement) SetX(x int32) {
-	b.ax += b.x - x
+	b.ax += x - b.x
 	b.x = x
 }
 
@@ -123,7 +123,7 @@ func (b *BaseElement) GetX() int32 {
 
 // SetY sets the cached y value.
 func (b *BaseElement) SetY(y int32) {
-	b.ay += b.y - y
+	b.ay += y - b.y
 	b.y = y
 }
 
