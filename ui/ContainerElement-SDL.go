@@ -99,7 +99,9 @@ func (w *Container) reflow() {
 				case *Container:
 					c.reflow()
 				}
+				y -= child.GetMarginBottom()
 				y -= child.GetHeight()
+				y -= child.GetMarginTop()
 				child.SetY(y)
 			}
 		} else {
@@ -108,8 +110,10 @@ func (w *Container) reflow() {
 				case *Container:
 					c.reflow()
 				}
+				y += child.GetMarginTop()
 				child.SetY(y)
 				y += child.GetHeight()
+				y += child.GetMarginBottom()
 			}
 		}
 	}
