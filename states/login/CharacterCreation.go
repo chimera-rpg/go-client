@@ -1,9 +1,6 @@
 package login
 
 import (
-	"flag"
-	"fmt"
-
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/states/game"
 	"github.com/chimera-rpg/go-client/ui"
@@ -43,9 +40,8 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 			Value: "Create Character",
 			Events: ui.Events{
 				OnPressed: func(button uint8, x int32, y int32) bool {
-					s.Client.Send(network.Command(network.CommandCharacter{
-						Type:       network.CreateCharacter,
-						Characters: []string{s.layout.Find("CharacterName").Element.GetValue()},
+					s.Client.Send(network.Command(network.CommandCreateCharacter{
+						Name: s.layout.Find("CharacterName").Element.GetValue(),
 					}))
 					return false
 				},
@@ -65,9 +61,7 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	s.Client.RootWindow.AdoptChannel <- s.layout.Find("Container").Element
 
 	// Let the server know we're ready!
-	s.Client.Send(network.Command(network.CommandCharacter{
-		Type: network.QueryGenera,
-	}))
+	s.Client.Send(network.Command(network.CommandQueryGenera{}))
 
 	go s.Loop()
 
@@ -75,30 +69,21 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 }
 
 // addCharacter adds a button for the provided character name.
-func (s *CharacterCreation) addCharacter(offset int, name string) {
-	children := s.layout.Find("Characters").Element.GetChildren()
-
-	for _, child := range children {
-		if _, ok := child.(*ui.ButtonElement); ok {
-			offset++
-		}
-	}
-
+func (s *CharacterCreation) addCharacter(name string) {
 	isFocused := false
 	if name == s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character {
 		isFocused = true
 	}
 
 	elChar := ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: fmt.Sprintf(s.Client.DataManager.Styles["Creation"]["CharacterEntry_fmt"], 10+offset*10),
+		Style: s.Client.DataManager.Styles["Selection"]["CharacterEntry"],
 		Value: name,
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {
 				s.Client.Log.Printf("Logging in with character %s", name)
 				s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character = name
-				s.Client.Send(network.Command(network.CommandCharacter{
-					Type:       network.ChooseCharacter,
-					Characters: []string{name},
+				s.Client.Send(network.Command(network.CommandSelectCharacter{
+					Name: name,
 				}))
 				return false
 			},
@@ -125,15 +110,6 @@ func (s *CharacterCreation) Enter(args ...interface{}) {
 
 // Loop is our loop for managing network activity and beyond.
 func (s *CharacterCreation) Loop() {
-	// Attempt to use provided character.
-	character := flag.Lookup("character")
-	if character.Value.String() != character.DefValue {
-		s.Client.Send(network.Command(network.CommandCharacter{
-			Type:       network.ChooseCharacter,
-			Characters: []string{character.Value.String()},
-		}))
-	}
-
 	for {
 		if !s.Running {
 			continue
@@ -177,30 +153,14 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 			s.Client.StateChannel <- client.StateMessage{Push: true, State: &game.Game{}, Args: nil}
 			return true
 		}
-	case network.CommandCharacter:
-		// CreateCharacter is how the server notifies us of new characters
-		if t.Type == network.CreateCharacter {
-			// Add character buttons.
-			for i, name := range t.Characters {
-				s.addCharacter(i, name)
-			}
-		} else if t.Type == network.ChooseCharacter {
-			// ChooseCharacter is how the server lets us know we're logging in as a character.
-			s.Client.StateChannel <- client.StateMessage{Push: true, State: &game.Game{}, Args: nil}
-			// Might as well save the configuration now.
-			if err := s.Client.DataManager.Config.Write(); err != nil {
-				s.Client.Log.Errorln(err)
-			}
-			return true
-		} else {
-			s.Client.Log.Printf("Unhandled CommandCharacter type %d\n", t.Type)
-		}
-	case network.CommandGenera:
+	case network.CommandCreateCharacter:
+		s.addCharacter(t.Name)
+	case network.CommandQueryGenera:
 		s.Client.Log.Println("TODO: Handle CommandGenera", t.Genera)
 		for _, genus := range t.Genera {
 			s.Client.DataManager.EnsureAnimation(genus.AnimationID)
 		}
-	case network.CommandSpecies:
+	case network.CommandQuerySpecies:
 		s.Client.Log.Println("TODO: Handle CommandSpecies", t.Genus, t.Species)
 		for _, species := range t.Species {
 			s.Client.DataManager.EnsureAnimation(species.AnimationID)

@@ -2,7 +2,6 @@ package login
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/states/game"
@@ -56,9 +55,7 @@ func (s *CharacterSelection) Init(t interface{}) (next client.StateI, nextArgs i
 	s.Client.RootWindow.AdoptChannel <- s.layout.Find("Container").Element
 
 	// Let the server know we're ready!
-	s.Client.Send(network.Command(network.CommandCharacter{
-		Type: network.QueryCharacters,
-	}))
+	s.Client.Send(network.Command(network.CommandQueryCharacters{}))
 
 	go s.Loop()
 
@@ -66,30 +63,21 @@ func (s *CharacterSelection) Init(t interface{}) (next client.StateI, nextArgs i
 }
 
 // addCharacter adds a button for the provided character name.
-func (s *CharacterSelection) addCharacter(offset int, name string) {
-	children := s.layout.Find("Characters").Element.GetChildren()
-
-	for _, child := range children {
-		if _, ok := child.(*ui.ButtonElement); ok {
-			offset++
-		}
-	}
-
+func (s *CharacterSelection) addCharacter(name string) {
 	isFocused := false
 	if name == s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character {
 		isFocused = true
 	}
 
 	elChar := ui.NewButtonElement(ui.ButtonElementConfig{
-		Style: fmt.Sprintf(s.Client.DataManager.Styles["Selection"]["CharacterEntry_fmt"], 10+offset*10),
+		Style: s.Client.DataManager.Styles["Selection"]["CharacterEntry"],
 		Value: name,
 		Events: ui.Events{
 			OnPressed: func(button uint8, x int32, y int32) bool {
 				s.Client.Log.Printf("Logging in with character %s", name)
 				s.Client.DataManager.Config.Servers[s.Client.CurrentServer].Character = name
-				s.Client.Send(network.Command(network.CommandCharacter{
-					Type:       network.ChooseCharacter,
-					Characters: []string{name},
+				s.Client.Send(network.Command(network.CommandSelectCharacter{
+					Name: name,
 				}))
 				return false
 			},
@@ -120,9 +108,8 @@ func (s *CharacterSelection) Loop() {
 	// Attempt to use provided character.
 	character := flag.Lookup("character")
 	if character.Value.String() != character.DefValue {
-		s.Client.Send(network.Command(network.CommandCharacter{
-			Type:       network.ChooseCharacter,
-			Characters: []string{character.Value.String()},
+		s.Client.Send(network.Command(network.CommandSelectCharacter{
+			Name: character.Value.String(),
 		}))
 	}
 
@@ -168,23 +155,15 @@ func (s *CharacterSelection) HandleNet(cmd network.Command) bool {
 			return true
 		}
 	case network.CommandCharacter:
-		// CreateCharacter is how the server notifies us of new characters
-		if t.Type == network.CreateCharacter {
-			// Add character buttons.
-			for i, name := range t.Characters {
-				s.addCharacter(i, name)
-			}
-		} else if t.Type == network.ChooseCharacter {
-			// ChooseCharacter is how the server lets us know we're logging in as a character.
-			s.Client.StateChannel <- client.StateMessage{Push: true, State: &game.Game{}, Args: nil}
-			// Might as well save the configuration now.
-			if err := s.Client.DataManager.Config.Write(); err != nil {
-				s.Client.Log.Errorln(err)
-			}
-			return true
-		} else {
-			s.Client.Log.Printf("Unhandled CommandCharacter type %d\n", t.Type)
+		s.addCharacter(t.Name)
+	case network.CommandSelectCharacter:
+		// SelectCharacter is how the server lets us know we're logging in as a character.
+		s.Client.StateChannel <- client.StateMessage{Push: true, State: &game.Game{}, Args: nil}
+		// Might as well save the configuration now.
+		if err := s.Client.DataManager.Config.Write(); err != nil {
+			s.Client.Log.Errorln(err)
 		}
+		return true
 	default:
 		s.Client.Log.Printf("Server sent non CommandBasic\n")
 		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
