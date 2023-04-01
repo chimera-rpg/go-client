@@ -162,6 +162,16 @@ func (b *BaseElement) GetScrollTop() int32 {
 	return b.st
 }
 
+// GetMarginTop gets the cached margin top value.
+func (b *BaseElement) GetMarginTop() int32 {
+	return b.mt
+}
+
+// GetMarginBottom gets the cached margin bottom value.
+func (b *BaseElement) GetMarginBottom() int32 {
+	return b.mb
+}
+
 // GetZIndex returns the element's rendering index.
 func (b *BaseElement) GetZIndex() int {
 	return int(b.Style.ZIndex.Value)
