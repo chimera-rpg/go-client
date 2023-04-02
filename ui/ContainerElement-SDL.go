@@ -89,6 +89,7 @@ func (w *Container) AdoptChild(c ElementI) {
 }
 
 func (w *Container) reflow() {
+	var x int32
 	var y int32
 	if w.Style.Display.Has(COLUMNS) {
 		if w.Style.Direction.Has(REVERSE) {
@@ -99,10 +100,13 @@ func (w *Container) reflow() {
 				case *Container:
 					c.reflow()
 				}
+				child.CalculateStyle()
 				y -= child.GetMarginBottom()
 				y -= child.GetHeight()
 				y -= child.GetMarginTop()
-				child.SetY(y)
+				child.GetStyle().Y.Percentage = false
+				child.GetStyle().Y.Set(float64(y))
+				child.CalculateStyle()
 			}
 		} else {
 			for _, child := range w.Children {
@@ -110,11 +114,28 @@ func (w *Container) reflow() {
 				case *Container:
 					c.reflow()
 				}
+				child.CalculateStyle()
 				y += child.GetMarginTop()
-				child.SetY(y)
+				child.GetStyle().Y.Percentage = false
+				child.GetStyle().Y.Set(float64(y))
+				child.CalculateStyle()
 				y += child.GetHeight()
 				y += child.GetMarginBottom()
 			}
+		}
+	} else if w.Style.Display.Has(ROWS) {
+		for _, child := range w.Children {
+			switch c := child.(type) {
+			case *Container:
+				c.reflow()
+			}
+			child.CalculateStyle()
+			x += child.GetMarginLeft()
+			child.GetStyle().X.Percentage = false
+			child.GetStyle().X.Set(float64(x))
+			child.CalculateStyle()
+			x += child.GetWidth()
+			x += child.GetMarginRight()
 		}
 	}
 }
