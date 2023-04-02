@@ -56,6 +56,9 @@ type UpdateZIndex struct {
 	Number
 }
 
+// UpdateParseStyle parses the given style and incorporates it into the element.
+type UpdateParseStyle string
+
 // UpdateOutlineColor represents an update to the outline color of the element.
 type UpdateOutlineColor = color.NRGBA
 

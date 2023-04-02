@@ -172,6 +172,16 @@ func (b *BaseElement) GetMarginBottom() int32 {
 	return b.mb
 }
 
+// GetMarginLeft gets the cached margin left value.
+func (b *BaseElement) GetMarginLeft() int32 {
+	return b.ml
+}
+
+// GetMarginRight gets the cached margin right value.
+func (b *BaseElement) GetMarginRight() int32 {
+	return b.mr
+}
+
 // GetZIndex returns the element's rendering index.
 func (b *BaseElement) GetZIndex() int {
 	return int(b.Style.ZIndex.Value)
@@ -864,6 +874,8 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Style.Alpha.Set(u)
 	case UpdateColorMod:
 		b.Style.ColorMod = color.NRGBA{u.R, u.G, u.B, u.A}
+	case UpdateParseStyle:
+		b.Style.Parse(string(u))
 	}
 	b.SetDirty(dirty)
 }

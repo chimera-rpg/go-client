@@ -26,6 +26,8 @@ type ElementI interface {
 	GetScrollTop() int32
 	GetMarginTop() int32
 	GetMarginBottom() int32
+	GetMarginLeft() int32
+	GetMarginRight() int32
 	GetZIndex() int
 	//
 	GetContext() *Context
