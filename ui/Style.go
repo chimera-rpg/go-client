@@ -85,6 +85,8 @@ type Style struct {
 	Resize          Flags
 	Display         Flags
 	Direction       Flags
+	ScaleX          Number
+	ScaleY          Number
 	X               Number
 	Y               Number
 	W               Number

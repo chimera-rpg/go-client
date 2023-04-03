@@ -57,6 +57,18 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.MaxH = parseNumber(p.tokenValue())
 	case "ZIndex":
 		s.ZIndex = parseNumber(p.tokenValue())
+	case "Scale":
+		parts := strings.Split(p.tokenValue(), " ")
+		partsLen := len(parts)
+		if partsLen == 1 { // xy
+			s.ScaleX, s.ScaleY = parseNumber(parts[0]), parseNumber(parts[0])
+		} else if partsLen == 2 { // x y
+			s.ScaleX, s.ScaleY = parseNumber(parts[0]), parseNumber(parts[1])
+		}
+	case "ScaleX":
+		s.ScaleX = parseNumber(p.tokenValue())
+	case "ScaleY":
+		s.ScaleY = parseNumber(p.tokenValue())
 	case "Margin":
 		parts := strings.Split(p.tokenValue(), " ")
 		partsLen := len(parts)
