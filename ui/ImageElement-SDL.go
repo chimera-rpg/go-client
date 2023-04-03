@@ -59,8 +59,12 @@ func (i *ImageElement) Render() {
 		i.BaseElement.Render()
 		return
 	}
-	if i.ImageID == 0 && i.Textures == nil {
-		i.SetImageID(i.ImageID)
+	if i.Textures == nil {
+		if i.Image != nil {
+			i.SetImage(i.Image)
+		} else {
+			i.SetImageID(i.ImageID)
+		}
 	}
 	if i.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
@@ -141,8 +145,26 @@ func (i *ImageElement) SetImageID(id uint32) {
 	i.tw = imgTextures.width
 	i.th = imgTextures.height
 	if i.Style.Resize.Has(TOCONTENT) {
-		i.Style.W.Set(float64(imgTextures.width))
-		i.Style.H.Set(float64(imgTextures.height))
+		w := float64(imgTextures.width)
+		h := float64(imgTextures.height)
+		if i.Style.ScaleX.Value > 0 {
+			if i.Style.ScaleX.Percentage {
+				w = i.Style.ScaleX.PercentOf(w)
+			} else {
+				w *= i.Style.ScaleX.Value
+			}
+		}
+		if i.Style.ScaleY.Value > 0 {
+			if i.Style.ScaleY.Percentage {
+				h = i.Style.ScaleY.PercentOf(h)
+			} else {
+				h *= i.Style.ScaleY.Value
+			}
+		}
+
+		i.Style.W.Set(w)
+		i.Style.H.Set(h)
+		i.CalculateStyle()
 	}
 
 	i.Dirty = true
@@ -181,8 +203,26 @@ func (i *ImageElement) SetImage(img image.Image) {
 	i.tw = int32(img.Bounds().Dx())
 	i.th = int32(img.Bounds().Dy())
 	if i.Style.Resize.Has(TOCONTENT) {
-		i.Style.W.Set(float64(img.Bounds().Dx()))
-		i.Style.H.Set(float64(img.Bounds().Dy()))
+		w := float64(i.tw)
+		h := float64(i.th)
+		if i.Style.ScaleX.Value > 0 {
+			if i.Style.ScaleX.Percentage {
+				w = i.Style.ScaleX.PercentOf(w)
+			} else {
+				w *= i.Style.ScaleX.Value
+			}
+		}
+		if i.Style.ScaleY.Value > 0 {
+			if i.Style.ScaleY.Percentage {
+				h = i.Style.ScaleY.PercentOf(h)
+			} else {
+				h *= i.Style.ScaleY.Value
+			}
+		}
+
+		i.Style.W.Set(w)
+		i.Style.H.Set(h)
+		i.CalculateStyle()
 	}
 
 	i.Dirty = true

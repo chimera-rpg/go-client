@@ -30,9 +30,7 @@ func NewImageElement(c ImageElementConfig) ElementI {
 	i.Style.ColorMod.B = 255
 	i.Style.Parse(ImageElementStyle)
 	i.Style.Parse(c.Style)
-	if c.Image != nil {
-		i.Image = c.Image
-	}
+	i.Image = c.Image
 	i.ImageID = c.ImageID
 	i.hideImage = c.HideImage
 	i.postOutline = c.PostOutline
@@ -51,9 +49,11 @@ func (i *ImageElement) HandleUpdate(update UpdateI) {
 	case UpdateImageID:
 		i.SetImageID(uint32(u))
 		i.OnChange()
+		i.SetDirty(true)
 	case image.Image:
 		i.SetImage(u)
 		i.OnChange()
+		i.SetDirty(true)
 	case UpdateOutlineColor:
 		i.BaseElement.HandleUpdate(update)
 		i.UpdateOutline()
