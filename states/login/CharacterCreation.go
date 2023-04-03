@@ -4,6 +4,7 @@ import (
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/states/game"
 	"github.com/chimera-rpg/go-client/ui"
+	"github.com/chimera-rpg/go-server/data"
 	"github.com/chimera-rpg/go-server/network"
 )
 
@@ -11,13 +12,144 @@ import (
 // character.
 type CharacterCreation struct {
 	client.State
-	layout ui.LayoutEntry
-	bail   chan bool
+	layout       ui.LayoutEntry
+	bail         chan bool
+	selectChan   chan Selection
+	selection    Selection
+	genusEntries []*entry
+}
+
+type Selection struct {
+	genus    string
+	species  string
+	culture  string
+	training string
+}
+
+type entrySelection struct {
+	container *ui.Container
+	name      ui.ElementI
+	image     ui.ElementI
+	selected  bool
+}
+
+type entryInfo struct {
+	container                                              *ui.Container
+	description                                            ui.ElementI
+	physicalAttributes, arcaneAttributes, spiritAttributes ui.ElementI
+}
+
+type entry struct {
+	animID    uint32
+	faceID    uint32
+	name      string
+	selection entrySelection
+	info      entryInfo
+	children  []*entry
+}
+
+func (s *CharacterCreation) makeEntrySelection(name string, imageID uint32, attributes data.AttributeSets, selection Selection) entrySelection {
+	var err error
+	var container *ui.Container
+	container, err = ui.NewContainerElement(ui.ContainerConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntrySelection"],
+		Events: ui.Events{
+			OnPressed: func(button uint8, x, y int32) bool {
+				s.selectChan <- selection
+				return true
+			},
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	nameEl := ui.NewTextElement(ui.TextElementConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntrySelection__name"],
+		Value: name,
+	})
+
+	config := ui.ImageElementConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntrySelection__image"],
+	}
+	imageID = 0
+	if imageID == 0 {
+		imageData, err := s.Client.DataManager.GetImage(s.Client.DataManager.GetDataPath("ui/loading.png"))
+		if err != nil {
+			panic(err)
+		}
+		config.Image = imageData
+	} else {
+		config.ImageID = imageID
+	}
+	imageEl := ui.NewImageElement(config)
+
+	container.GetAdoptChannel() <- nameEl
+	container.GetAdoptChannel() <- imageEl
+
+	return entrySelection{
+		container: container,
+		name:      nameEl,
+		image:     imageEl,
+	}
+}
+
+func (s *CharacterCreation) makeEntryInfo(description string, attributes data.AttributeSets) entryInfo {
+	container, err := ui.NewContainerElement(ui.ContainerConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo"],
+		Events: ui.Events{
+			OnPressed: func(button uint8, x, y int32) bool {
+				// TODO
+				return true
+			},
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	descEl := ui.NewTextElement(ui.TextElementConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__description"],
+		Value: description,
+	})
+
+	attrEl, err := ui.NewContainerElement(ui.ContainerConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__attributes"],
+	})
+
+	physEl := ui.NewTextElement(ui.TextElementConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__physical"],
+		Value: "Physical\n",
+	})
+
+	arcaneEl := ui.NewTextElement(ui.TextElementConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__arcane"],
+		Value: "Arcane\n",
+	})
+
+	spiritEl := ui.NewTextElement(ui.TextElementConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__spirit"],
+		Value: "Spirit\n",
+	})
+
+	attrEl.GetAdoptChannel() <- physEl
+	attrEl.GetAdoptChannel() <- arcaneEl
+	attrEl.GetAdoptChannel() <- spiritEl
+	container.GetAdoptChannel() <- attrEl
+	container.GetAdoptChannel() <- descEl
+
+	return entryInfo{
+		container:          container,
+		physicalAttributes: physEl,
+		arcaneAttributes:   arcaneEl,
+		spiritAttributes:   spiritEl,
+	}
 }
 
 // Init is our CharacterCreation init state.
 func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
 	s.bail = make(chan bool)
+	s.selectChan = make(chan Selection)
 	s.Client.Log.Print("CharacterCreation State")
 
 	s.layout = s.Client.DataManager.Layouts["Creation"][0].Generate(s.Client.DataManager.Styles["Creation"], map[string]interface{}{
@@ -71,6 +203,71 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 	return
 }
 
+func (s *CharacterCreation) refreshImages() {
+	var iter func(entry *entry)
+	iter = func(entry *entry) {
+		anim := s.Client.DataManager.GetAnimation(entry.animID)
+		face := anim.GetFace(entry.faceID)
+		if len(face.Frames) > 0 {
+			entry.selection.image.GetUpdateChannel() <- ui.UpdateImageID(face.Frames[0].ImageID)
+		}
+		for _, ch := range entry.children {
+			iter(ch)
+		}
+	}
+	for _, entry := range s.genusEntries {
+		iter(entry)
+	}
+}
+
+func (s *CharacterCreation) addGenus(genus network.Genus) {
+	anim := s.Client.DataManager.GetAnimation(genus.AnimationID)
+	face := anim.GetFace(genus.FaceID)
+	imageID := uint32(0)
+	if len(face.Frames) > 0 {
+		imageID = face.Frames[0].ImageID
+	}
+	entry := entry{
+		name:      genus.Name,
+		animID:    genus.AnimationID,
+		faceID:    genus.FaceID,
+		selection: s.makeEntrySelection(genus.Name, imageID, genus.Attributes, Selection{genus: genus.Name}),
+		info:      s.makeEntryInfo(genus.Description, genus.Attributes),
+	}
+	s.layout.Find("Genera__List").Element.GetAdoptChannel() <- entry.selection.container
+	s.layout.Find("Genera__Info").Element.GetAdoptChannel() <- entry.info.container
+	entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(true)
+	s.genusEntries = append(s.genusEntries, &entry)
+}
+
+func (s *CharacterCreation) addSpecies(genus string, species network.Species) {
+	for _, g := range s.genusEntries {
+		if g.name != genus {
+			continue
+		}
+		anim := s.Client.DataManager.GetAnimation(species.AnimationID)
+		face := anim.GetFace(species.FaceID)
+		imageID := uint32(0)
+		if len(face.Frames) > 0 {
+			imageID = face.Frames[0].ImageID
+		}
+		entry := entry{
+			name:      species.Name,
+			animID:    species.AnimationID,
+			faceID:    species.FaceID,
+			selection: s.makeEntrySelection(species.Name, imageID, species.Attributes, Selection{genus: genus, species: species.Name}),
+			info:      s.makeEntryInfo(species.Description, species.Attributes),
+		}
+		if s.selection.genus != genus {
+			entry.selection.container.SetHidden(true)
+		}
+		s.layout.Find("Species__List").Element.GetAdoptChannel() <- entry.selection.container
+		s.layout.Find("Species__Info").Element.GetAdoptChannel() <- entry.info.container
+		entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(true)
+		g.children = append(g.children, &entry)
+	}
+}
+
 // addCharacter adds a button for the provided character name.
 func (s *CharacterCreation) addCharacter(name string) {
 	isFocused := false
@@ -111,6 +308,83 @@ func (s *CharacterCreation) Enter(args ...interface{}) {
 	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
 }
 
+func (s *CharacterCreation) resetGenera() {
+	for _, entry := range s.genusEntries {
+		entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+		entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(true)
+	}
+}
+
+func (s *CharacterCreation) resetSpecies(genus string) {
+	for _, entry := range s.genusEntries {
+		if entry.name != genus {
+			continue
+		}
+		for _, entry := range entry.children {
+			entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+		}
+	}
+}
+
+func (s *CharacterCreation) hideSpecies(genus string) {
+	for _, entry := range s.genusEntries {
+		if entry.name != genus {
+			continue
+		}
+		for _, entry := range entry.children {
+			entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+			entry.selection.container.GetUpdateChannel() <- ui.UpdateHidden(true)
+			entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(true)
+		}
+	}
+}
+
+func (s *CharacterCreation) showSpecies(genus string) {
+	for _, entry := range s.genusEntries {
+		if entry.name != genus {
+			continue
+		}
+		for _, entry := range entry.children {
+			entry.selection.container.GetUpdateChannel() <- ui.UpdateHidden(false)
+		}
+	}
+}
+
+// Select selects a set of genera, species, culture, and training.
+func (s *CharacterCreation) Select(selection Selection) {
+	// Reset the selection.
+	if s.selection.genus != selection.genus {
+		s.resetGenera()
+		s.hideSpecies(s.selection.genus)
+		// TODO: Only send if we haven't received the given species yet.
+		s.Client.Send(network.Command(network.CommandQuerySpecies{Genus: selection.genus}))
+	} else if s.selection.species != selection.species {
+		s.resetSpecies(s.selection.genus)
+		// s.hideCultures(s.selection.genus, s.selection.species)
+		// TODO: Only send if we haven't received the given cultures yet.
+		s.Client.Send(network.Command(network.CommandQueryCulture{Genus: selection.genus, Species: selection.species}))
+	}
+
+	s.selection = selection
+
+	for _, entry := range s.genusEntries {
+		if entry.name == s.selection.genus {
+			entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection--selected"])
+			entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(false)
+
+			for _, entry := range entry.children {
+				if entry.name == s.selection.species {
+					entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection--selected"])
+					entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(false)
+					break
+				}
+			}
+			break
+		}
+	}
+	s.showSpecies(s.selection.genus)
+}
+
 // Loop is our loop for managing network activity and beyond.
 func (s *CharacterCreation) Loop() {
 	for {
@@ -120,12 +394,15 @@ func (s *CharacterCreation) Loop() {
 		select {
 		case <-s.bail:
 			return
+		case t := <-s.selectChan:
+			s.Select(t)
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
 			if ret {
 				return
 			}
 		case <-s.Client.DataManager.UpdatedImageIDs:
+			s.refreshImages()
 			// TODO: Refresh genus/species/pc image
 		case <-s.Client.ClosedChan:
 			s.Client.Log.Print("Lost connection to server.")
@@ -140,8 +417,10 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 	switch t := cmd.(type) {
 	case network.CommandGraphics:
 		s.Client.DataManager.HandleGraphicsCommand(t)
+		s.refreshImages()
 	case network.CommandAnimation:
 		s.Client.DataManager.HandleAnimationCommand(t)
+		s.refreshImages()
 	case network.CommandSound:
 		s.Client.DataManager.HandleSoundCommand(t)
 	case network.CommandAudio:
@@ -164,12 +443,16 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 		s.Client.Log.Println("TODO: Handle CommandGenera", t.Genera)
 		for _, genus := range t.Genera {
 			s.Client.DataManager.EnsureAnimation(genus.AnimationID)
+			s.addGenus(genus)
 		}
+		s.refreshImages()
 	case network.CommandQuerySpecies:
 		s.Client.Log.Println("TODO: Handle CommandSpecies", t.Genus, t.Species)
 		for _, species := range t.Species {
 			s.Client.DataManager.EnsureAnimation(species.AnimationID)
+			s.addSpecies(t.Genus, species)
 		}
+		s.refreshImages()
 	default:
 		s.Client.Log.Printf("Server sent incorrect Command\n")
 		s.Client.StateChannel <- client.StateMessage{PopToTop: true, Args: nil}
