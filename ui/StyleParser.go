@@ -150,6 +150,8 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.Display = parseDisplay(s, p.tokenValue())
 	case "Direction":
 		s.Direction = parseDirection(s, p.tokenValue())
+	case "Wrap":
+		s.Wrap = parseWrap(s, p.tokenValue())
 	case "Alpha":
 		s.Alpha = parseNumber(p.tokenValue())
 	case "ColorMod":
@@ -248,6 +250,23 @@ func parseDirection(style *Style, s string) (f Flags) {
 	case "Reverse":
 		f.Set(REVERSE)
 		f.Clear(REGULAR)
+	}
+	return
+}
+
+func parseWrap(style *Style, s string) (f Flags) {
+	f = style.Wrap
+	switch s {
+	case "NoWrap":
+		f.Set(NOWRAP)
+		f.Clear(WRAP)
+	case "Wrap":
+		f.Set(WRAP)
+		f.Clear(NOWRAP)
+	case "Hard":
+		f.Set(WRAP)
+		f.Set(HARD)
+		f.Clear(NOWRAP)
 	}
 	return
 }

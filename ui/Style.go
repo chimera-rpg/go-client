@@ -32,6 +32,13 @@ const (
 	REVERSE
 )
 
+// These const values are the bit flags for Wrap options.
+const (
+	NOWRAP Bits = 1 << iota
+	WRAP
+	HARD
+)
+
 // Number is our special number container type.
 type Number struct {
 	Value      float64
@@ -85,6 +92,7 @@ type Style struct {
 	Resize          Flags
 	Display         Flags
 	Direction       Flags
+	Wrap            Flags
 	ScaleX          Number
 	ScaleY          Number
 	X               Number
