@@ -55,7 +55,7 @@ type Manager struct {
 // Setup gets the required data/config/cache paths and creates them if needed.
 func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	m.Log = l
-	m.UpdatedImageIDs = make(chan uint32, 1)
+	m.UpdatedImageIDs = make(chan uint32, 1000)
 	// Acquire our various paths.
 	if err = m.acquireDataPath(); err != nil {
 		return
