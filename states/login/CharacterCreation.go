@@ -15,8 +15,10 @@ type CharacterCreation struct {
 	layout       ui.LayoutEntry
 	bail         chan bool
 	selectChan   chan Selection
+	tabChan      chan string
 	selection    Selection
 	genusEntries []*entry
+	focusedTab   ui.ElementI
 }
 
 type Selection struct {
@@ -148,8 +150,9 @@ func (s *CharacterCreation) makeEntryInfo(description string, attributes data.At
 
 // Init is our CharacterCreation init state.
 func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs interface{}, err error) {
-	s.bail = make(chan bool)
-	s.selectChan = make(chan Selection)
+	s.bail = make(chan bool, 1)
+	s.selectChan = make(chan Selection, 1)
+	s.tabChan = make(chan string, 1)
 	s.Client.Log.Print("CharacterCreation State")
 
 	s.layout = s.Client.DataManager.Layouts["Creation"][0].Generate(s.Client.DataManager.Styles["Creation"], map[string]interface{}{
@@ -191,7 +194,28 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 				},
 			},
 		},
+		//
+		"Nature__Tab": ui.ButtonElementConfig{
+			Value: "Nature",
+			Events: ui.Events{
+				OnPressed: func(button uint8, x int32, y int32) bool {
+					s.tabChan <- "Nature"
+					return false
+				},
+			},
+		},
+		"Nurture__Tab": ui.ButtonElementConfig{
+			Value: "Nurture",
+			Events: ui.Events{
+				OnPressed: func(button uint8, x int32, y int32) bool {
+					s.tabChan <- "Nurture"
+					return false
+				},
+			},
+		},
 	})
+
+	s.layout.Find("Nurture__Content").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
 
 	s.Client.RootWindow.AdoptChannel <- s.layout.Find("Container").Element
 
@@ -385,6 +409,16 @@ func (s *CharacterCreation) Select(selection Selection) {
 	s.showSpecies(s.selection.genus)
 }
 
+func (s *CharacterCreation) Tab(t string) {
+	if t == "Nature" {
+		s.layout.Find("Nature__Content").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+		s.layout.Find("Nurture__Content").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+	} else if t == "Nurture" {
+		s.layout.Find("Nature__Content").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+		s.layout.Find("Nurture__Content").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
+	}
+}
+
 // Loop is our loop for managing network activity and beyond.
 func (s *CharacterCreation) Loop() {
 	for {
@@ -396,6 +430,8 @@ func (s *CharacterCreation) Loop() {
 			return
 		case t := <-s.selectChan:
 			s.Select(t)
+		case t := <-s.tabChan:
+			s.Tab(t)
 		case cmd := <-s.Client.CmdChan:
 			ret := s.HandleNet(cmd)
 			if ret {
