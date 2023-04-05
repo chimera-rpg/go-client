@@ -870,6 +870,9 @@ func (b *BaseElement) HandleUpdate(update UpdateI) {
 		b.Focus()
 	case UpdateHidden:
 		b.SetHidden(bool(u))
+		if u == false {
+			b.Restyle = true
+		}
 	case UpdateAlpha:
 		b.Style.Alpha.Set(u)
 	case UpdateColorMod:
