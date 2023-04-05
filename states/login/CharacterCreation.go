@@ -1,6 +1,8 @@
 package login
 
 import (
+	"fmt"
+
 	"github.com/chimera-rpg/go-client/client"
 	"github.com/chimera-rpg/go-client/states/game"
 	"github.com/chimera-rpg/go-client/ui"
@@ -36,9 +38,8 @@ type entrySelection struct {
 }
 
 type entryInfo struct {
-	container                                              *ui.Container
-	description                                            ui.ElementI
-	physicalAttributes, arcaneAttributes, spiritAttributes ui.ElementI
+	container   *ui.Container
+	description ui.ElementI
 }
 
 type entry struct {
@@ -96,6 +97,40 @@ func (s *CharacterCreation) makeEntrySelection(name string, imageID uint32, attr
 	}
 }
 
+func (s *CharacterCreation) attributesToStrings(attr data.Attributes) (str []string) {
+	if attr.Might < 0 {
+		str = append(str, fmt.Sprintf("%d Might", attr.Might))
+	} else if attr.Might > 0 {
+		str = append(str, fmt.Sprintf("+%d Might", attr.Might))
+	}
+	if attr.Prowess < 0 {
+		str = append(str, fmt.Sprintf("%d Prowess", attr.Prowess))
+	} else if attr.Prowess > 0 {
+		str = append(str, fmt.Sprintf("+%d Prowess", attr.Prowess))
+	}
+	if attr.Focus < 0 {
+		str = append(str, fmt.Sprintf("%d Focus", attr.Focus))
+	} else if attr.Focus > 0 {
+		str = append(str, fmt.Sprintf("+%d Focus", attr.Focus))
+	}
+	if attr.Sense < 0 {
+		str = append(str, fmt.Sprintf("%d Sense", attr.Sense))
+	} else if attr.Sense > 0 {
+		str = append(str, fmt.Sprintf("+%d Sense", attr.Sense))
+	}
+	if attr.Haste < 0 {
+		str = append(str, fmt.Sprintf("%d Haste", attr.Haste))
+	} else if attr.Haste > 0 {
+		str = append(str, fmt.Sprintf("+%d Haste", attr.Haste))
+	}
+	if attr.Reaction < 0 {
+		str = append(str, fmt.Sprintf("%d Reaction", attr.Reaction))
+	} else if attr.Reaction > 0 {
+		str = append(str, fmt.Sprintf("+%d Reaction", attr.Reaction))
+	}
+	return
+}
+
 func (s *CharacterCreation) makeEntryInfo(description string, attributes data.AttributeSets) entryInfo {
 	container, err := ui.NewContainerElement(ui.ContainerConfig{
 		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo"],
@@ -119,32 +154,47 @@ func (s *CharacterCreation) makeEntryInfo(description string, attributes data.At
 		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__attributes"],
 	})
 
-	physEl := ui.NewTextElement(ui.TextElementConfig{
-		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__physical"],
-		Value: "Physical\n",
-	})
+	makeSection := func(title string, which string, attr data.Attributes) {
+		container, _ := ui.NewContainerElement(ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__"+which],
+		})
 
-	arcaneEl := ui.NewTextElement(ui.TextElementConfig{
-		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__arcane"],
-		Value: "Arcane\n",
-	})
+		titleEl := ui.NewTextElement(ui.TextElementConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__"+which+"__title"],
+			Value: title,
+		})
 
-	spiritEl := ui.NewTextElement(ui.TextElementConfig{
-		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__spirit"],
-		Value: "Spirit\n",
-	})
+		attrs, _ := ui.NewContainerElement(ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__"+which+"__attributes"],
+		})
 
-	attrEl.GetAdoptChannel() <- physEl
-	attrEl.GetAdoptChannel() <- arcaneEl
-	attrEl.GetAdoptChannel() <- spiritEl
+		for _, str := range s.attributesToStrings(attr) {
+			t := "good"
+			if str[0] == '-' {
+				t = "bad"
+			}
+			el := ui.NewTextElement(ui.TextElementConfig{
+				Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__attribute__"+t],
+				Value: str,
+			})
+			attrs.GetAdoptChannel() <- el
+		}
+
+		container.GetAdoptChannel() <- titleEl
+		container.GetAdoptChannel() <- attrs
+
+		attrEl.GetAdoptChannel() <- container
+	}
+
+	makeSection("Physical", "physical", attributes.Physical)
+	makeSection("Arcane", "arcane", attributes.Arcane)
+	makeSection("Spirit", "spirit", attributes.Spirit)
+
 	container.GetAdoptChannel() <- attrEl
 	container.GetAdoptChannel() <- descEl
 
 	return entryInfo{
-		container:          container,
-		physicalAttributes: physEl,
-		arcaneAttributes:   arcaneEl,
-		spiritAttributes:   spiritEl,
+		container: container,
 	}
 }
 
