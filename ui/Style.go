@@ -39,6 +39,12 @@ const (
 	HARD
 )
 
+// These const values are the bit flags for Overflow options.
+const (
+	OVERFLOWX Bits = 1 << iota
+	OVERFLOWY
+)
+
 // Number is our special number container type.
 type Number struct {
 	Value      float64
@@ -93,6 +99,7 @@ type Style struct {
 	Display         Flags
 	Direction       Flags
 	Wrap            Flags
+	Overflow        Flags
 	ScaleX          Number
 	ScaleY          Number
 	X               Number

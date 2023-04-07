@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -152,6 +153,8 @@ func (p *styleParser) parseProperty(s *Style, prop string) {
 		s.Direction = parseDirection(s, p.tokenValue())
 	case "Wrap":
 		s.Wrap = parseWrap(s, p.tokenValue())
+	case "Overflow":
+		s.Overflow = parseOverflow(s, p.tokenValue())
 	case "Alpha":
 		s.Alpha = parseNumber(p.tokenValue())
 	case "ColorMod":
@@ -268,6 +271,18 @@ func parseWrap(style *Style, s string) (f Flags) {
 		f.Set(HARD)
 		f.Clear(NOWRAP)
 	}
+	return
+}
+
+func parseOverflow(style *Style, s string) (f Flags) {
+	f = style.Overflow
+	switch s {
+	case "X":
+		f.Set(OVERFLOWX)
+	case "Y":
+		f.Set(OVERFLOWY)
+	}
+	fmt.Println(f)
 	return
 }
 
