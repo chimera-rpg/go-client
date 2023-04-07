@@ -10,6 +10,7 @@ type Events struct {
 	OnMouseButtonDown       func(button uint8, x int32, y int32) bool
 	OnMouseMove             func(x int32, y int32) bool
 	OnMouseButtonUp         func(button uint8, x int32, y int32) bool
+	OnMouseWheel            func(x, y int32) bool
 	OnMouseIn               func(x int32, y int32) bool
 	OnMouseOut              func(x int32, y int32) bool
 	OnPressed               func(button uint8, x int32, y int32) bool

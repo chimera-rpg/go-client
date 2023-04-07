@@ -218,6 +218,12 @@ func (instance *Instance) HandleEvent(event sdl.Event) {
 			instance.HeldElements[t.Button] = make([]ElementI, 0)
 			instance.ToBeHeldElements[t.Button] = make([]ElementI, 0)
 		}
+	case *sdl.MouseWheelEvent:
+		for _, he := range instance.HoveredElements {
+			if !he.OnMouseWheel(t.X, t.Y) {
+				break
+			}
+		}
 	case *sdl.KeyboardEvent:
 		if instance.FocusedElement != nil {
 			if t.Keysym.Sym == 27 {

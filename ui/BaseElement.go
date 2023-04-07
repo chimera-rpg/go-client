@@ -619,6 +619,14 @@ func (b *BaseElement) OnMouseMove(x int32, y int32) bool {
 	return true
 }
 
+// OnMouseWheel handles when a hovered element is wheeled.
+func (b *BaseElement) OnMouseWheel(x int32, y int32) bool {
+	if b.Events.OnMouseWheel != nil {
+		return b.Events.OnMouseWheel(x, y)
+	}
+	return true
+}
+
 // OnMouseIn handles when a mouse enters into the Element.
 func (b *BaseElement) OnMouseIn(x int32, y int32) bool {
 	if b.Events.OnMouseIn != nil {

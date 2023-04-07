@@ -71,6 +71,7 @@ type ElementI interface {
 	OnTouchEnd(id uint32, x int32, y int32) bool
 	OnMouseButtonDown(buttonID uint8, x int32, y int32) bool
 	OnMouseMove(x int32, y int32) bool
+	OnMouseWheel(x int32, y int32) bool
 	OnMouseIn(x int32, y int32) bool
 	OnMouseOut(x int32, y int32) bool
 	OnMouseButtonUp(buttonID uint8, x int32, y int32) bool
