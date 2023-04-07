@@ -93,39 +93,40 @@ func (f *Flags) Has(flags Bits) bool {
 
 // Style the type used by Elements to control desired positioning and styling.
 type Style struct {
-	Origin          Flags
-	ContentOrigin   Flags
-	Resize          Flags
-	Display         Flags
-	Direction       Flags
-	Wrap            Flags
-	Overflow        Flags
-	ScaleX          Number
-	ScaleY          Number
-	X               Number
-	Y               Number
-	W               Number
-	MinW            Number
-	MaxW            Number
-	H               Number
-	MinH            Number
-	MaxH            Number
-	ZIndex          Number
-	PaddingLeft     Number
-	PaddingRight    Number
-	PaddingTop      Number
-	PaddingBottom   Number
-	MarginLeft      Number
-	MarginRight     Number
-	MarginTop       Number
-	MarginBottom    Number
-	ScrollLeft      Number
-	ScrollTop       Number
-	Alpha           Number
-	ColorMod        color.NRGBA
-	ForegroundColor color.NRGBA
-	BackgroundColor color.NRGBA
-	OutlineColor    color.NRGBA
+	Origin                Flags
+	ContentOrigin         Flags
+	Resize                Flags
+	Display               Flags
+	Direction             Flags
+	Wrap                  Flags
+	Overflow              Flags
+	ScaleX                Number
+	ScaleY                Number
+	X                     Number
+	Y                     Number
+	W                     Number
+	MinW                  Number
+	MaxW                  Number
+	H                     Number
+	MinH                  Number
+	MaxH                  Number
+	ZIndex                Number
+	PaddingLeft           Number
+	PaddingRight          Number
+	PaddingTop            Number
+	PaddingBottom         Number
+	MarginLeft            Number
+	MarginRight           Number
+	MarginTop             Number
+	MarginBottom          Number
+	ScrollLeft            Number
+	ScrollTop             Number
+	Alpha                 Number
+	ColorMod              color.NRGBA
+	ForegroundColor       color.NRGBA
+	BackgroundColor       color.NRGBA
+	OutlineColor          color.NRGBA
+	ScrollbarGripperColor color.NRGBA
 }
 
 // Parse parses the given style string into property changes in the given Style.
