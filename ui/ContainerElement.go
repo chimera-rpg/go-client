@@ -18,6 +18,7 @@ type ContainerConfig struct {
 var ContainerElementStyle = `
 	ForegroundColor 0 0 0 255
 	BackgroundColor 139 186 139 255
+	ScrollbarGripperColor 179 226 179 200
 `
 
 // NewContainerElement creates a new Container instance according to the passed ContainerConfig.
@@ -59,4 +60,82 @@ func (w *Container) GetY() int32 {
 // IsContainer Returns whether or not this Element should be considered as a container.
 func (w *Container) IsContainer() bool {
 	return true
+}
+
+func (b *Container) refreshGrippers() {
+	viewportH := float64(b.h)
+	contentH := float64(b.h + b.overflowY)
+	b.gripH = int32(viewportH / contentH * viewportH)
+	if b.gripY+b.gripH > int32(viewportH) {
+		b.gripY = int32(viewportH) - b.gripH
+	} else if b.gripY < 0 {
+		b.gripY = 0
+	}
+	b.Style.ScrollTop.Percentage = false
+	b.Style.ScrollTop.Value = (float64(b.gripY) / viewportH) * contentH
+	b.BaseElement.CalculateStyle()
+	b.SetDirty(true)
+}
+
+func (b *Container) OnMouseMove(x int32, y int32) bool {
+	if b.overflowY > 0 {
+		if x >= (b.ax+b.w)-8 && x <= (b.ax+b.w) {
+			b.gripHoverY = true
+		} else {
+			b.gripHoverY = false
+		}
+	}
+	return b.BaseElement.OnMouseMove(x, y)
+}
+
+func (b *Container) OnMouseButtonDown(buttonID uint8, x int32, y int32) bool {
+	if b.overflowY > 0 {
+		if x >= (b.ax+b.w)-8 && x <= (b.ax+b.w) {
+			ydiff := y - b.ay
+
+			b.refreshGrippers()
+
+			if ydiff >= b.gripY && ydiff <= b.gripY+b.gripH {
+				b.gripHeldY = true
+				b.gripLastY = ydiff
+			} else {
+				if ydiff < b.gripY {
+					b.gripY -= b.gripH
+				} else if ydiff > b.gripY+b.gripH {
+					b.gripY += b.gripH
+				}
+				b.refreshGrippers()
+			}
+		}
+	}
+	return b.BaseElement.OnMouseButtonDown(buttonID, x, y)
+}
+
+func (b *Container) OnGlobalMouseMove(x int32, y int32) bool {
+	if b.gripHeldY {
+		ydiff := int32(y - b.ay)
+		b.gripY += ydiff - b.gripLastY
+		b.gripLastY = ydiff
+		b.refreshGrippers()
+	}
+	return b.BaseElement.OnGlobalMouseMove(x, y)
+}
+
+func (b *Container) OnMouseWheel(x int32, y int32) bool {
+	if b.overflowY > 0 {
+		if y > 0 {
+			b.gripY -= b.gripH
+		} else if y < 0 {
+			b.gripY += b.gripH
+		}
+		b.refreshGrippers()
+	}
+	return true
+}
+
+func (b *Container) OnGlobalMouseButtonUp(buttonID uint8, x int32, y int32) bool {
+	if b.gripHeldY {
+		b.gripHeldY = false
+	}
+	return b.BaseElement.OnGlobalMouseButtonUp(buttonID, x, y)
 }

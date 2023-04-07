@@ -145,10 +145,16 @@ func (s *CharacterCreation) makeEntryInfo(description string, attributes data.At
 		panic(err)
 	}
 
-	descEl := ui.NewTextElement(ui.TextElementConfig{
+	descContainer, _ := ui.NewContainerElement(ui.ContainerConfig{
 		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__description"],
+	})
+
+	descEl := ui.NewTextElement(ui.TextElementConfig{
+		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__description__text"],
 		Value: description,
 	})
+
+	descContainer.GetAdoptChannel() <- descEl
 
 	attrEl, err := ui.NewContainerElement(ui.ContainerConfig{
 		Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__attributes"],
@@ -191,7 +197,7 @@ func (s *CharacterCreation) makeEntryInfo(description string, attributes data.At
 	makeSection("Spirit", "spirit", attributes.Spirit)
 
 	container.GetAdoptChannel() <- attrEl
-	container.GetAdoptChannel() <- descEl
+	container.GetAdoptChannel() <- descContainer
 
 	return entryInfo{
 		container: container,

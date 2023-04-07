@@ -12,6 +12,15 @@ type Container struct {
 	BaseElement
 	SDLWindow  *sdl.Window
 	SDLTexture *sdl.Texture
+	overflowY  int32
+
+	gripX      int32
+	gripY      int32
+	gripW      int32
+	gripH      int32
+	gripHeldY  bool
+	gripHoverY bool
+	gripLastY  int32
 
 	ContainerRenderFunc ContainerRenderFunc
 }
@@ -65,6 +74,23 @@ func (w *Container) Render() {
 	for _, child := range w.BaseElement.VisibleChildren() {
 		child.RenderPost()
 	}
+
+	if w.Style.Overflow.Has(OVERFLOWY) && w.overflowY > 0 {
+		size := int32(2)
+		if w.gripHoverY || w.gripHeldY {
+			size = 6
+		}
+		// Draw gripper
+		dst := sdl.Rect{
+			X: w.w - size,
+			Y: w.gripY,
+			W: size,
+			H: w.gripH,
+		}
+		w.Context.Renderer.SetDrawColor(w.Style.ScrollbarGripperColor.R, w.Style.ScrollbarGripperColor.G, w.Style.ScrollbarGripperColor.B, w.Style.ScrollbarGripperColor.A)
+		w.Context.Renderer.FillRect(&dst)
+	}
+
 	if w.Parent != nil {
 		w.Context.Renderer.SetRenderTarget(oldTexture)
 		w.Context.Renderer.Copy(w.SDLTexture, nil, &sdl.Rect{X: w.x, Y: w.y, W: w.w, H: w.h})
@@ -80,6 +106,22 @@ func (w *Container) CalculateStyle() {
 		w.reflow()
 		// Update texture.
 		w.updateTexture()
+	}
+
+	if w.Style.Overflow.Has(OVERFLOWY) {
+		for _, child := range w.BaseElement.VisibleChildren() {
+			child.RenderPost()
+			//cx := child.GetX()
+			cy := child.GetY()
+			//cw := child.GetWidth()
+			ch := child.GetHeight()
+			//dx := (cx + cw) - w.w
+			dy := (cy + ch) - w.h
+			if dy > 0 && dy > w.overflowY {
+				w.overflowY = dy
+			}
+		}
+		w.refreshGrippers()
 	}
 }
 
