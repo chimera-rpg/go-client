@@ -772,6 +772,30 @@ func (b *BaseElement) OnWindowResized(w, h int32) {
 	}
 }
 
+// OnGlobalMouseMove is called when a mouse has been moved globally.
+func (b *BaseElement) OnGlobalMouseMove(x, y int32) bool {
+	if b.Events.OnGlobalMouseMove != nil {
+		return b.Events.OnGlobalMouseMove(x, y)
+	}
+	return true
+}
+
+// OnGlobalMouseButtonDown is called when a mouse button has been pressed globally.
+func (b *BaseElement) OnGlobalMouseButtonDown(buttonID uint8, x, y int32) bool {
+	if b.Events.OnGlobalMouseButtonDown != nil {
+		return b.Events.OnGlobalMouseButtonDown(buttonID, x, y)
+	}
+	return true
+}
+
+// OnGlobalMouseButtonUp is called when a mouse button has been released globally.
+func (b *BaseElement) OnGlobalMouseButtonUp(buttonID uint8, x, y int32) bool {
+	if b.Events.OnGlobalMouseButtonUp != nil {
+		return b.Events.OnGlobalMouseButtonUp(buttonID, x, y)
+	}
+	return true
+}
+
 // CanHold returns if the element should be considered as holdable.
 func (b *BaseElement) CanHold() bool {
 	return b.Holdable

@@ -92,6 +92,9 @@ type ElementI interface {
 	Blur()
 	OnBlur() bool
 	OnWindowResized(w, h int32)
+	OnGlobalMouseMove(x, y int32) bool
+	OnGlobalMouseButtonUp(buttonID uint8, x, y int32) bool
+	OnGlobalMouseButtonDown(buttonID uint8, x, y int32) bool
 	//
 	IsGrayscale() bool
 }

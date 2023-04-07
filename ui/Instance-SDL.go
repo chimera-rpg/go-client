@@ -287,7 +287,9 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) bool {
 			e.OnWindowResized(t.Data1, t.Data2)
 		}
 	case *sdl.MouseMotionEvent:
-		if e.Hit(t.X, t.Y) {
+		if !e.OnGlobalMouseMove(t.X, t.Y) {
+			return true
+		} else if e.Hit(t.X, t.Y) {
 			// OnMouseIn
 			existsInHovered := false
 			for _, he := range instance.HoveredElements {
@@ -316,7 +318,11 @@ func (instance *Instance) IterateEvent(e ElementI, event sdl.Event) bool {
 			}
 		}
 	case *sdl.MouseButtonEvent:
-		if e.Hit(t.X, t.Y) {
+		if t.State == sdl.RELEASED && !e.OnGlobalMouseButtonUp(t.Button, t.X, t.Y) {
+			return false
+		} else if t.State == sdl.PRESSED && !e.OnGlobalMouseButtonDown(t.Button, t.X, t.Y) {
+			return false
+		} else if e.Hit(t.X, t.Y) {
 			if t.State == sdl.PRESSED {
 				if e.CanFocus() {
 					instance.FocusElement(e)
