@@ -26,6 +26,7 @@ type CharacterCreation struct {
 type Selection struct {
 	genus    string
 	species  string
+	variety  string
 	culture  string
 	training string
 }
@@ -348,6 +349,39 @@ func (s *CharacterCreation) addSpecies(genus string, species network.Species) {
 	}
 }
 
+func (s *CharacterCreation) addVariety(genus string, species string, variety network.Variety) {
+	for _, g := range s.genusEntries {
+		if g.name != genus {
+			continue
+		}
+		for _, sp := range g.children {
+			if sp.name != species {
+				continue
+			}
+			anim := s.Client.DataManager.GetAnimation(variety.AnimationID)
+			face := anim.GetFace(variety.FaceID)
+			imageID := uint32(0)
+			if len(face.Frames) > 0 {
+				imageID = face.Frames[0].ImageID
+			}
+			entry := entry{
+				name:      variety.Name,
+				animID:    variety.AnimationID,
+				faceID:    variety.FaceID,
+				selection: s.makeEntrySelection(variety.Name, imageID, variety.Attributes, Selection{genus: genus, species: species, variety: variety.Name}),
+				info:      s.makeEntryInfo(variety.Description, variety.Attributes),
+			}
+			if s.selection.species != species {
+				entry.selection.container.SetHidden(true)
+			}
+			s.layout.Find("Variety__List").Element.GetAdoptChannel() <- entry.selection.container
+			s.layout.Find("Variety__Info").Element.GetAdoptChannel() <- entry.info.container
+			entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(true)
+			sp.children = append(sp.children, &entry)
+		}
+	}
+}
+
 // addCharacter adds a button for the provided character name.
 func (s *CharacterCreation) addCharacter(name string) {
 	isFocused := false
@@ -388,81 +422,99 @@ func (s *CharacterCreation) Enter(args ...interface{}) {
 	s.layout.Find("Container").Element.GetUpdateChannel() <- ui.UpdateHidden(false)
 }
 
-func (s *CharacterCreation) resetGenera() {
-	for _, entry := range s.genusEntries {
-		entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
-		entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(true)
-	}
-}
-
-func (s *CharacterCreation) resetSpecies(genus string) {
-	for _, entry := range s.genusEntries {
-		if entry.name != genus {
+func (s *CharacterCreation) getEntry(entries []*entry, section string) *entry {
+	for _, entry := range entries {
+		if entry.name != section {
 			continue
 		}
-		for _, entry := range entry.children {
-			entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
-		}
+		return entry
 	}
+	return nil
 }
 
-func (s *CharacterCreation) hideSpecies(genus string) {
-	for _, entry := range s.genusEntries {
-		if entry.name != genus {
-			continue
-		}
-		for _, entry := range entry.children {
-			entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
-			entry.selection.container.GetUpdateChannel() <- ui.UpdateHidden(true)
-			entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(true)
+func (s *CharacterCreation) getGenus(genus string) *entry {
+	for _, g := range s.genusEntries {
+		if g.name == genus {
+			return g
 		}
 	}
-}
-
-func (s *CharacterCreation) showSpecies(genus string) {
-	for _, entry := range s.genusEntries {
-		if entry.name != genus {
-			continue
-		}
-		for _, entry := range entry.children {
-			entry.selection.container.GetUpdateChannel() <- ui.UpdateHidden(false)
-		}
-	}
+	return nil
 }
 
 // Select selects a set of genera, species, culture, and training.
 func (s *CharacterCreation) Select(selection Selection) {
+	// * Step 1. Hide current genus/species/variety and send network requests as needed.
 	// Reset the selection.
 	if s.selection.genus != selection.genus {
-		s.resetGenera()
-		s.hideSpecies(s.selection.genus)
-		// TODO: Only send if we haven't received the given species yet.
-		s.Client.Send(network.Command(network.CommandQuerySpecies{Genus: selection.genus}))
+		if genus := s.getGenus(s.selection.genus); genus != nil {
+			// Hide genus info
+			genus.info.container.UpdateChannel <- ui.UpdateHidden(true)
+			genus.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+			// Hide species.
+			for _, entry := range genus.children {
+				entry.info.container.UpdateChannel <- ui.UpdateHidden(true)
+				entry.selection.container.UpdateChannel <- ui.UpdateHidden(true)
+				entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+				// Hide varieties.
+				for _, entry := range entry.children {
+					entry.info.container.UpdateChannel <- ui.UpdateHidden(true)
+					entry.selection.container.UpdateChannel <- ui.UpdateHidden(true)
+					entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+				}
+			}
+		} else {
+			s.Client.Send(network.Command(network.CommandQuerySpecies{Genus: selection.genus}))
+		}
 	} else if s.selection.species != selection.species {
-		s.resetSpecies(s.selection.genus)
-		// s.hideCultures(s.selection.genus, s.selection.species)
-		// TODO: Only send if we haven't received the given cultures yet.
-		s.Client.Send(network.Command(network.CommandQueryCulture{Genus: selection.genus, Species: selection.species}))
+		if genus := s.getGenus(s.selection.genus); genus != nil {
+			if species := s.getEntry(genus.children, s.selection.species); species != nil {
+				// Hide species info
+				species.info.container.UpdateChannel <- ui.UpdateHidden(true)
+				species.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+				// Hide varieties.
+				for _, entry := range species.children {
+					entry.info.container.UpdateChannel <- ui.UpdateHidden(true)
+					entry.selection.container.UpdateChannel <- ui.UpdateHidden(true)
+					entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+				}
+			} else {
+				s.Client.Send(network.Command(network.CommandQueryVariety{Genus: selection.genus, Species: selection.species}))
+			}
+		}
+	} else if s.selection.variety != selection.variety {
+		if genus := s.getGenus(s.selection.genus); genus != nil {
+			if species := s.getEntry(genus.children, s.selection.species); species != nil {
+				if variety := s.getEntry(species.children, s.selection.variety); variety != nil {
+					variety.info.container.UpdateChannel <- ui.UpdateHidden(true)
+					variety.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
+				}
+			}
+		}
 	}
 
 	s.selection = selection
 
-	for _, entry := range s.genusEntries {
-		if entry.name == s.selection.genus {
-			entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection--selected"])
-			entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(false)
-
-			for _, entry := range entry.children {
-				if entry.name == s.selection.species {
-					entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection--selected"])
-					entry.info.container.GetUpdateChannel() <- ui.UpdateHidden(false)
-					break
+	// * Step 2. Show newly selected genus/species/variety fields.
+	if genus := s.getGenus(s.selection.genus); genus != nil {
+		genus.info.container.UpdateChannel <- ui.UpdateHidden(false)
+		genus.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection--selected"])
+		// Show species.
+		for _, entry := range genus.children {
+			entry.selection.container.UpdateChannel <- ui.UpdateHidden(false)
+			if entry.name == s.selection.species {
+				entry.info.container.UpdateChannel <- ui.UpdateHidden(false)
+				entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection--selected"])
+				// Show varieties.
+				for _, entry := range entry.children {
+					entry.selection.container.UpdateChannel <- ui.UpdateHidden(false)
+					if entry.name == s.selection.variety {
+						entry.info.container.UpdateChannel <- ui.UpdateHidden(false)
+						entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection--selected"])
+					}
 				}
 			}
-			break
 		}
 	}
-	s.showSpecies(s.selection.genus)
 }
 
 func (s *CharacterCreation) Tab(t string) {
@@ -543,6 +595,12 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 		for _, species := range t.Species {
 			s.Client.DataManager.EnsureAnimation(species.AnimationID)
 			s.addSpecies(t.Genus, species)
+		}
+		s.refreshImages()
+	case network.CommandQueryVariety:
+		for _, variety := range t.Variety {
+			s.Client.DataManager.EnsureAnimation(variety.AnimationID)
+			s.addVariety(t.Genus, t.Species, variety)
 		}
 		s.refreshImages()
 	default:
