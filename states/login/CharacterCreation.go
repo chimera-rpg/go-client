@@ -21,6 +21,8 @@ type CharacterCreation struct {
 	selection    Selection
 	genusEntries []*entry
 	focusedTab   ui.ElementI
+	// ugh
+	attributeTexts map[ui.ElementI][]ui.ElementI
 }
 
 type Selection struct {
@@ -44,12 +46,13 @@ type entryInfo struct {
 }
 
 type entry struct {
-	animID    uint32
-	faceID    uint32
-	name      string
-	selection entrySelection
-	info      entryInfo
-	children  []*entry
+	animID     uint32
+	faceID     uint32
+	name       string
+	selection  entrySelection
+	info       entryInfo
+	children   []*entry
+	attributes data.AttributeSets
 }
 
 func (s *CharacterCreation) makeEntrySelection(name string, imageID uint32, attributes data.AttributeSets, selection Selection) entrySelection {
@@ -220,12 +223,23 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 			Value: "Character",
 		},
 		"CharacterName": ui.InputElementConfig{
-			Placeholder: "character name",
+			Placeholder: "name",
 			Events: ui.Events{
 				OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
-					if char == 13 { // Enter
+					/*if char == 13 { // Enter
 						s.layout.Find("CreateButton").Element.OnPressed(1, 0, 0)
-					}
+					}*/
+					return true
+				},
+			},
+		},
+		"CharacterDescription": ui.InputElementConfig{
+			Placeholder: "description",
+			Events: ui.Events{
+				OnKeyDown: func(char uint8, modifiers uint16, repeat bool) bool {
+					/*if char == 13 { // Enter
+						s.layout.Find("CreateButton").Element.OnPressed(1, 0, 0)
+					}*/
 					return true
 				},
 			},
@@ -270,9 +284,48 @@ func (s *CharacterCreation) Init(t interface{}) (next client.StateI, nextArgs in
 				},
 			},
 		},
+		"Results__Attributes": ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__attributes"],
+		},
+		"Results__Attributes__Physical": ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__physical"],
+		},
+		"Results__Attributes__Arcane": ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__arcane"],
+		},
+		"Results__Attributes__Spirit": ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__spirit"],
+		},
+		"Results__Attributes__Physical__Title": ui.TextElementConfig{
+			Value: "Physical",
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__physical__title"],
+		},
+		"Results__Attributes__Physical__Attributes": ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__physical__attributes"],
+		},
+		"Results__Attributes__Arcane__Title": ui.TextElementConfig{
+			Value: "Arcane",
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__arcane__title"],
+		},
+		"Results__Attributes__Arcane__Attributes": ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__arcane__attributes"],
+		},
+		"Results__Attributes__Spirit__Title": ui.TextElementConfig{
+			Value: "Spirit",
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__spirit__title"],
+		},
+		"Results__Attributes__Spirit__Attributes": ui.ContainerConfig{
+			Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__spirit__attributes"],
+		},
 	})
 
 	s.layout.Find("Nurture__Content").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+
+	s.attributeTexts = make(map[ui.ElementI][]ui.ElementI)
+	// Create results attributes.
+	{
+		//s.layout.Find("Results__Attributes__Physical").Element.GetUpdateChannel() <- ui.UpdateHidden(true)
+	}
 
 	s.Client.RootWindow.AdoptChannel <- s.layout.Find("Container").Element
 
@@ -309,11 +362,12 @@ func (s *CharacterCreation) addGenus(genus network.Genus) {
 		imageID = face.Frames[0].ImageID
 	}
 	entry := entry{
-		name:      genus.Name,
-		animID:    genus.AnimationID,
-		faceID:    genus.FaceID,
-		selection: s.makeEntrySelection(genus.Name, imageID, genus.Attributes, Selection{genus: genus.Name}),
-		info:      s.makeEntryInfo(genus.Description, genus.Attributes),
+		name:       genus.Name,
+		animID:     genus.AnimationID,
+		faceID:     genus.FaceID,
+		selection:  s.makeEntrySelection(genus.Name, imageID, genus.Attributes, Selection{genus: genus.Name}),
+		info:       s.makeEntryInfo(genus.Description, genus.Attributes),
+		attributes: genus.Attributes,
 	}
 	s.layout.Find("Genera__List").Element.GetAdoptChannel() <- entry.selection.container
 	s.layout.Find("Genera__Info").Element.GetAdoptChannel() <- entry.info.container
@@ -333,11 +387,12 @@ func (s *CharacterCreation) addSpecies(genus string, species network.Species) {
 			imageID = face.Frames[0].ImageID
 		}
 		entry := entry{
-			name:      species.Name,
-			animID:    species.AnimationID,
-			faceID:    species.FaceID,
-			selection: s.makeEntrySelection(species.Name, imageID, species.Attributes, Selection{genus: genus, species: species.Name}),
-			info:      s.makeEntryInfo(species.Description, species.Attributes),
+			name:       species.Name,
+			animID:     species.AnimationID,
+			faceID:     species.FaceID,
+			selection:  s.makeEntrySelection(species.Name, imageID, species.Attributes, Selection{genus: genus, species: species.Name}),
+			info:       s.makeEntryInfo(species.Description, species.Attributes),
+			attributes: species.Attributes,
 		}
 		if s.selection.genus != genus {
 			entry.selection.container.SetHidden(true)
@@ -365,11 +420,12 @@ func (s *CharacterCreation) addVariety(genus string, species string, variety net
 				imageID = face.Frames[0].ImageID
 			}
 			entry := entry{
-				name:      variety.Name,
-				animID:    variety.AnimationID,
-				faceID:    variety.FaceID,
-				selection: s.makeEntrySelection(variety.Name, imageID, variety.Attributes, Selection{genus: genus, species: species, variety: variety.Name}),
-				info:      s.makeEntryInfo(variety.Description, variety.Attributes),
+				name:       variety.Name,
+				animID:     variety.AnimationID,
+				faceID:     variety.FaceID,
+				selection:  s.makeEntrySelection(variety.Name, imageID, variety.Attributes, Selection{genus: genus, species: species, variety: variety.Name}),
+				info:       s.makeEntryInfo(variety.Description, variety.Attributes),
+				attributes: variety.Attributes,
 			}
 			if s.selection.species != species {
 				entry.selection.container.SetHidden(true)
@@ -407,6 +463,107 @@ func (s *CharacterCreation) addCharacter(name string) {
 		elChar.Focus()
 	}
 	s.layout.Find("Characters").Element.GetAdoptChannel() <- elChar
+}
+
+func (s *CharacterCreation) getNatures() (genus *entry, species *entry, variety *entry) {
+	for _, g := range s.genusEntries {
+		if g.name == s.selection.genus {
+			genus = g
+			for _, sp := range g.children {
+				if sp.name == s.selection.species {
+					species = sp
+					for _, v := range sp.children {
+						if v.name == s.selection.variety {
+							variety = v
+							return
+						}
+					}
+					return
+				}
+			}
+			return
+		}
+	}
+	return
+}
+
+func (s *CharacterCreation) refreshResults() {
+	var attributes data.AttributeSets
+	physEl := s.layout.Find("Results__Attributes__Physical__Attributes")
+	arcaneEl := s.layout.Find("Results__Attributes__Arcane__Attributes")
+	spiritEl := s.layout.Find("Results__Attributes__Spirit__Attributes")
+
+	genus, species, variety := s.getNatures()
+	if genus != nil {
+		attributes.Add(genus.attributes)
+	}
+	if species != nil {
+		attributes.Add(species.attributes)
+	}
+	if variety != nil {
+		attributes.Add(variety.attributes)
+	}
+
+	// Update the image
+	imageEl := s.layout.Find("CharacterImage")
+	if variety != nil {
+		anim := s.Client.DataManager.GetAnimation(variety.animID)
+		face := anim.GetFace(variety.faceID)
+		if len(face.Frames) > 0 {
+			imageEl.Element.GetUpdateChannel() <- ui.UpdateImageID(face.Frames[0].ImageID)
+		}
+	} else if species != nil {
+		anim := s.Client.DataManager.GetAnimation(species.animID)
+		face := anim.GetFace(species.faceID)
+		if len(face.Frames) > 0 {
+			imageEl.Element.GetUpdateChannel() <- ui.UpdateImageID(face.Frames[0].ImageID)
+		}
+	} else if genus != nil {
+		anim := s.Client.DataManager.GetAnimation(genus.animID)
+		face := anim.GetFace(genus.faceID)
+		if len(face.Frames) > 0 {
+			imageEl.Element.GetUpdateChannel() <- ui.UpdateImageID(face.Frames[0].ImageID)
+		}
+	} else {
+		imageData, err := s.Client.DataManager.GetImage(s.Client.DataManager.GetDataPath("ui/loading.png"))
+		if err != nil {
+			panic(err)
+		}
+		imageEl.Element.GetUpdateChannel() <- imageData
+	}
+
+	// FIXME: We should re-use text elements...
+	addAttributeStrings := func(attrs ui.ElementI, attr data.Attributes) {
+		attrStrings := s.attributesToStrings(attr)
+		for i, str := range attrStrings {
+			t := "good"
+			if str[0] == '-' {
+				t = "bad"
+			}
+
+			if i < len(s.attributeTexts[attrs]) {
+				s.attributeTexts[attrs][i].GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntryInfo__attribute__"+t])
+				s.attributeTexts[attrs][i].GetUpdateChannel() <- ui.UpdateValue{Value: str}
+			} else {
+				el := ui.NewTextElement(ui.TextElementConfig{
+					Style: s.Client.DataManager.Styles["Creation"]["EntryInfo__attribute__"+t],
+					Value: str,
+				})
+				attrs.GetAdoptChannel() <- el
+
+				s.attributeTexts[attrs] = append(s.attributeTexts[attrs], el)
+			}
+		}
+
+		// Remove excess.
+		for i := len(s.attributeTexts[attrs]) - 1; i >= len(attrStrings); i-- {
+			attrs.GetDisownChannel() <- s.attributeTexts[attrs][i]
+		}
+		s.attributeTexts[attrs] = s.attributeTexts[attrs][:len(attrStrings)]
+	}
+	addAttributeStrings(physEl.Element, attributes.Physical)
+	addAttributeStrings(arcaneEl.Element, attributes.Arcane)
+	addAttributeStrings(spiritEl.Element, attributes.Spirit)
 }
 
 // Close our CharacterCreation State.
@@ -515,6 +672,7 @@ func (s *CharacterCreation) Select(selection Selection) {
 			}
 		}
 	}
+	s.refreshResults()
 }
 
 func (s *CharacterCreation) Tab(t string) {
@@ -584,14 +742,12 @@ func (s *CharacterCreation) HandleNet(cmd network.Command) bool {
 	case network.CommandCreateCharacter:
 		s.addCharacter(t.Name)
 	case network.CommandQueryGenera:
-		s.Client.Log.Println("TODO: Handle CommandGenera", t.Genera)
 		for _, genus := range t.Genera {
 			s.Client.DataManager.EnsureAnimation(genus.AnimationID)
 			s.addGenus(genus)
 		}
 		s.refreshImages()
 	case network.CommandQuerySpecies:
-		s.Client.Log.Println("TODO: Handle CommandSpecies", t.Genus, t.Species)
 		for _, species := range t.Species {
 			s.Client.DataManager.EnsureAnimation(species.AnimationID)
 			s.addSpecies(t.Genus, species)
