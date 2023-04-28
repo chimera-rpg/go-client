@@ -504,6 +504,11 @@ func (s *CharacterCreation) refreshResults() {
 		attributes.Add(variety.attributes)
 	}
 
+	dummyImage, err := s.Client.DataManager.GetImage(s.Client.DataManager.GetDataPath("ui/loading.png"))
+	if err != nil {
+		panic(err)
+	}
+
 	// Update the image
 	imageEl := s.layout.Find("CharacterImage")
 	if variety != nil {
@@ -511,25 +516,27 @@ func (s *CharacterCreation) refreshResults() {
 		face := anim.GetFace(variety.faceID)
 		if len(face.Frames) > 0 {
 			imageEl.Element.GetUpdateChannel() <- ui.UpdateImageID(face.Frames[0].ImageID)
+		} else {
+			imageEl.Element.GetUpdateChannel() <- dummyImage
 		}
 	} else if species != nil {
 		anim := s.Client.DataManager.GetAnimation(species.animID)
 		face := anim.GetFace(species.faceID)
 		if len(face.Frames) > 0 {
 			imageEl.Element.GetUpdateChannel() <- ui.UpdateImageID(face.Frames[0].ImageID)
+		} else {
+			imageEl.Element.GetUpdateChannel() <- dummyImage
 		}
 	} else if genus != nil {
 		anim := s.Client.DataManager.GetAnimation(genus.animID)
 		face := anim.GetFace(genus.faceID)
 		if len(face.Frames) > 0 {
 			imageEl.Element.GetUpdateChannel() <- ui.UpdateImageID(face.Frames[0].ImageID)
+		} else {
+			imageEl.Element.GetUpdateChannel() <- dummyImage
 		}
 	} else {
-		imageData, err := s.Client.DataManager.GetImage(s.Client.DataManager.GetDataPath("ui/loading.png"))
-		if err != nil {
-			panic(err)
-		}
-		imageEl.Element.GetUpdateChannel() <- imageData
+		imageEl.Element.GetUpdateChannel() <- dummyImage
 	}
 
 	// FIXME: We should re-use text elements...
