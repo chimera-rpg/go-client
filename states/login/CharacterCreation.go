@@ -49,6 +49,7 @@ type entry struct {
 	animID     uint32
 	faceID     uint32
 	name       string
+	received   bool
 	selection  entrySelection
 	info       entryInfo
 	children   []*entry
@@ -368,6 +369,7 @@ func (s *CharacterCreation) addGenus(genus network.Genus) {
 		selection:  s.makeEntrySelection(genus.Name, imageID, genus.Attributes, Selection{genus: genus.Name}),
 		info:       s.makeEntryInfo(genus.Description, genus.Attributes),
 		attributes: genus.Attributes,
+		received:   false,
 	}
 	s.layout.Find("Genera__List").Element.GetAdoptChannel() <- entry.selection.container
 	s.layout.Find("Genera__Info").Element.GetAdoptChannel() <- entry.info.container
@@ -380,6 +382,7 @@ func (s *CharacterCreation) addSpecies(genus string, species network.Species) {
 		if g.name != genus {
 			continue
 		}
+		g.received = true
 		anim := s.Client.DataManager.GetAnimation(species.AnimationID)
 		face := anim.GetFace(species.FaceID)
 		imageID := uint32(0)
@@ -393,6 +396,7 @@ func (s *CharacterCreation) addSpecies(genus string, species network.Species) {
 			selection:  s.makeEntrySelection(species.Name, imageID, species.Attributes, Selection{genus: genus, species: species.Name}),
 			info:       s.makeEntryInfo(species.Description, species.Attributes),
 			attributes: species.Attributes,
+			received:   false,
 		}
 		if s.selection.genus != genus {
 			entry.selection.container.SetHidden(true)
@@ -413,6 +417,7 @@ func (s *CharacterCreation) addVariety(genus string, species string, variety net
 			if sp.name != species {
 				continue
 			}
+			sp.received = true
 			anim := s.Client.DataManager.GetAnimation(variety.AnimationID)
 			face := anim.GetFace(variety.FaceID)
 			imageID := uint32(0)
@@ -607,6 +612,19 @@ func (s *CharacterCreation) getGenus(genus string) *entry {
 
 // Select selects a set of genera, species, culture, and training.
 func (s *CharacterCreation) Select(selection Selection) {
+	// Requestasaurus rex the network stuff
+	if genus := s.getGenus(selection.genus); genus != nil {
+		if !genus.received {
+			s.Client.Send(network.Command(network.CommandQuerySpecies{Genus: selection.genus}))
+		} else {
+			if species := s.getEntry(genus.children, selection.species); species != nil {
+				if !species.received {
+					s.Client.Send(network.Command(network.CommandQueryVariety{Genus: selection.genus, Species: selection.species}))
+				}
+			}
+		}
+	}
+
 	// * Step 1. Hide current genus/species/variety and send network requests as needed.
 	// Reset the selection.
 	if s.selection.genus != selection.genus {
@@ -626,8 +644,6 @@ func (s *CharacterCreation) Select(selection Selection) {
 					entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
 				}
 			}
-		} else {
-			s.Client.Send(network.Command(network.CommandQuerySpecies{Genus: selection.genus}))
 		}
 	} else if s.selection.species != selection.species {
 		if genus := s.getGenus(s.selection.genus); genus != nil {
@@ -641,8 +657,6 @@ func (s *CharacterCreation) Select(selection Selection) {
 					entry.selection.container.UpdateChannel <- ui.UpdateHidden(true)
 					entry.selection.container.GetUpdateChannel() <- ui.UpdateParseStyle(s.Client.DataManager.Styles["Creation"]["EntrySelection"])
 				}
-			} else {
-				s.Client.Send(network.Command(network.CommandQueryVariety{Genus: selection.genus, Species: selection.species}))
 			}
 		}
 	} else if s.selection.variety != selection.variety {
