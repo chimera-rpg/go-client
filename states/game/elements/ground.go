@@ -6,7 +6,7 @@ import (
 
 	"github.com/chimera-rpg/go-client/ui"
 	"github.com/chimera-rpg/go-client/world"
-	"github.com/chimera-rpg/go-common/data"
+	"github.com/chimera-rpg/go-server/data"
 	"golang.org/x/exp/slices"
 )
 
