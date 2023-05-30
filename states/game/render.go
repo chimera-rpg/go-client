@@ -239,6 +239,9 @@ func (s *Game) GetRenderPosition(ctx RenderContext, m *world.DynamicMap, y, x, z
 
 // RenderObject renders a given Object within a DynamicMap.
 func (s *Game) RenderObject(ctx RenderContext, viewObject *world.Object, o *world.Object, m *world.DynamicMap, dt time.Duration, uiMessages *BatchMessages) {
+	if o.Contained {
+		return
+	}
 	if o != viewObject {
 		if o.Element != nil {
 			if o.Missing && o.WasMissing {

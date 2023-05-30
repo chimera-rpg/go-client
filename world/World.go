@@ -19,6 +19,7 @@ type World struct {
 	dataManager                      *data.Manager
 	maps                             map[cdata.StringID]*DynamicMap
 	currentMap                       cdata.StringID
+	containers                       []*Container // Known containers.
 	objects                          []*Object
 	changedObjects                   []*Object
 	ReachCube                        [][][]struct{}
@@ -239,6 +240,8 @@ func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
 		w.updateVisionUnblocking()
 	case network.CommandObjectPayloadInfo:
 		w.UpdateObjectInfo(cmd.ObjectID, p.Info)
+	case network.CommandObjectPayloadContainer:
+		w.UpdateContainer(cmd.ObjectID, p.Objects)
 	default:
 		w.Log.WithFields(logrus.Fields{
 			"payload": p,
