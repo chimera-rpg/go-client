@@ -81,6 +81,17 @@ func (instance *Instance) Loop() {
 			return
 		}
 
+		select {
+		case id := <-instance.ImageLoadChan:
+			instance.Context.Manager.GetCachedImage(uint32(id))
+		case id := <-instance.ImageClearChan:
+			instance.Context.Manager.ClearCachedImage(uint32(id))
+		default:
+			break
+		}
+
+		instance.CheckChannels(instance.RootWindow.This)
+
 		// Process batch updates.
 		for {
 			var batchMessages []BatchMessage
@@ -109,17 +120,6 @@ func (instance *Instance) Loop() {
 				break
 			}
 		}
-
-		select {
-		case id := <-instance.ImageLoadChan:
-			instance.Context.Manager.GetCachedImage(uint32(id))
-		case id := <-instance.ImageClearChan:
-			instance.Context.Manager.ClearCachedImage(uint32(id))
-		default:
-			break
-		}
-
-		instance.CheckChannels(instance.RootWindow.This)
 
 		// Handle held elements.
 		for k, t := range instance.HeldPendingTimer {
