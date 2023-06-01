@@ -6,7 +6,6 @@ package ui
 import (
 	"image"
 
-	"github.com/nfnt/resize"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -188,6 +187,18 @@ func (i *ImageElement) PixelHit(x, y int32) bool {
 	if i.IsHidden() {
 		return false
 	}
+	// Superior Image-based method since we have the image anyhow.
+	x = x - i.ax
+	y = y - i.ay
+	rect := i.Image.Bounds()
+	x1 := int(float64(x) * float64(rect.Dx()) / float64(int(i.w)))
+	y1 := int(float64(y) * float64(rect.Dy()) / float64(int(i.h)))
+	c := i.Image.At(x1, y1)
+	_, _, _, a := c.RGBA()
+	if a > 0 {
+		return true
+	}
+	return false
 	// Pure SDL texture method. Instable, probably have to lock pixels.
 	/*texWidth := i.w
 	texHeight := i.h
@@ -224,7 +235,7 @@ func (i *ImageElement) PixelHit(x, y int32) bool {
 	}
 	return false*/
 	// Resize-based method.
-	x -= i.GetAbsoluteX()
+	/*x -= i.GetAbsoluteX()
 	y -= i.GetAbsoluteY()
 
 	resizedImage := resize.Resize(uint(i.w), uint(i.h), i.Image, resize.NearestNeighbor)
@@ -234,5 +245,5 @@ func (i *ImageElement) PixelHit(x, y int32) bool {
 		return true
 	}
 
-	return false
+	return false*/
 }
