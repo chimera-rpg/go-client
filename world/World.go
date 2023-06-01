@@ -234,7 +234,7 @@ func (w *World) SyncViewTarget(oID uint32, p network.CommandObjectPayloadViewTar
 }
 
 // CreateObjectFromPayload creates or updates an Object associated with an object ID from a creation payload.
-func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPayloadCreate) error {
+func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPayloadCreate) *Object {
 	o := w.GetObject(oID)
 	if o != nil {
 		// Update existing object.
@@ -316,7 +316,7 @@ func (w *World) CreateObjectFromPayload(oID uint32, p network.CommandObjectPaylo
 		o.HasShadow = true
 	}
 
-	return nil
+	return o
 }
 
 // AddObject adds the given object to the objects slice.
