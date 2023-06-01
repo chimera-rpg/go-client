@@ -14,6 +14,7 @@ import (
 	"github.com/chimera-rpg/go-client/world"
 	cdata "github.com/chimera-rpg/go-server/data"
 	"github.com/chimera-rpg/go-server/network"
+	"github.com/sirupsen/logrus"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -265,11 +266,25 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		}
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:
-		s.world.HandleObjectCommand(c)
-		if _, ok := c.Payload.(network.CommandObjectPayloadContainer); ok {
+		switch p := c.Payload.(type) {
+		case network.CommandObjectPayloadCreate:
+			s.Client.DataManager.EnsureAnimation(p.AnimationID)
+			s.world.CreateObjectFromPayload(c.ObjectID, p)
+		case network.CommandObjectPayloadDelete:
+			s.world.DeleteObject(c.ObjectID)
+		case network.CommandObjectPayloadInfo:
+			s.world.UpdateObjectInfo(c.ObjectID, p.Info)
+		case network.CommandObjectPayloadContainer:
+			s.world.UpdateContainer(c.ObjectID, p.Objects)
 			if c.ObjectID == 0 {
 				s.InventoryWindow.Refresh()
 			}
+		case network.CommandObjectPayloadViewTarget:
+			s.world.SyncViewTarget(c.ObjectID, p)
+		default:
+			s.Client.Log.WithFields(logrus.Fields{
+				"payload": p,
+			}).Info("[Game] Unhandled CommandObject Payload")
 		}
 	case network.CommandTiles:
 		s.world.HandleTilesCommand(c)

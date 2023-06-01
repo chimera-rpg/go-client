@@ -221,33 +221,16 @@ func (w *World) HandleTileSkyCommand(cmd network.CommandTileSky) error {
 	return nil
 }
 
-// HandleObjectCommand handles an ObjectCommand, creating or deleting depending on the payload.
-func (w *World) HandleObjectCommand(cmd network.CommandObject) error {
-	switch p := cmd.Payload.(type) {
-	case network.CommandObjectPayloadCreate:
-		w.dataManager.EnsureAnimation(p.AnimationID)
-		w.CreateObjectFromPayload(cmd.ObjectID, p)
-	case network.CommandObjectPayloadDelete:
-		w.DeleteObject(cmd.ObjectID)
-	case network.CommandObjectPayloadViewTarget:
-		w.viewObjectID = cmd.ObjectID
-		w.viewObject = w.GetObject(cmd.ObjectID)
-		w.viewHeight = int(p.Height)
-		w.viewWidth = int(p.Width)
-		w.viewDepth = int(p.Depth)
-		w.updateCubes()
-		w.updateVisibleTiles()
-		w.updateVisionUnblocking()
-	case network.CommandObjectPayloadInfo:
-		w.UpdateObjectInfo(cmd.ObjectID, p.Info)
-	case network.CommandObjectPayloadContainer:
-		w.UpdateContainer(cmd.ObjectID, p.Objects)
-	default:
-		w.Log.WithFields(logrus.Fields{
-			"payload": p,
-		}).Info("[World] Unhandled CommandObject Payload")
-	}
-	return nil
+// SyncViewTarget sets the current view target to the given object with the provided options from the payload.
+func (w *World) SyncViewTarget(oID uint32, p network.CommandObjectPayloadViewTarget) {
+	w.viewObjectID = oID
+	w.viewObject = w.GetObject(oID)
+	w.viewHeight = int(p.Height)
+	w.viewWidth = int(p.Width)
+	w.viewDepth = int(p.Depth)
+	w.updateCubes()
+	w.updateVisibleTiles()
+	w.updateVisionUnblocking()
 }
 
 // CreateObjectFromPayload creates or updates an Object associated with an object ID from a creation payload.
