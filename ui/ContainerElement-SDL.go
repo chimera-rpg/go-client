@@ -59,6 +59,9 @@ func (w *Container) Render() {
 		return
 	}
 	oldTexture := w.Context.Renderer.GetRenderTarget()
+	if w.SDLTexture == nil {
+		return
+	}
 	w.Context.Renderer.SetRenderTarget(w.SDLTexture)
 	if w.ContainerRenderFunc != nil {
 		w.ContainerRenderFunc(w)

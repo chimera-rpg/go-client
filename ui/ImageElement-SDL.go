@@ -4,6 +4,7 @@
 package ui
 
 import (
+	"errors"
 	"image"
 	"math"
 	"unsafe"
@@ -60,11 +61,7 @@ func (i *ImageElement) Render() {
 		return
 	}
 	if i.Textures == nil {
-		if i.Image != nil {
-			i.SetImage(i.Image)
-		} else {
-			i.SetImageID(i.ImageID)
-		}
+		i.SetImageID(i.ImageID)
 	}
 	if i.Style.BackgroundColor.A > 0 {
 		dst := sdl.Rect{
@@ -147,64 +144,6 @@ func (i *ImageElement) SetImageID(id uint32) {
 	if i.Style.Resize.Has(TOCONTENT) {
 		w := float64(imgTextures.width)
 		h := float64(imgTextures.height)
-		if i.Style.ScaleX.Value > 0 {
-			if i.Style.ScaleX.Percentage {
-				w = i.Style.ScaleX.PercentOf(w)
-			} else {
-				w *= i.Style.ScaleX.Value
-			}
-		}
-		if i.Style.ScaleY.Value > 0 {
-			if i.Style.ScaleY.Percentage {
-				h = i.Style.ScaleY.PercentOf(h)
-			} else {
-				h *= i.Style.ScaleY.Value
-			}
-		}
-
-		i.Style.W.Set(w)
-		i.Style.H.Set(h)
-		i.CalculateStyle()
-	}
-
-	i.Dirty = true
-	i.invalidated = true
-}
-
-// SetImage sets the underlying texture to the passed go Image.
-func (i *ImageElement) SetImage(img image.Image) {
-	var err error
-	if i.Context == nil || img == nil {
-		return
-	}
-
-	if i.ImageID > 0 {
-		i.Textures = nil
-	}
-
-	i.ImageID = 0
-	i.Image = img
-
-	if i.Textures != nil {
-		if i.Textures.regularTexture != nil {
-			i.Textures.regularTexture.Destroy()
-		}
-		if i.Textures.grayscaleTexture != nil {
-			i.Textures.grayscaleTexture.Destroy()
-		}
-	} else {
-		i.Textures = &Image{}
-	}
-
-	i.Textures.regularTexture, i.Textures.grayscaleTexture, err = i.createTexture(img)
-	if err != nil {
-		panic(err)
-	}
-	i.tw = int32(img.Bounds().Dx())
-	i.th = int32(img.Bounds().Dy())
-	if i.Style.Resize.Has(TOCONTENT) {
-		w := float64(i.tw)
-		h := float64(i.th)
 		if i.Style.ScaleX.Value > 0 {
 			if i.Style.ScaleX.Percentage {
 				w = i.Style.ScaleX.PercentOf(w)

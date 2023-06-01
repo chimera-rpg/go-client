@@ -50,10 +50,6 @@ func (i *ImageElement) HandleUpdate(update UpdateI) {
 		i.SetImageID(uint32(u))
 		i.OnChange()
 		i.SetDirty(true)
-	case image.Image:
-		i.SetImage(u)
-		i.OnChange()
-		i.SetDirty(true)
 	case UpdateOutlineColor:
 		i.BaseElement.HandleUpdate(update)
 		i.UpdateOutline()
