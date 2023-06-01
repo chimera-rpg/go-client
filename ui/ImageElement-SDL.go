@@ -351,6 +351,9 @@ func (i *ImageElement) createTexture(img image.Image) (tex *sdl.Texture, gray *s
 }
 
 func (i *ImageElement) createOutline() error {
+	if i.Textures == nil {
+		return errors.New("missing textures to make outline")
+	}
 	/*_, _, width, height, err := i.SDLTexture.Query()
 	if err != nil {
 		return err
