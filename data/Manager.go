@@ -48,6 +48,7 @@ type Manager struct {
 	images          []ImageRef
 	imageLock       sync.Mutex
 	UpdatedImageIDs chan uint32
+	LoadingImage    image.Image
 	sounds          map[uint32]SoundEntry
 	handleCallback  func(netID int, cmd network.Command)
 }
@@ -149,6 +150,13 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	m.audio = make(map[uint32]Audio)
 	//m.images = make(map[uint32]image.Image)
 	m.sounds = make(map[uint32]SoundEntry)
+
+	// Load our loading image
+	imageData, err := m.GetImage(m.GetDataPath("ui/loading.png"))
+	if err != nil {
+		m.Log.Error("[Manager] ", err)
+	}
+	m.LoadingImage = imageData
 
 	// Collect cached images.
 	if err = m.collectCachedImages(); err != nil {
@@ -379,11 +387,10 @@ func (m *Manager) GetCachedImage(iID uint32) (img image.Image, err error) {
 			return ref.img, nil
 		}
 	}
-	imageData, err := m.GetImage(m.GetDataPath("ui/loading.png"))
-	if err != nil {
-		return imageData, errors.New("missing")
+	if m.LoadingImage == nil {
+		return nil, errors.New("missing")
 	}
-	return imageData, errors.New("loading")
+	return m.LoadingImage, errors.New("loading")
 }
 
 func (m *Manager) SetCachedImage(iID uint32, img image.Image, override bool, ready bool) {
