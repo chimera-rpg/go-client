@@ -138,7 +138,7 @@ func (s *Game) SetupUI() (err error) {
 	s.CommandContainer.GetAdoptChannel() <- s.ChatInput
 	s.GameContainer.AdoptChannel <- s.ChatWindow.This
 	// Sub-window: inventory
-	inventoryContainer, err := s.InventoryWindow.Setup(s, s.Styles()["Game"]["Inventory"], s.inputChan)
+	inventoryContainer, err := s.InventoryWindow.Setup(s, elements.ContainerWindowConfig{Style: s.Styles()["Game"]["Inventory"], Type: elements.ContainerInventoryType, ID: "inventory"}, s.inputChan)
 	if err != nil {
 		panic(err)
 	}
@@ -151,7 +151,7 @@ func (s *Game) SetupUI() (err error) {
 	s.GameContainer.AdoptChannel <- inspectorContainer.This
 
 	// Sub-window: ground
-	groundContainer, err := s.GroundWindow.Setup(s, s.Styles()["Game"]["Ground"], s.inputChan)
+	groundContainer, err := s.GroundWindow.Setup(s, elements.ContainerWindowConfig{Style: s.Styles()["Game"]["Ground"], Type: elements.ContainerGroundType, ID: "ground"}, s.inputChan)
 	if err != nil {
 		panic(err)
 	}

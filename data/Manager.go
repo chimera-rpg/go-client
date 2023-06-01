@@ -112,6 +112,8 @@ func (m *Manager) Setup(l *logrus.Logger) (err error) {
 	if err := m.Config.Read(path.Join(m.ConfigPath, "client.yaml")); err != nil {
 		m.Log.Info(err)
 	}
+	// TODO: Make a func to ensure validity of config structure.
+	m.Config.Game.Containers = make(map[string]*config.ContainerConfig)
 
 	// Read in our styles.
 	m.Styles = make(map[string]map[string]string)

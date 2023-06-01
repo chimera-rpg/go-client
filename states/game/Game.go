@@ -47,7 +47,7 @@ type Game struct {
 	InventoryWindow      elements.ContainerWindow
 	InspectorWindow      elements.InspectorWindow
 	MapWindow            elements.MapWindow
-	GroundWindow         elements.GroundModeWindow
+	GroundWindow         elements.ContainerWindow
 	DebugWindow          elements.DebugWindow
 	StatsWindow          ui.Container
 	StateWindow          ui.Container
@@ -266,6 +266,11 @@ func (s *Game) HandleNet(cmd network.Command) bool {
 		s.world.HandleMapCommand(c)
 	case network.CommandObject:
 		s.world.HandleObjectCommand(c)
+		if _, ok := c.Payload.(network.CommandObjectPayloadContainer); ok {
+			if c.ObjectID == 0 {
+				s.InventoryWindow.Refresh()
+			}
+		}
 	case network.CommandTiles:
 		s.world.HandleTilesCommand(c)
 	case network.CommandTile:

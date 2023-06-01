@@ -55,7 +55,7 @@ type GameConfig struct {
 	Graphics      GameGraphicsConfig
 	CommandPrefix string
 	Bindings      binds.Bindings
-	Ground        GroundConfig
+	Containers    map[string]*ContainerConfig
 }
 
 // GameGraphicsConfig is the configuration for the game's graphics.
@@ -78,7 +78,17 @@ type WindowConfig struct {
 	Fullscreen    bool
 }
 
-type GroundConfig struct {
+// ContainerConfig is the config for a container, wow.
+type ContainerConfig struct {
 	Mode      int
 	Aggregate bool
+}
+
+func (g *GameConfig) GetContainerConfig(which string) *ContainerConfig {
+	if c, ok := g.Containers[which]; ok {
+		return c
+	}
+	c := &ContainerConfig{}
+	g.Containers[which] = c
+	return c
 }

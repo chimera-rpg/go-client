@@ -6,6 +6,16 @@ type Container struct {
 	ObjectIDs []uint32
 }
 
+// GetContainer returns the container for the given ID.
+func (w *World) GetContainer(ID uint32) *Container {
+	for _, c := range w.containers {
+		if c.ID == ID {
+			return c
+		}
+	}
+	return nil
+}
+
 // UpdateContainer updates the given container with the list of objects.
 func (w *World) UpdateContainer(ID uint32, objects []uint32) {
 	var container *Container
